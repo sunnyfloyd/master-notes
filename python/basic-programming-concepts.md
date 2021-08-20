@@ -1,4 +1,24 @@
 # HyperSkill Python Course Notes
+
+## Table of Contents
+
+- [HyperSkill Python Course Notes](#hyperskill-python-course-notes)
+  - [Table of Contents](#table-of-contents)
+  - [Introduction to OOP](#introduction-to-oop)
+  - [Naming Variables](#naming-variables)
+  - [Scopes](#scopes)
+  - [Class](#class)
+    - [Magic Methods](#magic-methods)
+    - [Inheritance](#inheritance)
+  - [Introduction to databases](#introduction-to-databases)
+  - [SQL](#sql)
+  - [Object-Relational Mapping (ORM)](#object-relational-mapping-orm)
+    - [Data and object mapping](#data-and-object-mapping)
+    - [ORM Concept](#orm-concept)
+  - [Immutability](#immutability)
+  - [Dictionaries](#dictionaries)
+  - [Arguments](#arguments)
+  - [Lists](#lists)
  
 ## Introduction to OOP
 

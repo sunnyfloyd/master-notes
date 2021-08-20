@@ -1,0 +1,22 @@
+# Linux
+
+- ```history``` and then ```![number]```
+- ```echo```
+- ```ls```, ```ls -1```, ```ls -l```
+- ```pwd```
+- ```cd```, ```cd ~```
+- ```mkdir```
+- ```touch```
+- ```mv file_name file_name2_and_location```
+- ```rm file_name```, supports wildcards ```rm file*```
+- ```rm -r directory_name```
+- **nano** is a basic linux editor
+- ```apt update```
+- ```apt install```
+- ```cat file_name```, when long file ```more file_name```, use this to scroll both ways ```less file_name```
+- ```head -n 5 file_name```, ```tail -n 5 file_name```
+- ```cat file.txt > file2.txt```, ```echo blabla > file.txt```, ```ls -l > files.txt```
+- ```grep 'word' file_name```
+- Search and display the total number of times that the string ‘nixcraft’ appears in a file named frontpage.md ```grep -c 'nixcraft' frontpage.md```.
+- ```one command | second command``` - second command uses output from the first command.
+- 

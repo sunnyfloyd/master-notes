@@ -1,28 +1,9 @@
 # Wed Development With Flask
 
-## Starting Flask Server
+## Sources
 
-- Starting flask server:
-
-```bash
-# in terminal
-export FLASK_APP=hello.py
-# in powershell
-[set] $env:FLASK_APP = "hello.py"
-
-# additionally following variables can be set
-# to allow automated reloads whenever change is made
-# in terminal
-$env:FLASK_ENV=development
-# in powershell
-$env:FLASK_ENV = "development"
-# to start a server with a debug mode being on
-$env:FLASK_DEBUG = 1
-
-flask run
-```
-
-- Terminal variables are not remembered so in order to skip manual setting of the variables create *.flaskenv* file and populate it with desired varialbes and use ```pip install python-dotenv```.
+- [The Flask Mega-Tutorial](https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-i-hello-world)
+- [Flask Course - Python Web Application Development](https://www.youtube.com/watch?v=Qr4QMBUPxWo)
 
 ## Project Structure
 
@@ -51,7 +32,58 @@ if __name__ == '__main__':
     app.run(debug=True)
 ```
 
-## Flask
+### Flask Blueprints
+
+- In Flask, a blueprint is a logical structure that represents a subset of the application. A blueprint can include elements such as routes, view functions, forms, templates and static files. If you write your blueprint in a separate Python package, then you have a component that encapsulates the elements related to specific feature of the application. You can think of a blueprint as a temporary storage for application functionality that helps in organizing your code.
+
+- The creation of a blueprint is fairly similar to the creation of an application. This is done in the *___init__.py* module of the blueprint package:
+
+```python
+from flask import Blueprint
+
+bp = Blueprint('errors', __name__)
+
+from app.errors import handlers
+```
+
+- The Blueprint class takes the name of the blueprint, the name of the base module (typically set to `__name__` like in the Flask application instance). After the blueprint object is created, I import the *handlers.py* module, so that the error handlers in it are registered with the blueprint. This import is at the bottom to avoid circular dependencies.
+
+- Registering blueprint in the main app:
+
+```python
+app = Flask(__name__)
+# ...
+from app.errors import bp as errors_bp
+app.register_blueprint(errors_bp)  # `url_prefix` argument can be used to define URL prefix
+```
+
+- When defining routes in a blueprint, the `@bp.route` decorate is used instead of `@app.route`. There is also a required change in the syntax used in the `url_for()` to build URLs. For regular view functions attached directly to the application, the first argument to `url_for()` is the view function name. When a route is defined in a blueprint, **this argument must include the blueprint name and the view function name, separated by a period**. So for example, I had to replace all occurrences of `url_for('login')` with `url_for('auth.login')`.
+
+- The `current_app` variable that Flask provides is a special "context" variable that Flask initializes with the application before it dispatches a request. This makes it easy for view functions to access the application instance without having to import it: `from flask import current_app`.
+
+## Application Development
+
+- Starting flask server:
+
+```bash
+# in terminal
+export FLASK_APP=hello.py
+# in powershell
+[set] $env:FLASK_APP = "hello.py"
+
+# additionally following variables can be set
+# to allow automated reloads whenever change is made
+# in terminal
+$env:FLASK_ENV=development
+# in powershell
+$env:FLASK_ENV = "development"
+# to start a server with a debug mode being on
+$env:FLASK_DEBUG = 1
+
+flask run
+```
+
+- Terminal variables are not remembered so in order to skip manual setting of the variables create *.flaskenv* file and populate it with desired varialbes and use ```pip install python-dotenv```.
 
 - Simple flask app:
 
@@ -95,92 +127,168 @@ def user(username):
 
 - Environment variables should be stored in a config and can be loaded with *python-dotenv* package.
 
-### Flask Blueprints
+### User Authentication
 
-- In Flask, a blueprint is a logical structure that represents a subset of the application. A blueprint can include elements such as routes, view functions, forms, templates and static files. If you write your blueprint in a separate Python package, then you have a component that encapsulates the elements related to specific feature of the application. You can think of a blueprint as a temporary storage for application functionality that helps in organizing your code.
+- Form part in routes is the same as for the registration part.
 
-- The creation of a blueprint is fairly similar to the creation of an application. This is done in the *___init__.py* module of the blueprint package:
-
-```python
-from flask import Blueprint
-
-bp = Blueprint('errors', __name__)
-
-from app.errors import handlers
-```
-
-- The Blueprint class takes the name of the blueprint, the name of the base module (typically set to `__name__` like in the Flask application instance). After the blueprint object is created, I import the *handlers.py* module, so that the error handlers in it are registered with the blueprint. This import is at the bottom to avoid circular dependencies.
-
-- Registering blueprint in the main app:
+- In *forms.py* within the appropriate form class created for user login additional validations should be included to check provided user name and password. Such validation can also be included as part of the routes within the ```validate_on_submit``` if clase:
 
 ```python
-app = Flask(__name__)
-# ...
-from app.errors import bp as errors_bp
-app.register_blueprint(errors_bp)  # `url_prefix` argument can be used to define URL prefix
+def validate_username(self, username):
+    if User.query.filter_by(username=username.data).first() is None:
+        raise ValidationError(message='This username does not exist.')
+
+def validate_password(self, password):
+    candidate = User.query.filter_by(username=self.username.data).first().password_hash
+    if not bcrypt.check_password_hash(candidate, password.data):
+        raise ValidationError(message='Incorrect username and password.')
 ```
 
-- When defining routes in a blueprint, the `@bp.route` decorate is used instead of `@app.route`. There is also a required change in the syntax used in the `url_for()` to build URLs. For regular view functions attached directly to the application, the first argument to `url_for()` is the view function name. When a route is defined in a blueprint, **this argument must include the blueprint name and the view function name, separated by a period**. So for example, I had to replace all occurrences of `url_for('login')` with `url_for('auth.login')`.
-
-- The `current_app` variable that Flask provides is a special "context" variable that Flask initializes with the application before it dispatches a request. This makes it easy for view functions to access the application instance without having to import it: `from flask import current_app`.
-
-## Jinja
-
-- Variable block in a print statement: ```{{ }}```.
-
-- Instruction block:
+- To initiate login functionality use ```flask_login``` module:
 
 ```python
-{# Comments here #}
-{% for i in range(10) %}
-    <p>Item number {{ i + 1 }}>
-{% endfor %}
+from flask_login import LoginManager
+
+login_manager = LoginManager()
+login_manager.init_app(app)
 ```
 
-- To access attributes of a variable, in addition to a standard Python ```__getitem__``` syntax (```[]```), dot syntax (```.```) can be used.
-
-- Defining an inner scope is done with ```with``` block:
+- Within the *models* callback function should be located:
 
 ```python
-{% with var1 = 2 %}
-    {{ var1 }}
-{% endwith %}
-# var1 is not accessible outside of the with block scope
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 ```
 
-- Setting a variable is done with a ```set``` keyword: ```{% set var1 = 'value' %}```.
+- To skip manual implementation of methods required by Flask in the ```User``` class we can inherit from ```UserMixin``` class that provides implementation of these methods.
 
-- To capture the contents of a block into a variable use `set` as a block:
+- After a successful validation user should be created:
 
 ```python
-{% set navigation %}
-    <li><a href="/">Index</a>
-    <li><a href="/downloads">Downloads</a>
-{% endset %}
-# 'navigation' variable is now available for use in template
+user = User.query.filter_by(username=form.username.data).first()
+login_user(user)
 ```
 
-#### Template Inheritance
-
-- In order to inherit HTML code from base/template use ```{% extends 'base.html' %}```.
-
-- ```{% block block_name %}``` indicates unique elements in the base template from which other pages will inherit:
+- Indication of routes accessible only by logged users requires ```@login_required``` decorator. In order to render desired view configure ```LoginManager()``` instance by setting its ```login_view``` property. If custom functionality is required for handling unauthorized users use ```unauthorized_handler(callback)```:
 
 ```python
-# in the base.html
-<title>
-    {% block title %}
-
-    {% endblock %}
-</title>
-
-# in the home.html
-{% block title %}
-    Home Page
-{% endblock %}
+login_manager = LoginManager(app)
+login_manager.login_view = 'login_page'
+login_manager.login_message = 'Please login before accessing this page.'
+login_manager.login_message_category = 'info'
 ```
 
-- URLs should not be hardcoded inside the templates, but instead ```url_for('page_generating_func')``` should be used.
+- ```logout_user()``` will logout the user.
+
+- ```current_user``` provides properties that allow for checking authentication status of the current user such as ```curent_user.is_authenticated``` and ```curent_user.is_anonymous```. ```curent_user``` is accessible via Jinja syntax as well.
+
+### Models and Databases
+
+- Flask has a dedicated wrapper for SQLAlchemy which is ```flask-sqlalchemy```.
+
+- Basic config for SQLAlchemy:
+
+```python
+from flask_sqlalchemy import SQLAlchemy
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///market.db'
+db = SQLAlchemy(app)
+```
+
+- Creating a table 'Item' with desired fields:
+
+```python
+from flask_sqlalchemy import SQLAlchemy
+db = SQLAlchemy(app)
+
+class User(db.Model, UserMixin):
+    id = db.Column(db.Integer(), primary_key=True)
+    username = db.Column(db.String(length=15), nullable=False, unique=True)
+    email_address = db.Column(db.String(length=50), nullable=False, unique=True)
+    password_hash = db.Column(db.String(length=60), nullable=False)
+    budget = db.Column(db.Integer(), nullable=False, default=1000)
+    # This is not an actual database field, but a high-level view of the relationship
+    items = db.relationship('Item', backref='owned_user', lazy=True)
+
+class Item(db.Model):
+    id = db.Column(db.Integer(), primary_key=True)
+    name = db.Column(db.String(length=30), nullable=False, unique=True)
+    price = db.Column(db.Integer(), nullable=False)
+    barcode = db.Column(db.String(length=12), nullable=False, unique=True)
+    description = db.Column(db.String(length=1024), nullable=False, unique=True)
+    owner = db.Column(db.Integer(), db.ForeignKey('user.id'))
+```
+
+- For a one-to-many relationship, a ```db.relationship``` field is normally defined on the "one" side, and is used as a convenient way to get access to the "many".
+
+- In order to initiate a database file use in a python console:
+
+```python
+from market import db
+db.create_all()
+```
+
+- Adding items via Python console:
+
+```python
+from market import db
+from market import Item
+item1 = Item(name='phone', price=500, barcode='12345', description='dummy descr')
+db.session.add(item1)
+db.session.commit()
+```
+
+- To query a database to show all of the items ```Item.query.all()```.
+
+- To query a table by item's ID ```User.query.get(1)```.
+
+- Default representation of an object in a table can be changed by overwriting ```__repr__``` function within a model class:
+
+```python
+def __repr__(self):
+        return f'Item {self.name}'
+```
+
+- Filtering of a table can be done with ```Item.query.filter_by(price=500)```.
+
+- To delete entire database: ```db.drop_all()```.
+
+- If custom table name should be given it can be done via ```__tablename__ = 'name'```.
+
+- We often need to run queries outside of the application to check functionality of our app/models. In orde to do so we can choose one of the following:
+
+```python
+# First option: In opened Python session
+from market import db
+from market.models import User, Item
+
+# Second option (in run.py)
+from market import app, db
+from market.models import User, Post
+
+@app.shell_context_processor
+def make_shell_context():
+    return {'db': db, 'User': User, 'Post': Post}
+
+flask shell  # to run Python session in the Flask application context
+```
+
+#### Migrations
+
+- Working with a relational databases can be made simpler by using Alembic which handles all database schema changes:
+
+```python
+# Using Flask-Migrate wrapper for Alembic
+from flask_migrate import Migrate
+migrate = Migrate(app, db)
+
+# In terminal
+flask db init  # creates structure for the db migration
+flask db migrate -m 'comment'  # first db migration (generates migration script only)
+flask db upgrade  # run migration script making required changes
+```
+
+- Migration workflow in short: ```changes to the models -> run db migrate -> run db upgrade```. Run ```db downgrade``` in case of any issues.
 
 ### Flask Forms
 
@@ -389,169 +497,64 @@ flash(
 {% endwith %}
 ```
 
-### User Authentication
+## Jinja
 
-- Form part in routes is the same as for the registration part.
+- Variable block in a print statement: ```{{ }}```.
 
-- In *forms.py* within the appropriate form class created for user login additional validations should be included to check provided user name and password. Such validation can also be included as part of the routes within the ```validate_on_submit``` if clase:
-
-```python
-def validate_username(self, username):
-    if User.query.filter_by(username=username.data).first() is None:
-        raise ValidationError(message='This username does not exist.')
-
-def validate_password(self, password):
-    candidate = User.query.filter_by(username=self.username.data).first().password_hash
-    if not bcrypt.check_password_hash(candidate, password.data):
-        raise ValidationError(message='Incorrect username and password.')
-```
-
-- To initiate login functionality use ```flask_login``` module:
+- Instruction block:
 
 ```python
-from flask_login import LoginManager
-
-login_manager = LoginManager()
-login_manager.init_app(app)
+{# Comments here #}
+{% for i in range(10) %}
+    <p>Item number {{ i + 1 }}>
+{% endfor %}
 ```
 
-- Within the *models* callback function should be located:
+- To access attributes of a variable, in addition to a standard Python ```__getitem__``` syntax (```[]```), dot syntax (```.```) can be used.
+
+- Defining an inner scope is done with ```with``` block:
 
 ```python
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
+{% with var1 = 2 %}
+    {{ var1 }}
+{% endwith %}
+# var1 is not accessible outside of the with block scope
 ```
 
-- To skip manual implementation of methods required by Flask in the ```User``` class we can inherit from ```UserMixin``` class that provides implementation of these methods.
+- Setting a variable is done with a ```set``` keyword: ```{% set var1 = 'value' %}```.
 
-- After a successful validation user should be created:
+- To capture the contents of a block into a variable use `set` as a block:
 
 ```python
-user = User.query.filter_by(username=form.username.data).first()
-login_user(user)
+{% set navigation %}
+    <li><a href="/">Index</a>
+    <li><a href="/downloads">Downloads</a>
+{% endset %}
+# 'navigation' variable is now available for use in template
 ```
 
-- Indication of routes accessible only by logged users requires ```@login_required``` decorator. In order to render desired view configure ```LoginManager()``` instance by setting its ```login_view``` property. If custom functionality is required for handling unauthorized users use ```unauthorized_handler(callback)```:
+### Template Inheritance
+
+- In order to inherit HTML code from base/template use ```{% extends 'base.html' %}```.
+
+- ```{% block block_name %}``` indicates unique elements in the base template from which other pages will inherit:
 
 ```python
-login_manager = LoginManager(app)
-login_manager.login_view = 'login_page'
-login_manager.login_message = 'Please login before accessing this page.'
-login_manager.login_message_category = 'info'
+# in the base.html
+<title>
+    {% block title %}
+
+    {% endblock %}
+</title>
+
+# in the home.html
+{% block title %}
+    Home Page
+{% endblock %}
 ```
 
-- ```logout_user()``` will logout the user.
-
-- ```current_user``` provides properties that allow for checking authentication status of the current user such as ```curent_user.is_authenticated``` and ```curent_user.is_anonymous```. ```curent_user``` is accessible via Jinja syntax as well.
+- URLs should not be hardcoded inside the templates, but instead ```url_for('page_generating_func')``` should be used.
 
 ### Jinja Add-Ons
 
 - HTML elements that should be included in the given page, but might be too verbose, can be included with the ```{% include 'includes/html_page.html' %}``` syntax. Those HTML chunks will have access to all of the variables within the context that they are spawned in. This is also useful when same code appears on different pages - in case of changes in the code those need to be done in a single template. Such components should be stored in a separate folder like *subtemplates*.
-
-## Models and Databases
-
-- Flask has a dedicated wrapper for SQLAlchemy which is ```flask-sqlalchemy```.
-
-- Basic config for SQLAlchemy:
-
-```python
-from flask_sqlalchemy import SQLAlchemy
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///market.db'
-db = SQLAlchemy(app)
-```
-
-- Creating a table 'Item' with desired fields:
-
-```python
-from flask_sqlalchemy import SQLAlchemy
-db = SQLAlchemy(app)
-
-class User(db.Model, UserMixin):
-    id = db.Column(db.Integer(), primary_key=True)
-    username = db.Column(db.String(length=15), nullable=False, unique=True)
-    email_address = db.Column(db.String(length=50), nullable=False, unique=True)
-    password_hash = db.Column(db.String(length=60), nullable=False)
-    budget = db.Column(db.Integer(), nullable=False, default=1000)
-    # This is not an actual database field, but a high-level view of the relationship
-    items = db.relationship('Item', backref='owned_user', lazy=True)
-
-class Item(db.Model):
-    id = db.Column(db.Integer(), primary_key=True)
-    name = db.Column(db.String(length=30), nullable=False, unique=True)
-    price = db.Column(db.Integer(), nullable=False)
-    barcode = db.Column(db.String(length=12), nullable=False, unique=True)
-    description = db.Column(db.String(length=1024), nullable=False, unique=True)
-    owner = db.Column(db.Integer(), db.ForeignKey('user.id'))
-```
-
-- For a one-to-many relationship, a ```db.relationship``` field is normally defined on the "one" side, and is used as a convenient way to get access to the "many".
-
-- In order to initiate a database file use in a python console:
-
-```python
-from market import db
-db.create_all()
-```
-
-- Adding items via Python console:
-
-```python
-from market import db
-from market import Item
-item1 = Item(name='phone', price=500, barcode='12345', description='dummy descr')
-db.session.add(item1)
-db.session.commit()
-```
-
-- To query a database to show all of the items ```Item.query.all()```.
-
-- To query a table by item's ID ```User.query.get(1)```.
-
-- Default representation of an object in a table can be changed by overwriting ```__repr__``` function within a model class:
-
-```python
-def __repr__(self):
-        return f'Item {self.name}'
-```
-
-- Filtering of a table can be done with ```Item.query.filter_by(price=500)```.
-
-- To delete entire database: ```db.drop_all()```.
-
-- If custom table name should be given it can be done via ```__tablename__ = 'name'```.
-
-- We often need to run queries outside of the application to check functionality of our app/models. In orde to do so we can choose one of the following:
-
-```python
-# First option: In opened Python session
-from market import db
-from market.models import User, Item
-
-# Second option (in run.py)
-from market import app, db
-from market.models import User, Post
-
-@app.shell_context_processor
-def make_shell_context():
-    return {'db': db, 'User': User, 'Post': Post}
-
-flask shell  # to run Python session in the Flask application context
-```
-
-### Migrations
-
-- Working with a relational databases can be made simpler by using Alembic which handles all database schema changes:
-
-```python
-# Using Flask-Migrate wrapper for Alembic
-from flask_migrate import Migrate
-migrate = Migrate(app, db)
-
-# In terminal
-flask db init  # creates structure for the db migration
-flask db migrate -m 'comment'  # first db migration (generates migration script only)
-flask db upgrade  # run migration script making required changes
-```
-
-- Migration workflow in short: ```changes to the models -> run db migrate -> run db upgrade```. Run ```db downgrade``` in case of any issues.

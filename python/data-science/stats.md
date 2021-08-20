@@ -1,6 +1,10 @@
-# Statistics for Data Science and Business Analysis
+# Statistics and Probabilty
 
-## Population and Sample
+## Statistics for Data Science and Business Analysis
+
+- Notes based on [Statistics for Data Science and Business Analysis](https://learning.oreilly.com/videos/statistics-for-data/9781789803259/).
+
+### Population and Sample
 
 - **Population** (*N*) - collection of all items of intereset to our study. Hard to define and hard to observe.
 
@@ -9,7 +13,7 @@
   - Representative sample - sample that accurately reflects the population;
   - Random sample - when each member of the population has an equal chance of being chosen.
 
-## Fundamentals of Descriptive Statistics
+### Fundamentals of Descriptive Statistics
 
 - **Types of data**:
 
@@ -26,7 +30,7 @@
     - Interval - does not have a meaningful zero, but has a meaningful difference;
     - Ratio - does have a **true zero**.
 
-### Visualizing categorical variables
+#### Visualizing categorical variables
 
 - Frequency distribution tables - nominal and relative frequency;
 
@@ -36,29 +40,29 @@
 
 - Pareto diagrams (bar + cumulative) - ordered nominal frequency represented with a bar chart on one axis and cumulative relative frequency represented with a curve on the other axis.
 
-### Visualizing numerical variables
+#### Visualizing numerical variables
 
 - Frequency distribution table does not serve its purpose with numerical data. It can be used when data is grouped into intervals (5 - 20 in most cases). Can be done in pandas with ```pd.cut(x, bins)```.
 
 - Histogram - displays the shape and spread of continuous sample data. Each bar groups numbers into ranges. Might be useful to show relative frequencies instead of absolute ones. Some of the histograms might be created with the unequal intervals (age groups).
 
-### Cross tables and scatter plots
+#### Cross tables and scatter plots
 
 - **Crost Tables** (contingency tables) - represent relation between two variables. Can be then translated into a **side-by-side bar chart**.
 
 - **Scatter Plots** used when representing two numerical sets of data.
 
-## Measures of central tendency, asymmetry, and variability
+### Measures of central tendency, asymmetry, and variability
 
 NOTE: Calculating statistics for a sample most of a time is based on *(N-1)* denominator. This is done in order to increase a magnitude of the statistics representing data dispersion/variance.
 
-### Mean, median, mode
+#### Mean, median, mode
 
 - Mean - watch out for outliers! If the mean and median are very different it might mean that within a dataset there are outliers that impact average value.
 
 - If there are multiple modes then mode should not be provided as it most like does not bear any meaning.
 
-### Measuring skewness (measurin asymmetry)
+#### Measuring skewness (measurin asymmetry)
 
 - **Skewness** - indicates whether the data is concentrated on one side and on which side the ourliers are.
 
@@ -68,7 +72,7 @@ NOTE: Calculating statistics for a sample most of a time is based on *(N-1)* den
 
 - **Negative skew** (left skew) - when mean < median; left outliers.
 
-### Measuring how data is spread out: calculating variance
+#### Measuring how data is spread out: calculating variance
 
 - **Variance** measures the dispersion of a set of data points around their mean. Within the formula for variance squaring the difference has two main purposes:
 
@@ -81,7 +85,7 @@ NOTE: Calculating statistics for a sample most of a time is based on *(N-1)* den
 
 - **Coefficient of variation (CV)** - standard deviation **relative to the mean**. It is useful when we want to compare deviations from two different datasets.
 
-### Calculating and understanding covariance
+#### Calculating and understanding covariance
 
 - **Covariance** - Covariance shows the tendency in the linear relationship between the variables, but does not measure strength/magnitude of the relationship but:
 
@@ -91,7 +95,7 @@ NOTE: Calculating statistics for a sample most of a time is based on *(N-1)* den
 
 - **Correlation coefficient** (covariance divided by the product of two standard deviations) - value in range *[-1, 1]*. A normalised measurement of the covariance. It is a measure of a linear correlation between two sets of data.
 
-## Distributions
+### Distributions
 
 - **Distribution** is a function that shows possible values for a variable and how they occur. Types of distributions:
 
@@ -103,13 +107,13 @@ NOTE: Calculating statistics for a sample most of a time is based on *(N-1)* den
   - **Uniform**
   - **Binomial**
 
-### Normal Distribution
+#### Normal Distribution
 
 - **Gaussian distribution** - symmetrical (no skew), *mean = median = mode*. Same standard deviation, but different mean (controlling for std) will move the curve on the x axis without changing curve's shape. Same mean, but different standard deviation (controlling for the mean) will re-shape curve - the lower std the higher the curve will be and thinner the tails.
 
 - **Standard normal distribution** - *mean = 0* and *std = 1* (*N~(0, 1)*). Normal distribution can be transformed into its standardized form by calculating z-score for each variable (check z-score normalization in machine learning notes).
 
-### The Central Limit Theorem
+#### The Central Limit Theorem
 
 - The **central limit theorem** states that if you have a population with mean *μ* and standard deviation *σ* and take sufficiently large **random samples from the population with replacement**, then **the distribution of the sample means will be approximately normally distributed**. This will hold true regardless of whether the source population is normal or skewed, provided the sample size is sufficiently large (usually n > 30). **If the population is normal, then the theorem holds true even for samples smaller than 30.** In fact, this also holds true even if the population is binomial, provided that *min(np, n(1-p))> 5*, where *n* is the sample size and *p* is the probability of success in the population. This means that we can use the normal probability model to quantify uncertainty when making inferences about a population mean based on the sample mean. For random samples taken from the population we can compute mean of the sample means and the variance of the sample means:
 $$N\sim(\mu,\frac{\sigma^2}{n})$$
@@ -121,14 +125,14 @@ $$\frac{\sigma}{\sqrt{n}}$$
 
 - Based on CLT if you work with sample that is large enough I can assume the normality of sample means.
 
-### Student's T Distribution
+#### Student's T Distribution
 
 - **t-distribution** is continous probability distribution that arise when estimating the mean of a **normally-distributed population** in situations where the **sample size is small** and the **population's standard deviation is unknown**. It has fatter tails than normal distribution due to higher uncertainty. The more **deegree of freedoms** (larger sample) the closer it is to a normal distribution. It is an approximation of the normal distribution.
 
 - **t-statistic** ( *(sample mean - population mean) / standard error* ):
 $$t_{n-1,\ \alpha} = \frac{\bar{x}-\mu}{\frac{s}{\sqrt{n}}}$$
 
-## Estimarors and Estimates
+### Estimarors and Estimates
 
 - **Estimator** of the population parameter is an approximation depending solely on the sample information. It is a statistic that estimates some fact about the population. You can also think of an estimator as the rule that creates an estimate. Specific value given by the estimator is called an **estimand**. We distinct 2 main types of estimates:
 
@@ -146,7 +150,7 @@ $$t_{n-1,\ \alpha} = \frac{\bar{x}-\mu}{\frac{s}{\sqrt{n}}}$$
 
 - **Statistical inference** is the process of using data analysis to infer properties of an underlying distribution of probability. Inferential statistical analysis infers properties of a population, for example by testing hypotheses and deriving estimates. It is assumed that the observed data set is sampled from a larger population.
 
-### Confidence Intervals - Single Population
+#### Confidence Intervals - Single Population
 
 - **Confidence interval** is the range within which you expect the population parameter to be.
 
@@ -177,7 +181,7 @@ stats.norm.interval(0.99, loc=np.mean(dataset), scale=pd.DataFrame(dataset).sem(
 stats.t.interval(0.99, df=8, loc=np.mean(dataset), scale=pd.DataFrame(dataset).sem())
 ```
 
-### Confidence Intervals - Two Populations
+#### Confidence Intervals - Two Populations
 
 - Sampels taken from the two populations can be:
 
@@ -187,7 +191,7 @@ stats.t.interval(0.99, df=8, loc=np.mean(dataset), scale=pd.DataFrame(dataset).s
     - population variance is unknown but assumed to be equal,
     - population variance is unknown but assumed to be different.
 
-#### Dependent Samples
+##### Dependent Samples
 
 - Most common example is for developing a medicine where given parameter is tested before and after using certain drug.
 
@@ -196,9 +200,9 @@ stats.t.interval(0.99, df=8, loc=np.mean(dataset), scale=pd.DataFrame(dataset).s
 - Confidence interval for difference of two means from dependent samples (for large samples z-statistic should be used):
 $$\bar{d}\pm t_{n-1,\alpha/2}\frac{s_d}{\sqrt{n}}$$
 
-#### Independent Samples
+##### Independent Samples
 
-##### Known Population Variance
+###### Known Population Variance
 
 - Used for truly independent samples (f.i. score of different students from different departments, different teachers, different exams and classes).
 
@@ -214,7 +218,7 @@ $$\bar{d}\pm t_{n-1,\alpha/2}\frac{s_d}{\sqrt{n}}$$
 
 - Confidence interval: $$(\bar{x_1} - \bar{x_2})\pm z_{\alpha/2}\sqrt{\frac{\sigma^2_{x_1}}{n_{x_1}}+\frac{\sigma^2_{x_2}}{n_{x_2}}}$$
 
-##### Unknown Population Variance (assumed to be equal)
+###### Unknown Population Variance (assumed to be equal)
 
 - Can be used when analysing prices of the same product on different markets since it makes sense that variance of given product should be equal on both markets.
 
@@ -224,7 +228,7 @@ $$s^2_p = \frac{(n_{x_1}-1)s^2_{x_1}+(n_{x_2}-1)s^2_{x_2}}{n_{x_1}+n_{x_2}-2}$$
 - Confidence interval:
 $$(\bar{x_1}-\bar{x_2})\pm t_{n_{x_1}+n_{x_2}-2,\ \alpha/2}\sqrt{\frac{s^2_p}{n_{x_1}}+\frac{s^2_p}{n_{x_2}}}$$
 
-##### Unknown Population Variance (assumed to be different)
+###### Unknown Population Variance (assumed to be different)
 
 - Can be used when analysing prices of different products so that price variance can be assummed to be different.
 
@@ -233,7 +237,7 @@ $$(\bar{x_1}-\bar{x_2})\pm t_{v,\ \alpha/2}\sqrt{\frac{s^2_{x_1}}{n_{x_1}}+\frac
 
 - degrees of freedom (*v*) is given by [this formula](https://opentextbc.ca/introstatopenstax/wp-content/ql-cache/quicklatex.com-6384ba6785cbf87164c59664b773c487_l3.svg).
 
-### Margin of Error
+#### Margin of Error
 
 - **Margin of error** is a scaled quantile (f.e. *t-* or *z-statistics*) by standard error. It depends on whether population variance is known or not. Since margin of error determines the interval for confidence interval they can be summarized as:
 $$\bar{x}\pm ME$$
