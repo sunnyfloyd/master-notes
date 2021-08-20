@@ -6,6 +6,8 @@
 
 ## Table of Contents
 
+(links work in local repo only)
+
 - [master-notes](\.)
   - [README.md](\.\README.md)
   - [devops-and-deployment](\devops-and-deployment)
