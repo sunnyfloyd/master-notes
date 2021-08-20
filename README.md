@@ -26,7 +26,7 @@
     - [fastapi.md](\python\fastapi.md)
     - [python.md](\python\python.md)
     - [data-science](\python\data-science)
-      - [machine learning.md](\python\data-science\machine learning.md)
+      - [machine-learning.md](\python\data-science\machine-learning.md)
       - [pandas-and-numpy.md](\python\data-science\pandas-and-numpy.md)
       - [stats.md](\python\data-science\stats.md)
     - [django](\python\django)
