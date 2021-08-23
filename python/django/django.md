@@ -1,9 +1,35 @@
 # Django
 
+## Table of Contents
+
+- [Django](#django)
+  - [Table of Contents](#table-of-contents)
+  - [Sources](#sources)
+  - [Basics](#basics)
+  - [Models](#models)
+    - [Creating Model Managers](#creating-model-managers)
+  - [Databases and ORMs](#databases-and-orms)
+    - [ORM Methods](#orm-methods)
+  - [Admin Panel and Customization](#admin-panel-and-customization)
+  - [Views](#views)
+    - [URLs](#urls)
+    - [Templates](#templates)
+      - [Pagination](#pagination)
+    - [Generic Views](#generic-views)
+      - [Generic Views (from Django tutorial)](#generic-views-from-django-tutorial)
+  - [Templates](#templates-1)
+  - [Testing](#testing)
+    - [Client Testing](#client-testing)
+    - [Testing Frontend with Selenium](#testing-frontend-with-selenium)
+  - [Forms](#forms)
+  - [Session Management](#session-management)
+  - [Static Files](#static-files)
+
 ## Sources
 
 - [Django Official Tutorial](https://docs.djangoproject.com/en/3.2/intro/tutorial01/)
 - [CS50 Harvard Course](https://cs50.harvard.edu/web/2020/weeks/3/)
+- [Django 3 By Example - Third Edition](https://learning.oreilly.com/library/view/django-3-by/9781838981952/)
 
 ## Basics
 
@@ -11,7 +37,18 @@
 
 - Run development server: ```python manage.py runserver [[server_IP:]port]```.
 
+- You can run the Django development server on a custom host and port or tell Django to load a specific settings file, as follows: `python manage.py runserver 127.0.0.1:8001 --settings=mysite.settings`.
+
 - Create new application structure in the current directory: ```python manage.py startapp app_name```.
+
+- To include the app in the project, we need to add a reference to its configuration class in the ```INSTALLED_APPS``` setting. The ```PollsConfig``` class is in the *polls/apps.py* file, so its dotted path is `polls.apps.PollsConfig`. The `PollsConfig` class is your application configuration. When added to the `INSTALLED_APPS` Django knows that your application is active for this project and will be able to load its models.
+
+```python
+INSTALLED_APPS = [
+    'polls.apps.PollsConfig',
+    ...
+]
+```
 
 - `python manage.py shell` to invoke Django shell.
 
@@ -62,11 +99,11 @@ urlpatterns = [
 
 - The ```include()``` function allows referencing other URLconfs. Whenever Django encounters ```include()```, it chops off whatever part of the URL matched up to that point and sends the remaining string to the included URLconf for further processing.
 
-## Databases and Models
+## Models
 
-- By default, the databse configuration in Django uses SQLite. To use another database, install the appropriate database bindings and change the ```ENGINE``` and ```NAME``` keys in the ```DATABASES``` *default* item to match database connection settings. If not using SQLite as a database, additional settings such as ```USER```, ```PASSWORD```, and ```HOST``` must be added.
+- [Models API reference](https://docs.djangoproject.com/en/3.0/ref/models/)
 
-- ```python manage.py migrate``` command looks at the ```INSTALLED_APPS``` setting and creates any necessary database tables according to the database settings in *mysite/settings.py* file and the database migrations shipped with the app. `migrate` takes all the migrations that haven’t been applied (Django tracks which ones are applied using a special table in your database called django_migrations) and runs them against your database - essentially, synchronizing the changes you made to your models with the schema in the database.
+- **Model** is a Python class that subclasses `django.db.models.Model` in which each attribute represents a database field. Django will create a table for each model defined in the `models.py` file. When you create a model, Django will provide you with a practical API to query objects in the database easily.
 
 - Models declaration:
 
@@ -86,18 +123,52 @@ class Choice(models.Model):
     votes = models.IntegerField(default=0)
 ```
 
-- `on_delete=models.CASCADE` ensures that all records that reference deleted record from foreign table are also deleted.
+- `on_delete=models.CASCADE` ensures that all records that reference deleted record from foreign table are also deleted. The behaviour can be altered based on the passed argument like `models.PROTECT`. [Full list of arguments that can be passed to `on_delete`](https://docs.djangoproject.com/en/3.0/ref/models/fields/#django.db.models.ForeignKey.on_delete).
 
-- To include the app in the project, we need to add a reference to its configuration class in the ```INSTALLED_APPS``` setting. The ```PollsConfig``` class is in the *polls/apps.py* file, so its dotted path is `polls.apps.PollsConfig`:
+- `auto_now_add` and `auto_now` are mutually exclusive: former one adds a date to the field during object creation, whereas the latter updates it every time the `save()` method is called.
 
-```python
-INSTALLED_APPS = [
-    'polls.apps.PollsConfig',
+- Model class can also include `Meta` class that might alter some default behaviours like default ordering or default table name:
+
+```py
+class Post (models.Model)
     ...
-]
+
+    class Meta:
+        db_table = 'table_name'  # default name is converted from camel case to snake case
+        ordering = ('-publish',)
 ```
 
+- Django creates a primary key automatically for each model, but you can also override this by specifying primary_key=True in one of your model fields. The default primary key is an id column, which consists of an integer that is incremented automatically. This column corresponds to the id field that is automatically added to your models.
+
+### Creating Model Managers
+
+- `objects` is the default manager of every model that retrieves all objects in the database. However, you can also define custom managers for your models. There are **two ways to add or customize managers** for your models:
+  - add extra manager methods to an existing manager: `Post.objects.my_manager()`
+  - create a new manager by modifying the initial `QuerySet` that the manager returns: `Post.my_manager.all()`:
+
+```py
+# creating a new manager
+class PublishedManager(models.Manager):
+    def get_queryset(self):
+        return super(PublishedManager,
+                     self).get_queryset()\
+                          .filter(status='published')
+
+class Post(models.Model):
+    # ...
+    objects = models.Manager() # The default manager.
+    published = PublishedManager() # Our custom manager.
+```
+
+- The first manager declared in a model becomes the default manager. You can use the `Meta` attribute `default_manager_name` to specify a different default manager. If no manager is defined in the model, Django automatically creates the `objects` default manager for it. If you declare any managers for your model but you want to keep the `objects` manager as well, you have to add it explicitly to your model.
+
+- The `get_queryset()` method of a manager returns the `QuerySet` that will be executed.
+
+## Databases and ORMs
+
 - By running `python manage.py makemigrations polls`, you’re telling Django that you’ve made some changes to your models (in this case, you’ve made new ones) and that you’d like the changes to be stored as a migration.
+
+- ```python manage.py migrate``` command looks at the ```INSTALLED_APPS``` setting and creates any necessary database tables according to the database settings in *mysite/settings.py* file and the database migrations shipped with the app. `migrate` takes all the migrations that haven’t been applied (Django tracks which ones are applied using a special table in your database called django_migrations) and runs them against your database - essentially, synchronizing the changes you made to your models with the schema in the database.
 
 - `python manage.py sqlmigrate polls 0001` to see SQL code that will be run by migration.
 
@@ -105,9 +176,11 @@ INSTALLED_APPS = [
 
 - Three-step guide to making model changes: changes to models -> `makemigrations` -> `migrate`. The reason that there are separate commands to make and apply migrations is because you’ll commit migrations to your version control system and ship them with your app; they not only make your development easier, they’re also usable by other developers and in production.
 
+- By default, the databse configuration in Django uses SQLite. To use another database, install the appropriate database bindings and change the ```ENGINE``` and ```NAME``` keys in the ```DATABASES``` *default* item to match database connection settings. If not using SQLite as a database, additional settings such as ```USER```, ```PASSWORD```, and ```HOST``` must be added.
+
 ### ORM Methods
 
-- Typical usage of Django ORM:
+- Examples of Django ORM methods:
 
 ```python
 from polls.models import Choice, Question  # model classes
@@ -127,12 +200,55 @@ c = q.choice_set.create(choice_text='Not much', votes=0)  # on 'one' side object
 c.question
 q.choice_set.count()  # using 'count' db function
 Choice.objects.filter(question__pub_date__year=current_year)  # use double underscores to separate relationships
+Post.objects.filter(publish__year=2020, author__username='admin')
 c = q.choice_set.filter(choice_text__startswith='Just hacking')
 c.delete()  # deleting single record
 Question.objects.order_by('-pub_date')[:5]
 Question.objects.filter(pub_date__lte=timezone.now())  # returns a queryset containing Questions whose pub_date is less than or equal to - that is, earlier than or equal to - timezone.now.
 Question.objects.create(question_text=question_text, pub_date=time)
 ```
+
+- The changes you make to the object are not persisted to the database until you call the `save()` method. This is due to the fact that object creation first happens in the memory. You can also create the object and persist it into the database in a single operation using the `create()` method: `Post.objects.create(title='post title')`.
+
+- Each Django model has at least one manager, and the default manager is called **objects**. You get a `QuerySet` object using your model manager. To retrieve all objects from a table, you just use the `all()` method on the default objects manager.
+
+- Django `QuerySets` are **lazy**, which means they are only evaluated when they are forced to be. `QuerySets` are only evaluated in the following cases:
+
+  - The first time you iterate over them
+  - When you slice them, for instance, `Post.objects.all()[:3]`
+  - When you pickle or cache them
+  - When you call `repr()` or `len()` on them
+  - When you explicitly call `list()` on them
+  - When you test them in a statement, such as `bool()`, `or`, `and`, or `if`.
+
+
+- To filter a `QuerySet`, you can use the `filter()` method of the manager.
+
+- Queries with field lookup methods are built using two underscores, for example, `publish__year`, but the same notation is also used for accessing fields of related models, such as `author__username`.
+
+```py
+Post.objects.filter(publish__year=2020, author__username='admin')
+Post.objects.filter(publish__year=2020) \
+            .filter(author__username='admin'
+```
+
+- You can exclude certain results from your QuerySet using the `exclude()` method of the manager. For example, you can retrieve all posts published in 2020 whose titles don't start with *Why*: `Post.objects.filter(publish__year=2020).exclude(title__startswith='Why')`.
+
+- If you want to delete an object, you can do it from the object instance using the `delete()` method.
+
+- Shortcut for getting an object or 404:
+
+```python
+from django.shortcuts import get_object_or_404
+
+def detail(request, question_id):
+    question = get_object_or_404(Question, pk=question_id)
+    return render(request, 'polls/detail.html', {'question': question})
+```
+
+- The `get_object_or_404()` function takes a Django model as its first argument and an arbitrary number of keyword arguments, which it passes to the `get()` function of the model’s manager. It raises `Http404` if the object doesn’t exist.
+
+- There’s also a `get_list_or_404()` function, which works just as `get_object_or_404()` – except using `filter()` instead of `get()`. It raises `Http404` if the list is empty.
 
 - In order to avoid race conditions in Django ORM `F()` can be used:
 
@@ -171,12 +287,17 @@ admin.site.register(Book)
 
 ```py
 from django.contrib import admin
-from .models import Question
+from .models import Post
 
-class QuestionAdmin(admin.ModelAdmin):
-    fields = ['pub_date', 'question_text']  # reordering the fields on the edit form
-
-admin.site.register(Question, QuestionAdmin)
+@admin.register(Post)  # replaces admin.site.register(Post)
+class PostAdmin(admin.ModelAdmin):
+    list_display = ('title', 'slug', 'author', 'publish', 'status')
+    list_filter = ('status', 'created', 'publish', 'author')
+    search_fields = ('title', 'body')
+    prepopulated_fields = {'slug': ('title',)}
+    raw_id_fields = ('author',)
+    date_hierarchy = 'publish'
+    ordering = ('status', 'publish')
 ```
 
 - Above workflow applies to all the changes in admin options for a model: create a model admin class -> pass it as the second argument to `admin.site.register()`.
@@ -185,22 +306,7 @@ admin.site.register(Question, QuestionAdmin)
 
 - A **view** is a *type* of Web page in your Django application that generally serves a specific function and has a specific template. In Django, web pages and other content are delivered by views. Each view is represented by a Python function (or method, in the case of class-based views). Django will choose a view by examining the URL that’s requested (to be precise, the part of the URL after the domain name). To get from a URL to a view, Django uses what are known as `URLconfs`. A `URLconf` maps URL patterns to views.
 
-- Defining URL patterns:
-
-```python
-urlpatterns = [
-    path('', views.index, name='index'),
-    path('<int:question_id>/', views.detail, name='detail'),
-    path('<int:question_id>/results/', views.results, name='results'),
-    path('<int:question_id>/vote/', views.vote, name='vote'),
-]
-```
-
 - View needs to return a `HttpResponse` object.
-
-- Project’s `TEMPLATES` setting describes how Django will load and render templates. The default settings file configures a DjangoTemplates backend whose `APP_DIRS` option is set to `True`. By convention `DjangoTemplates` looks for a *templates* subdirectory in each of the `INSTALLED_APPS`.
-
-- Within the templates directory you have just created, create another directory called polls, and within that create a file called *index.html*. In other words, your template should be at *polls/templates/polls/index.html*. Because of how the *app_directories* template loader works as described above, you can refer to this template within Django as *polls/index.html*.
 
 - Rendering a template with variable context (dictionary that maps template variable names to Python objects):
 
@@ -229,33 +335,6 @@ def index(request):
 
 - The `render()` function takes the request object as its first argument, a template name as its second argument and a dictionary as its optional third argument. It returns an `HttpResponse` object of the given template rendered with the given context.
 
-- Raising a HTTP 404 error:
-
-```python
-from django.shortcuts import render
-
-def detail(request, question_id):
-    try:
-        question = Question.objects.get(pk=question_id)
-    except Question.DoesNotExist:
-        raise Http404("Question does not exist")
-    return render(request, 'polls/detail.html', {'question': question})
-```
-
-- Shortcut for getting an object or 404:
-
-```python
-from django.shortcuts import get_object_or_404
-
-def detail(request, question_id):
-    question = get_object_or_404(Question, pk=question_id)
-    return render(request, 'polls/detail.html', {'question': question})
-```
-
-- The `get_object_or_404()` function takes a Django model as its first argument and an arbitrary number of keyword arguments, which it passes to the `get()` function of the model’s manager. It raises `Http404` if the object doesn’t exist.
-
-- There’s also a `get_list_or_404()` function, which works just as `get_object_or_404()` – except using `filter()` instead of `get()`. It raises `Http404` if the list is empty.
-
 - If you need to use something similar to the `url` template tag in your code, Django provides the following function:
 
 ```py
@@ -276,7 +355,182 @@ reverse(views.archive)
 
 - Always return an `HttpResponseRedirect` after successfully dealing with POST data. This prevents data from being posted twice if a user hits the Back button.
 
+- Raising a HTTP 404 error:
+
+```python
+from django.shortcuts import render
+
+def detail(request, question_id):
+    try:
+        question = Question.objects.get(pk=question_id)
+    except Question.DoesNotExist:
+        raise Http404("Question does not exist")
+    return render(request, 'polls/detail.html', {'question': question})
+```
+
+### URLs
+
+- You use angle brackets to capture the values from the URL. Any value specified in the URL pattern as `<parameter>` is captured as a string. You use path converters, such as `<int:year>`, to specifically match and return an integer. [All path converters in Django docs](https://docs.djangoproject.com/en/3.0/topics/http/urls/#path-converters).
+
+```python
+urlpatterns = [
+    path('', views.index, name='index'),
+    path('<int:question_id>/', views.detail, name='detail'),
+    path('<int:question_id>/results/', views.results, name='results'),
+    path('<int:question_id>/vote/', views.vote, name='vote'),
+]
+```
+
+- If using `path()` and converters isn't sufficient, you can use `re_path()` instead to define complex URL patterns with [Python regular expressions](https://docs.djangoproject.com/en/3.0/ref/urls/#django.urls.re_path).
+
+- Including the URL patterns of the application in the main URL patterns of the project:
+
+```py
+from django.urls import path, include
+from django.contrib import admin
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('blog/', include('blog.urls', namespace='blog')),
+]
+```
+
+- Each application should define its own namespace via `app_name` variable inside `urls.py`. Thanks to it, application URLs can be accessed with `namespace:view_name` syntax. [URL utility function in Django docs](https://docs.djangoproject.com/en/3.0/topics/http/urls/#url-namespaces).
+
+- A **canonical URL** is the preferred URL for a resource. You may have different pages in your site where you display given objects, but there is a single URL that you use as the main URL for a model object. The convention in Django is to add a `get_absolute_url()` method to the model that returns the canonical URL for the object:
+
+```py
+from django.urls import reverse
+class Post(models.Model):
+    # ...
+    def get_absolute_url(self):
+        return reverse('blog:post_detail',
+                       args=[self.publish.year,
+                             self.publish.month,
+                             self.publish.day, self.slug])
+
+# In template we can then use:
+{% for post in posts %}
+    <h2>
+    <a href="{{ post.get_absolute_url }}">
+        {{ post.title }}
+    </a>
+{% endfor %}
+```
+
+### Templates
+
+- [Django docs on templates](https://docs.djangoproject.com/en/3.0/ref/templates/language/).
+
+- Django has a powerful template language that allows you to specify how data is displayed. It is based on template tags, template variables, and template filters:
+
+    - Template tags control the rendering of the template and look like `{% tag %}`
+    - Template variables get replaced with values when the template is rendered look like `{{ variable }}`
+    - Template filters allow you to modify variables for display and look like `|filter }}`.
+
+- Project’s `TEMPLATES` setting describes how Django will load and render templates. The default settings file configures a DjangoTemplates backend whose `APP_DIRS` option is set to `True`. By convention `DjangoTemplates` looks for a *templates* subdirectory in each of the `INSTALLED_APPS`.
+
+- Within the templates directory you have just created, create another directory called polls, and within that create a file called *index.html*. In other words, your template should be at *polls/templates/polls/index.html*. Because of how the *app_directories* template loader works as described above, you can refer to this template within Django as *polls/index.html*.
+
+- Example of template filters. You can concatenate as many template filters as you wish; each one will be applied to the output generated by the preceding one:
+
+  - `truncatewords` truncates the value to the number of words specified,
+  - `linebreaks` converts the output into HTML line breaks.
+
+#### Pagination
+
+- Django has a built-in pagination class that allows you to manage paginated data easily:
+
+```py
+from django.core.paginator import Paginator, EmptyPage,\
+                                  PageNotAnInteger
+def post_list(request):
+    object_list = Post.published.all()
+    paginator = Paginator(object_list, 3) # 3 posts in each page
+    page = request.GET.get('page')
+    try:
+        posts = paginator.page(page)
+    except PageNotAnInteger:
+        # If page is not an integer deliver the first page
+        posts = paginator.page(1)
+    except EmptyPage:
+        # If page is out of range deliver last page of results
+        posts = paginator.page(paginator.num_pages)
+    return render(request,
+                  'blog/post/list.html',
+                   {'page': page,
+                    'posts': posts})
+```
+
+- This is how pagination works:
+
+    - You instantiate the `Paginator` class with the number of objects that you want to display on each page.
+    - You get the page `GET` parameter, which indicates the current page number.
+    - You obtain the objects for the desired page by calling the `page()` method of Paginator.
+    - If the page parameter is not an integer, you retrieve the first page of results. If this parameter is a number higher than the last page of results, you retrieve the last page.
+    - You pass the page number and retrieved objects to the template.
+
+- Template application of Django pagination:
+
+```py
+<div class="pagination">
+  <span class="step-links">
+    {% if page.has_previous %}
+      <a href="?page={{ page.previous_page_number }}">Previous</a>
+    {% endif %}
+    <span class="current">
+      Page {{ page.number }} of {{ page.paginator.num_pages }}.
+    </span>
+    {% if page.has_next %}
+      <a href="?page={{ page.next_page_number }}">Next</a>
+    {% endif %}
+  </span>
+</div>
+```
+
+- Since the `Page` object you are passing to the template is called `posts`, you include the pagination template in the post list template, passing the parameters to render it correctly. You can follow this method to reuse your pagination template in the paginated views of different models:
+
+```py
+# `posts` object will be accessible in pagination snippet via `page` variable/argument
+{% include "pagination.html" with page=posts %}
+```
+
 ### Generic Views
+
+- **Class-based** views are an alternative way to implement views as Python objects instead of functions. Since a view is a callable that takes a web request and returns a web response, you can also define your views as class methods. Django provides base view classes for this. All of them inherit from the View class, which handles HTTP method dispatching and other common functionalities.
+
+- Class-based views offer advantages over function-based views for some use cases. They have the following features:
+
+    - Organizing code related to HTTP methods, such as `GET`, `POST`, or `PUT`, in separate methods, instead of using conditional branching
+    - Using multiple inheritance to create reusable view classes (also known as *mixins*)
+
+- Class-based view is analogous to the previous `post_list` view. In the code below you are telling `ListView` to do the following things:
+
+    - Use a specific QuerySet instead of retrieving all objects. Instead of defining a `queryset` attribute, you could have specified `model = Post` and Django would have built the generic `Post.objects.all()` QuerySet for you.
+    - Use the context variable posts for the query results. The default variable is `object_list` if you don't specify any `context_object_name`.
+    - Paginate the result, displaying three objects per page.
+    - Use a custom template to render the page. If you don't set a default template, ListView will use blog/post_list.html.
+
+```py
+# views.py
+from django.views.generic import ListView
+
+class PostListView(ListView):
+    queryset = Post.published.all()
+    context_object_name = 'posts'
+    paginate_by = 3
+    template_name = 'blog/post/list.html'
+
+# urls.py
+urlpatterns = [
+    path('', views.PostListView.as_view(), name='post_list'),
+]
+
+# list.html
+{% include "pagination.html" with page=page_obj %}
+```
+
+#### Generic Views (from Django tutorial)
 
 ```py
 from django.http import HttpResponseRedirect
@@ -549,10 +803,6 @@ if __name__ == "__main__":
     unittest.main()
 ```
 
-## Static Files
-
-- Django’s `STATICFILES_FINDERS` setting contains a list of finders that know how to discover static files from various sources. One of the defaults is `AppDirectoriesFinder` which looks for a *static* subdirectory in each of the `INSTALLED_APPS`.
-
 ## Forms
 
 - Creating a new form is based on the `forms.Form` class:
@@ -599,3 +849,7 @@ def add(request):
     if 'tasks' not in request.session:
         request.session['tasks'] += [task]
 ```
+
+## Static Files
+
+- Django’s `STATICFILES_FINDERS` setting contains a list of finders that know how to discover static files from various sources. One of the defaults is `AppDirectoriesFinder` which looks for a *static* subdirectory in each of the `INSTALLED_APPS`.

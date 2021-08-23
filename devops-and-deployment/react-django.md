@@ -8,7 +8,7 @@
 
 There are 4 main architectures that can be applied to separete frontend and backend:
 
-1. Running the frontend and the backend on distinct origins (frontend: app.example.com. tha makes cross-origin API requests to api.example.com). Most Single-Page Apps (SPA) use this architecture.
+1. Running the frontend and the backend on distinct origins (frontend: app.example.com that makes cross-origin API requests to api.example.com). Most Single-Page Apps (SPA) use this architecture.
 
 2. Making the backend serve static files for the frontend. This is Django’s default behavior in development: `runserver` serves static assets with a WSGI middleware provided by the staticfiles app. WhiteNoise provides a production-ready implementation of that behavior.
 
