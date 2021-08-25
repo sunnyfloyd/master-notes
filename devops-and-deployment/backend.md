@@ -6,6 +6,7 @@
       - [HTTP 1.0](#http-10)
       - [HTTP 1.1](#http-11)
       - [HTTP/2](#http2)
+        - [HTTP/2 Server Push](#http2-server-push)
       - [HTTP/2 over QUIC (HTTP/3)](#http2-over-quic-http3)
       - [Multiplexing](#multiplexing)
       - [HTTP E-Tags](#http-e-tags)
@@ -55,9 +56,9 @@
 
 #### HTTP 1.1
 
-- **HTTP 1.1** uses **Kepp-Alive** header so that instead of opening and closing connection for each request client may indicate how the connection may be used to set a timeout and a maximum amount of requests:
+- **HTTP 1.1** uses **Kepp-Alive** header so that instead of opening and closing connection for each request client may indicate how the connection may be used to set a timeout and a maximum amount of requests. Additionally, multiple connections are being opened to send and receive multiple requests.
 
-- HTTP/1.1 does not allow sending of multiple messages. Once a HTTP/1.1 message is sent, no other message can be sent on that connection until that message is returned in full (ignoring the badly supported pipelining concept). This means **HTTP/1.1 is basically synchronous** and, if the full bandwidth is not used and other HTTP messages are queued, then it wastes any extra capacity that could be used on the underlying TCP connection. To get around this, more TCP connections can be opened, which basically allows HTTP/1.1 to act like a (limited) multiplexed protocol. If the network bandwidth was fully utilised then those extra connections would not add any benefit - it’s the fact there is capacity and that the other TCP connections are not being fully utilised that means this makes sense.
+- HTTP/1.1 does not allow sending of multiple messages. Once a HTTP/1.1 message is sent, no other message can be sent on that connection until that message is returned in full (ignoring the badly supported pipelining concept). This means **HTTP/1.1 is basically synchronous** and, if the full bandwidth is not used and other HTTP messages are queued, then it wastes any extra capacity that could be used on the underlying TCP connection. To get around this, more TCP connections can be opened (browsers usually open 6 connections), which basically allows HTTP/1.1 to act like a (limited) multiplexed protocol. If the network bandwidth was fully utilised then those extra connections would not add any benefit - it’s the fact there is capacity and that the other TCP connections are not being fully utilised that means this makes sense.
 
   - persisted TCP connection
   - low latency
@@ -75,6 +76,34 @@
   - Protocol Negotiation during TLS (NPN - next protocol negotiation/ALPN - application layer protocol negotiation)
 
 - HTTP/2 adds multiplexing to the protocol to allow a single TCP connection to be used for multiple in flight HTTP requests. It does this by changing the text-based HTTP/1.1 protocol to a binary, packet-based protocol. These may look like TCP packets but that’s not really relevant (in the same way that saying TCP is similar to IP because it’s packet based is not relevant). Splitting messages into packets is really the only way of allowing multiple messages to be in flight at the same time. HTTP/2 also adds the concept of streams so that packets can belong to different requests - TCP has no such concept - and this is what really makes HTTP/2 multiplexed. In fact, because TCP doesn’t allow separate, independents streams (i.e. multiplexing), and because it is guaranteed, this actually introduces a new problem where a single dropped TCP packet holds up all the HTTP/2 streams on that connection, despite the fact that only one stream should really be affected and the other streams should be able to carry on despite this. This can even make HTTP/2 slower in certain conditions. Google is experimenting with moving away from TCP to QUIC to address this.
+
+##### HTTP/2 Server Push
+
+- Push works over HTTP/2, which at its core is a frames protocol, meaning that information is exchanged in groups of bytes called frames. Additionally, frames are part of streams, and streams are identified by a number. The stream number is present in each frame as a binary field. Streams allow matching requests to responses, e.g. the response to request GET /index.html at stream 3 must also be at stream 3. 
+
+- With **HTTP/2 Push**, the server can take the initiative by having rules that trigger content to be sent even before it is requested. In the example scenario, the server knows that anyone requesting *index.html* will need *styles.css* and *script.js*, so it can push them to the client immediately without waiting for the client to request them. If done correctly, by the time the browser finishes parsing *index.html*, the transfer of *styles.css* and *script.js* would have already started, or even completed, removing the latency of having to request these and wait for them to arrive.
+
+- There are different types of frames, and each has a different function. HTTP/2 has only a few of these types. Here are the ones interesting for this description:
+
+  - **HEADERS** frame. As its name implies, this type of frame carries HTTP headers. When sent by the browser to the server, it signals that a request is being made. When sent by the server to the browser, it signals that a response to a previous request or push promise is being sent.
+  - **PUSH_PROMISE** frame. This frame is sent by the server to the browser to start pushing a resource. It also contains HTTP headers. However, the kind of headers present in a PUSH_PROMISE frame are headers that would normally be present in a request. This is different from the response headers that a server would normally send. The request URL, for example, is present in the PUSH_PROMISE frame as the HTTP/2-specific :path pseudo-header, as is the :authority pseudo-header to indicate a host. Other headers that may be present in a PUSH_PROMISE and that some browsers use are cache headers, for example, if-none-match.
+  - **DATA** frames. These frames are sent in either direction to carry the actual content of a resource or the contents that the browser POSTs or PUTs to the server.
+  - **RST_STREAM** frames. These frames serve many purposes. One of them is having the browser signal to the server that a pushed stream is not needed.
+
+- When the server wants to push a resource, it prepares a PUSH_PROMISE frame, architecting it in the best way possible to seduce the browser into using the pushed contents. Then the server annexes the PUSH_PROMISE frame to the response part of a normal, browser-initiated stream. However, the actual data for the pushed resource is sent in a fresh stream started by the server – and thus with an even number.
+
+- The browser holds the pushed data in a temporary "quarantine" zone until it decides to use it. Later, every time the browser is going to make an actual request, it examines the contents of any received push promises to see if it is similar enough to the request it wants to make. However, the server need not wait until that moment to start sending data for the promised resource. After the PUSH_PROMISE frame has been sent on the browser-initiated stream, the server can send what would be response headers using a HEADERS frame in the new server-initiated stream, and later it can send the data of the resource using DATA frames. And at any point in time, the browser can interrupt any transfer by using RST_STREAM.
+
+- Here is how this would work in the previous example. If the server is HTTP/2 PUSH ready, when it receives a request to *index.html* it can forecast that requests to *styles.css* and *script.js* are following close in tail. So it issues push promises to get a bit ahead of events. Here is how things could look, in order of occurrence and making up the stream numbers:
+
+  - Server receives HEADERS frame asking for *index.html* in stream 3, and it can forecast the need for *styles.css* and *script.js*.
+  - Server sends a PUSH_PROMISE for *styles.css* and a PUSH_PROMISE for *script.js*, again in stream 3. These frames are roughly equivalent to a browser's request.
+  - Server sends a HEADERS frame in stream 3 for responding to the request for *index.html*.
+  - Server sends DATA frame(s) with the contents of *index.html*, still in stream 3.
+  - Server sends HEADERS frame for the response to *styles.css* in stream 4 – notice the even stream number – and then for the response to *script.js* in stream 6.
+  - Server sends DATA frames for the contents of *styles.css* and *script.js*, using their respective stream numbers.
+
+- Push promises are sent as early as possible so that the browser will have them well ahead of any discoveries. Notice that HTTP headers (specifically Link with the 'preload' keyword) can reveal URLs that the browser needs to fetch, and an eager browser would start asking for the resources upon seeing those headers. Therefore, push promises are best sent before even the response headers of the stream where they are attached.
 
 #### HTTP/2 over QUIC (HTTP/3)
 
@@ -116,7 +145,7 @@
 
 - [Source](https://www.youtube.com/watch?v=TgZnpp5wJWU)
 
-- When client requests a given resource server responds with the requested resource, and also adds an E-Tag for this resource. E-Tag is basically an unique identifier for requested resource that is cached on the client side. Next time client requests this resource it can do so with the E-Tag in the request's header and server will respond that this resource has not changed (304 status - not modified) or if no resource with a given E-tag was found it will respond with the updated version of this resource and a new E-Tag.
+- When client requests a given resource server responds with the requested resource, and also adds an E-Tag for this resource. E-Tag is basically an unique identifier for requested resource that is cached on the client side. Next time client requests this resource it can do so with the E-Tag (if-none-match cache header) in the request's header and server will respond that this resource has not changed (304 status - not modified) or if no resource with a given E-tag was found it will respond with the updated version of this resource and a new E-Tag.
 
 - Pros:
 
@@ -203,6 +232,31 @@
 #### WebSockets
 
 - The **WebSocket API** (WebSockets) is an advanced technology that makes it possible to open a two-way interactive communication session between the user's browser and a server. With this API, you can send messages to a server and receive event-driven responses without having to poll the server for a reply.
+
+- It is a stateful connection since both client and server are aware of each other.
+
+- **WebSockets Handshake** is initialized with the HTTP GET request with **UPGRADE header**. If server respons with 101 switching protocols response then persisting websocket (ws:// or wss://) connection is established (requires HTTP 1.1 or higher).
+
+- **Use cases**:
+
+  - chatting
+  - live feed
+  - multiplayer gaming
+  - showing client progress/logging
+
+- Pros:
+
+  - full-duplex (no polling)
+  - HTTP compatible
+  - firewall friendly (standard)
+
+- Cons:
+
+  - proxying is tricky (especially if proxy is implemented at the application layer)
+  - layer 7 load balancing is challenging (due to the timeouts)
+  - stateful, difficult to scale horizontally
+
+- Alternatives: long polling, [EventSource](https://developer.mozilla.org/en-US/docs/Web/API/EventSource)
 
 - **Socket.IO** enables real-time, bidirectional and event-based communication. It is more advanced websockets implementation.
 
