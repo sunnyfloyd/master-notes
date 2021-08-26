@@ -10,10 +10,14 @@
     - [Creating Model Managers](#creating-model-managers)
   - [Databases and ORMs](#databases-and-orms)
     - [ORM Methods](#orm-methods)
+      - [QuerySet API](#queryset-api)
+        - [annotate](#annotate)
+        - [values_list](#values_list)
   - [Admin Panel and Customization](#admin-panel-and-customization)
   - [Views](#views)
     - [URLs](#urls)
     - [Templates](#templates)
+      - [Filters](#filters)
       - [Pagination](#pagination)
     - [Generic Views](#generic-views)
       - [Generic Views (from Django tutorial)](#generic-views-from-django-tutorial)
@@ -22,8 +26,14 @@
     - [Client Testing](#client-testing)
     - [Testing Frontend with Selenium](#testing-frontend-with-selenium)
   - [Forms](#forms)
+    - [Form Class Forms](#form-class-forms)
+    - [ModelForm Class Forms](#modelform-class-forms)
   - [Session Management](#session-management)
   - [Static Files](#static-files)
+  - [Utilities](#utilities)
+    - [Sending Emails](#sending-emails)
+    - [Absolute URI](#absolute-uri)
+    - [Taggit](#taggit)
 
 ## Sources
 
@@ -124,6 +134,8 @@ class Choice(models.Model):
 ```
 
 - `on_delete=models.CASCADE` ensures that all records that reference deleted record from foreign table are also deleted. The behaviour can be altered based on the passed argument like `models.PROTECT`. [Full list of arguments that can be passed to `on_delete`](https://docs.djangoproject.com/en/3.0/ref/models/fields/#django.db.models.ForeignKey.on_delete).
+
+- If you do not define the `related_name` attribute in relationship model fields, Django will use the name of the model in lowercase, followed by _set (that is, modelname_set) to name the relationship of the related object to the object of the model, where this relationship has been defined.
 
 - `auto_now_add` and `auto_now` are mutually exclusive: former one adds a date to the field during object creation, whereas the latter updates it every time the `save()` method is called.
 
@@ -268,6 +280,59 @@ reporter.save()  # addition is performed on DB side rather than in Python
 class User(AbstractUser):
     following = models.ManyToManyField(
         'self', symmetrical=False, blank=True, related_name='followers')
+```
+
+#### QuerySet API
+
+##### annotate
+
+- Per-object summaries can be generated using the `annotate()` clause. When an `annotate()` clause is specified, each object in the QuerySet will be annotated with the specified values.
+
+- As with `aggregate()`, the name for the annotation is automatically derived from the name of the aggregate function and the name of the field being aggregated. You can override this default name by providing an alias when you specify the annotation.
+
+- Unlike `aggregate()`, `annotate()` is not a terminal clause. The output of the `annotate()` clause is a QuerySet; this QuerySet can be modified using any other QuerySet operation, including `filter()`, `order_by()`, or even additional calls to `annotate()`.
+
+```py
+# Build an annotated queryset
+from django.db.models import Count
+q = Book.objects.annotate(Count('authors'))
+# Interrogate the first object in the queryset
+q[0]
+# <Book: The Definitive Guide to Django>
+q[0].authors__count
+# 2
+# Interrogate the second object in the queryset
+q[1]
+# <Book: Practical Django Projects>
+q[1].authors__count
+#1
+
+q = Book.objects.annotate(num_authors=Count('authors'))
+q[0].num_authors
+# 2
+q[1].num_authors
+# 1
+```
+
+##### values_list
+
+- This is similar to `values()` except that instead of returning dictionaries, it returns tuples when iterated over. Each tuple contains the value from the respective field or expression passed into the `values_list()` call — so the first item is the first field, etc. You can pass `flat=True` to it to get single values such as `[1, 2, 3, ...]` instead of one-tuples such as `[(1,), (2,), (3,) ...]`:
+
+```py
+Entry.objects.values_list('id', 'headline')
+# <QuerySet [(1, 'First entry'), ...]>
+from django.db.models.functions import Lower
+Entry.objects.values_list('id', Lower('headline'))
+# <QuerySet [(1, 'first entry'), ...]>
+```
+
+- If returned value is a flat list it can be then used further in look up methods:
+
+```py
+post_tags_ids = post.tags.values_list('id', flat=True)
+# <QuerySet [2, 3, 6, 7, 8, 9]>
+similar_posts = Post.published.filter(tags__in=post_tags_ids)\
+                                .exclude(id=post.id)
 ```
 
 ## Admin Panel and Customization
@@ -427,15 +492,23 @@ class Post(models.Model):
     - Template tags control the rendering of the template and look like `{% tag %}`
     - Template variables get replaced with values when the template is rendered look like `{{ variable }}`
     - Template filters allow you to modify variables for display and look like `|filter }}`.
+    - 
+- Django template language doesn't use parentheses for calling methods.
 
 - Project’s `TEMPLATES` setting describes how Django will load and render templates. The default settings file configures a DjangoTemplates backend whose `APP_DIRS` option is set to `True`. By convention `DjangoTemplates` looks for a *templates* subdirectory in each of the `INSTALLED_APPS`.
 
 - Within the templates directory you have just created, create another directory called polls, and within that create a file called *index.html*. In other words, your template should be at *polls/templates/polls/index.html*. Because of how the *app_directories* template loader works as described above, you can refer to this template within Django as *polls/index.html*.
 
+- The `{% with %}` tag allows you to assign a value to a new variable that will be available to be used until the `{% endwith %}` tag. The `{% with %}` template tag is useful for avoiding hitting the database or accessing expensive methods multiple times.
+
+#### Filters
+
 - Example of template filters. You can concatenate as many template filters as you wish; each one will be applied to the output generated by the preceding one:
 
-  - `truncatewords` truncates the value to the number of words specified,
-  - `linebreaks` converts the output into HTML line breaks.
+  - `truncatewords` truncates the value to the number of words specified
+  - `linebreaks` converts the output into HTML line breaks
+  - `pluralize` displays a plural suffix for the given word
+  - `join` works the same as the Python string `join()` method concatenating elements from iterable
 
 #### Pagination
 
@@ -805,6 +878,17 @@ if __name__ == "__main__":
 
 ## Forms
 
+Django comes with two base classes to build forms:
+
+  - Form: Allows you to build standard forms
+  - ModelForm: Allows you to build forms tied to model instances
+
+- Forms can reside anywhere in your Django project. The convention is to place them inside a *forms.py* file for each application.
+
+- [List of available form fields](https://docs.djangoproject.com/en/3.0/ref/forms/fields/)
+
+### Form Class Forms
+
 - Creating a new form is based on the `forms.Form` class:
 
 ```python
@@ -840,6 +924,47 @@ def add(request):
     })
 ```
 
+- You can see a list of validation errors by accessing `form.errors`.
+
+- If the form is valid, you retrieve the validated data by accessing `form.cleaned_data`. If your form data does not validate, `cleaned_data` will contain only the valid fields.
+
+- To put a form inside a template tou tell Django to render its fields in HTML paragraph `<p>` elements with the `as_p` method. You can also render the form as an unordered list with `as_ul` or as an HTML table with `as_table`. If you want to render each field, you can iterate through the fields, instead of using `{{ form.as_p }}`.
+
+```HTML
+<form method="post">
+    {{ form.as_p }}
+    {% csrf_token %}
+    <input type="submit" value="Send e-mail">
+</form>
+
+<!-- iterating through form fields instead -->
+{% for field in form %}
+  <div>
+    {{ field.errors }}
+    {{ field.label_tag }} {{ field }}
+  </div>
+{% endfor %}
+```
+
+- The `{% csrf_token %}` template tag introduces a hidden field with an autogenerated token to avoid cross-site request forgery (CSRF) attacks. These attacks consist of a malicious website or program performing an unwanted action for a user on your site. By default, **Django checks for the CSRF token in all POST requests**. Remember to include the csrf_token tag in all forms that are submitted via POST.
+
+### ModelForm Class Forms
+
+- To create a form from a model, you just need to indicate which model to use to build the form in the `Meta` class of the form. Django introspects the model and builds the form dynamically for you.
+
+- Each model field type has a corresponding default form field type. The way that you define your model fields is taken into account for form validation. By default, Django builds a form field for each field contained in the model. However, you can explicitly tell the framework which fields you want to include in your form using a `fields` list, or define which fields you want to exclude using an `exclude` list of fields:
+
+```py
+from .models import Comment
+
+class CommentForm(forms.ModelForm):
+    class Meta:
+        model = Comment
+        fields = ('name', 'email', 'body')
+```
+
+- `save()` method in `ModelForm` class creates an instance of the model that the form is linked to and saves it to the database. If you call it using `commit=False`, you create the model instance, but don't save it to the database yet. This comes in handy when you want to modify the object before finally saving it, which is what you will do next. The `save()` method is available for ModelForm but not for `Form` instances, since they are not linked to any model.
+
 ## Session Management
 
 - Data can be stored in client session (first `python manage.py migrate` needs to be run to create all of the default tables inside a Django database):
@@ -853,3 +978,51 @@ def add(request):
 ## Static Files
 
 - Django’s `STATICFILES_FINDERS` setting contains a list of finders that know how to discover static files from various sources. One of the defaults is `AppDirectoriesFinder` which looks for a *static* subdirectory in each of the `INSTALLED_APPS`.
+
+## Utilities
+
+### Sending Emails
+
+- To send emails with Django you need to define the configuration of an external SMTP server by adding the following settings to the *settings.py* file of your project:
+
+  - `EMAIL_HOST`: The SMTP server host; the default is localhost
+  - `EMAIL_PORT`: The SMTP port; the default is 25
+  - `EMAIL_HOST_USER`: The username for the SMTP server
+  - `EMAIL_HOST_PASSWORD`: The password for the SMTP server
+  - `EMAIL_USE_TLS`: Whether to use a Transport Layer Security (TLS) secure connection
+  - `EMAIL_USE_SSL`: Whether to use an implicit TLS secure connection
+
+- If you can't use an SMTP server, you can tell Django to write emails to the console by adding the following setting to the *settings.py* file:
+
+```py
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+```
+
+- The following sample configuration is valid for sending emails via Gmail servers using a Google account. Additionaly [captha might need to be disabled](https://accounts.google.com/displayunlockcaptcha) and [access for less secure applications needs to be enabled](https://myaccount.google.com/lesssecureapps):
+
+```py
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST_USER = 'your_account@gmail.com'
+EMAIL_HOST_PASSWORD = 'your_password'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+```
+
+- `send_mail()` function takes the subject, message, sender, and list of recipients as required arguments. By setting the optional argument fail_silently=False, you are telling it to raise an exception if the email couldn't be sent correctly. If the output you see is 1, then your email was successfully sent.
+
+### Absolute URI
+
+- `HttpRequest.build_absolute_uri` returns the absolute URI form of location. If no location is provided, the location will be set to `request.get_full_path()`. If the location is already an absolute URI, it will not be altered. Otherwise the absolute URI is built using the server variables available in this request. For example:
+
+```py
+request.build_absolute_uri()
+# 'https://example.com/music/bands/the_beatles/?print=true'
+request.build_absolute_uri('/bands/')
+# 'https://example.com/bands/'
+request.build_absolute_uri('https://example2.com/bands/')
+# 'https://example2.com/bands/'
+```
+
+### Taggit
+
+- [**Django Taggit**](https://github.com/jazzband/django-taggit) provides tagging functionality into Django Models.
