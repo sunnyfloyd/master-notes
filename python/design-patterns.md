@@ -11,6 +11,7 @@
     - [Singleton](#singleton)
     - [Prototype](#prototype)
   - [Structural Patterns](#structural-patterns)
+    - [Adapters](#adapters)
 
 ## Sources
 
@@ -82,11 +83,77 @@ class Logger(metaclass=Singleton):
 
 - **Prototype** is a creational design pattern that lets you copy existing objects without making your code dependent on their classes.
 
-- Python provides its own interface of Prototype via `copy.copy` and `copy.deepcopy` functions. And any class that wants to implement custom implementations have to override `__copy__` and `__deepcopy__` member functions.
+- Python provides its own interface of Prototype via `copy.copy` and `copy.deepcopy` functions. Any class that wants to implement custom implementations have to override `__copy__` and `__deepcopy__` member functions.
 
 - Good to remember that `__dict__` is implemented by default and it outputs all of the attributes of a given object.
 
 ### Structural Patterns
 
-- PLACEHOLDER
-- 
+- **Structural patterns** explain how to assemble objects and classes into larger structures while keeping these structures flexible and efficient.
+
+#### Adapters
+
+- **Adapter** is a structural design pattern that allows objects with incompatible interfaces to collaborate.
+
+- The Adapter pattern lets you create a middle-layer class that serves as a translator between your code and a legacy class, a 3rd-party class or any other class with a weird interface.
+
+- Use the Adapter class when you want to use some existing class, but its interface isn’t compatible with the rest of your code.
+
+- Use the pattern when you want to reuse several existing subclasses that lack some common functionality that can’t be added to the superclass.
+
+- This approach is very similar to the **Decorator pattern**. However, decorator enahnces an object without changing its interface. In additiona, decorator supports recursive composition, which isn’t possible when you use Adapter.
+
+- There are two main possibilities to create an adapter class: **using inheritance** or **using object composition**:
+
+```py
+# Using Inheritance
+class Target:
+    """
+    The Target defines the domain-specific interface used by the client code.
+    """
+
+    def request(self) -> str:
+        return "Target: The default target's behavior."
+
+class Adaptee:
+    """
+    The Adaptee contains some useful behavior, but its interface is incompatible
+    with the existing client code. The Adaptee needs some adaptation before the
+    client code can use it.
+    """
+
+    def specific_request(self) -> str:
+        return ".eetpadA eht fo roivaheb laicepS"
+
+class Adapter(Target, Adaptee):
+    """
+    The Adapter makes the Adaptee's interface compatible with the Target's
+    interface via multiple inheritance.
+    """
+
+    def request(self) -> str:
+        return f"Adapter: (TRANSLATED) {self.specific_request()[::-1]}"
+
+# Using Object Composition
+class Target:
+    def request(self) -> str:
+        return "Target: The default target's behavior."
+
+
+class Adaptee:
+    def specific_request(self) -> str:
+        return ".eetpadA eht fo roivaheb laicepS"
+
+
+class Adapter(Target):
+    """
+    The Adapter makes the Adaptee's interface compatible with the Target's
+    interface via composition.
+    """
+
+    def __init__(self, adaptee: Adaptee) -> None:
+        self.adaptee = adaptee
+
+    def request(self) -> str:
+        return f"Adapter: (TRANSLATED) {self.adaptee.specific_request()[::-1]}"
+```
