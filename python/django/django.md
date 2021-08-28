@@ -17,7 +17,9 @@
   - [Views](#views)
     - [URLs](#urls)
     - [Templates](#templates)
+      - [Custom Template Tags](#custom-template-tags)
       - [Filters](#filters)
+      - [Custom Template Filters](#custom-template-filters)
       - [Pagination](#pagination)
     - [Generic Views](#generic-views)
       - [Generic Views (from Django tutorial)](#generic-views-from-django-tutorial)
@@ -34,6 +36,10 @@
     - [Sending Emails](#sending-emails)
     - [Absolute URI](#absolute-uri)
     - [Taggit](#taggit)
+    - [Sitemaps](#sitemaps)
+    - [Content Feed (RSS)](#content-feed-rss)
+  - [This is a post formatted with markdown](#this-is-a-post-formatted-with-markdown)
+- [Application definition](#application-definition)
 
 ## Sources
 
@@ -286,7 +292,9 @@ class User(AbstractUser):
 
 ##### annotate
 
-- Per-object summaries can be generated using the `annotate()` clause. When an `annotate()` clause is specified, each object in the QuerySet will be annotated with the specified values.
+- [Aggregation functions in Django](https://docs.djangoproject.com/en/3.0/topics/db/aggregation/)
+
+- Per-object summaries can be generated using the `annotate()` clause. When an `annotate()` clause is specified, each object in the QuerySet will be annotated with the specified values. It basically means to run certain aggreagation function (like `Count()`) for specified field from the QuerySet (object) and return a new QuerySet with additional field.
 
 - As with `aggregate()`, the name for the annotation is automatically derived from the name of the aggregate function and the name of the field being aggregated. You can override this default name by providing an alias when you specify the annotation.
 
@@ -400,7 +408,7 @@ def index(request):
 
 - The `render()` function takes the request object as its first argument, a template name as its second argument and a dictionary as its optional third argument. It returns an `HttpResponse` object of the given template rendered with the given context.
 
-- If you need to use something similar to the `url` template tag in your code, Django provides the following function:
+- If you need to use something similar to the `url` template tag in your code, Django provides the following `reverse` function:
 
 ```py
 # In URLConf
@@ -415,6 +423,8 @@ reverse('news-archive')
 from news import views
 reverse(views.archive)
 ```
+
+- The `reverse_lazy()` utility function is a lazily evaluated version of `reverse()`. It allows you to use a URL reversal before the project's URL configuration is loaded.
 
 - `request.POST` is a dictionary-like object that lets one access submitted data by key name. Django provides also `request.GET` method.
 
@@ -487,6 +497,8 @@ class Post(models.Model):
 
 - [Django docs on templates](https://docs.djangoproject.com/en/3.0/ref/templates/language/).
 
+- [Django built-in template tags and filters](https://docs.djangoproject.com/en/3.0/ref/templates/builtins/)
+
 - Django has a powerful template language that allows you to specify how data is displayed. It is based on template tags, template variables, and template filters:
 
     - Template tags control the rendering of the template and look like `{% tag %}`
@@ -501,14 +513,70 @@ class Post(models.Model):
 
 - The `{% with %}` tag allows you to assign a value to a new variable that will be available to be used until the `{% endwith %}` tag. The `{% with %}` template tag is useful for avoiding hitting the database or accessing expensive methods multiple times.
 
+- To store the result in a custom variable use the `as` argument followed by the variable name: `{% template_tag_function as variable_name %}`.
+
+#### Custom Template Tags
+
+- [Custom template tags in Django](https://docs.djangoproject.com/en/3.0/howto/custom-template-tags/)
+
+- Creating custom tags is useful when we do not want to bloat the view's context with variables that might be used across different views.
+
+- Django provides the following helper functions that allow you to create your own template tags in an easy manner:
+
+  - `simple_tag`: Processes the data and returns a string
+  - `inclusion_tag`: Processes the data and returns a rendered template
+
+- Template tags must live inside Django applications.
+
+- Flow for creating new template tags:
+
+  - create new package within the application by adding new folder with *__init__.py* in it
+  - create new python file with meaningful name that will later be used to access custom tags
+  - add code to the created python file:
+
+```py
+from django import template
+from ..models import Post
+
+register = template.Library()
+
+@register.simple_tag
+def total_posts():
+    return Post.published.count()
+```
+
+- Django uses the function's name as the tag name, but custom name can be defined with `@register.simple_tag(name='my_tag')`.
+
+- Before using custom template tags, you have to make them available for the template using the `{% load file_name %}` tag.
+
+- **Inclusion tags** registration includes path to the template that will be renders: `@register.inclusion_tag('path/to/html_file.html')`. Inclusion tags have to return a dictionary of values instead of a simple value - it will be used as the context to render the specified template. The template tag can also allow to specify an argument (that can also be optioanl): {% show_latest_posts 3 %}.
+
 #### Filters
 
-- Example of template filters. You can concatenate as many template filters as you wish; each one will be applied to the output generated by the preceding one:
+- [Built-in template filters](https://docs.djangoproject.com/en/3.0/ref/templates/builtins/#built-in-filter-reference)
+
+- Filters can be used outside of the templates as well. Default filters can be imported from `django.template.defaultfilters`.
+
+- Django has a variety of built-in template filters that allow you to alter variables in templates. These are Python functions that take one or two parameters, the value of the variable that the filter is applied to, and an optional argument. They return a value that can be displayed or treated by another filter. A filter looks like `{{ variable|my_filter }}`. Filters with an argument look like `{{ variable|my_filter:"foo" }}`.
+
+- You can apply as many filters as you like to a variable, for example, `{{ variable|filter1|filter2 }}`, and each of them will be applied to the output generated by the preceding filter.
+
+- Example of template filters:
 
   - `truncatewords` truncates the value to the number of words specified
   - `linebreaks` converts the output into HTML line breaks
   - `pluralize` displays a plural suffix for the given word
   - `join` works the same as the Python string `join()` method concatenating elements from iterable
+
+#### Custom Template Filters
+
+- You register template filters in the same way as template tags:
+
+```py
+@register.filter(name='markdown')
+def markdown_format(text):
+    return mark_safe(markdown.markdown(text))
+```
 
 #### Pagination
 
@@ -1026,3 +1094,445 @@ request.build_absolute_uri('https://example2.com/bands/')
 ### Taggit
 
 - [**Django Taggit**](https://github.com/jazzband/django-taggit) provides tagging functionality into Django Models.
+
+### Sitemaps
+
+- [Sitemap Framework](https://docs.djangoproject.com/en/3.0/ref/contrib/sitemaps/)
+
+- Django comes with a sitemap framework, which allows you to generate sitemaps for your site dynamically. A sitemap is an XML file that tells search engines the pages of your website, their relevance, and how frequently they are updated. Using a sitemap will make your site more visible in search engine rankings: sitemaps help crawlers to index your website's content.
+
+- The Django sitemap framework depends on `django.contrib.sites`, which allows you to associate objects to particular websites that are running with your project. This comes in handy when you want to run multiple sites using a single Django project. To install the sitemap framework, you will need to activate both the `sites` and the `sitemap` applications in your project.
+
+- In *settings.py* add below and run `python manage.py migrate`:
+
+```py
+SITE_ID = 1
+# Application definition
+INSTALLED_APPS = [
+    # ...
+    'django.contrib.sites',
+    'django.contrib.sitemaps',
+]
+```
+
+- You create a custom sitemap by inheriting the `Sitemap` class of the `sitemaps` module. The `changefreq` and `priority` attributes indicate the change frequency of your post pages and their relevance in your website (the maximum value is 1).
+
+- The `items()` method returns the QuerySet of objects to include in this sitemap. By default, Django calls the `get_absolute_url()` method on each object to retrieve its URL. If you want to specify the URL for each object, you can add a `location` method to your sitemap class.
+
+- The `lastmod` method receives each object returned by items() and returns the last time the object was modified.
+- 
+- Above can be done inside desired application within the *sitemaps.py* file. This code basically indicates method for retrieving all objects that should constitute a sitemap and on each `get_absolute_url()` method is called to obtain valid URL:
+
+```py
+from django.contrib.sitemaps import Sitemap
+from .models import Post
+
+class PostSitemap(Sitemap):
+    changefreq = 'weekly'
+    priority = 0.9
+    def items(self):
+        return Post.published.all()
+    def lastmod(self, obj):
+        return obj.updated
+```
+
+- Finally, add your sitemap URL by editing the main *urls.py* file of your project and add the sitemap. Add the required imports and define a dictionary of sitemaps.  Define a URL pattern that matches *sitemap.xml* and uses the `sitemap` view. The sitemaps dictionary is passed to the `sitemap` view.:
+
+```py
+from django.urls import path, include
+from django.contrib.sitemaps.views import sitemap
+from blog.sitemaps import PostSitemap
+
+sitemaps = {
+    'posts': PostSitemap,
+}
+urlpatterns = [
+    ...
+    path('sitemap.xml', sitemap, {'sitemaps': sitemaps},
+         name='django.contrib.sitemaps.views.sitemap')
+]
+```
+
+- Domain name for the sitemap can be modified via Django admin panel.
+
+### Content Feed (RSS)
+
+- [Syndication Feed Framework](https://docs.djangoproject.com/en/3.0/ref/contrib/syndication/)
+
+- Django has a built-in syndication feed framework that you can use to dynamically generate RSS or Atom feeds in a similar manner to creating sitemaps using the site's framework. A web feed is a data format (usually XML) that provides users with the most recently updated content. Users will be able to subscribe to your feed using a feed aggregator (software that is used to read feeds and get new content notifications).
+
+- Inside *feeds.py* in the application directory:
+
+```py
+from django.contrib.syndication.views import Feed
+from django.template.defaultfilters import truncatewords
+from django.urls import reverse_lazy
+from .models import Post
+
+class LatestPostsFeed(Feed):
+    title = 'My blog'
+    link = reverse_lazy('blog:post_list')
+    description = 'New posts of my blog.'
+
+    def items(self):
+        return Post.published.all()[:5]
+
+    def item_title(self, item):
+        return item.title
+
+    def item_description(self, item):
+        return truncatewords(item.body, 30)
+```
+
+
+3
+Extending Your Blog Application
+
+The previous chapter went through the basics of forms and the creation of a comment system. You also learned how to send emails with Django, and you implemented a tagging system by integrating a third-party application with your project. In this chapter, you will extend your blog application with some other popular features used on blogging platforms. You will also learn about other components and functionalities with Django.
+
+The chapter will cover the following points:
+
+    Creating custom template tags and filters: You will learn how to build your own template tags and template filters to exploit the capabilities of Django templates.
+    Adding a sitemap and post feed: You will learn how to use the sitemaps framework and syndication framework that come with Django.
+    Implementing full-text search with PostgreSQL: Search is a very popular feature for blogs. You will learn how to implement an advanced search engine for your blog application.
+
+Creating custom template tags and filters
+
+Django offers a variety of built-in template tags, such as {% if %} or {% block %}. You used different template tags in Chapter 1, Building a Blog Application, and Chapter 2, Enhancing Your Blog with Advanced Features. You can find a complete reference of built-in template tags and filters at https://docs.djangoproject.com/en/3.0/ref/templates/builtins/.
+
+Django also allows you to create your own template tags to perform custom actions. Custom template tags come in very handy when you need to add a functionality to your templates that is not covered by the core set of Django template tags. This could be a tag to perform a QuerySet or any server-side processing that you want to reuse across templates. For example, you could build a template tag to display the list of latest posts published on your blog. You can include this list in the sidebar of the blog for multiple pages, regardless of the view.
+Custom template tags
+
+Django provides the following helper functions that allow you to create your own template tags in an easy manner:
+
+    simple_tag: Processes the data and returns a string
+    inclusion_tag: Processes the data and returns a rendered template
+
+Template tags must live inside Django applications.
+
+Inside your blog application directory, create a new directory, name it templatetags, and add an empty __init__.py file to it. Create another file in the same folder and name it blog_tags.py. The file structure of the blog application should look like the following:
+
+blog/
+    __init__.py
+    models.py
+    ...
+    templatetags/
+        __init__.py
+        blog_tags.py
+
+The way you name the file is important. You will use the name of this module to load tags in templates.
+
+Let's start by creating a simple tag to retrieve the total posts published on the blog. Edit the blog_tags.py file you just created and add the following code:
+
+from django import template
+from ..models import Post
+register = template.Library()
+@register.simple_tag
+def total_posts():
+    return Post.published.count()
+
+You have created a simple template tag that returns the number of posts published so far. Each module that contains template tags needs to define a variable called register to be a valid tag library. This variable is an instance of template.Library, and it's used to register your own template tags and filters.
+
+In the code above, you define a tag called total_posts with a Python function and use the @register.simple_tag decorator to register the function as a simple tag. Django will use the function's name as the tag name. If you want to register it using a different name, you can do so by specifying a name attribute, such as @register.simple_tag(name='my_tag').
+
+After adding a new template tags module, you will need to restart the Django development server in order to use the new tags and filters in templates.
+
+Before using custom template tags, you have to make them available for the template using the {% load %} tag. As mentioned before, you need to use the name of the Python module containing your template tags and filters.
+
+Open the blog/templates/base.html template and add {% load blog_tags %} at the top of it to load your template tags module. Then, use the tag you created to display your total posts. Just add {% total_posts %} to your template. The template should look like this:
+
+{% load blog_tags %}
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+  <title>{% block title %}{% endblock %}</title>
+  <link href="{% static "css/blog.css" %}" rel="stylesheet">
+</head>
+<body>
+  <div id="content">
+    {% block content %}
+    {% endblock %}
+  </div>
+  <div id="sidebar">
+    <h2>My blog</h2>
+    <p>This is my blog. I've written {% total_posts %} posts so far.</p>
+  </div>
+</body>
+</html>
+
+You will need to restart the server to keep track of the new files added to the project. Stop the development server with Ctrl + C and run it again using the following command:
+
+python manage.py runserver
+
+Open http://127.0.0.1:8000/blog/ in your browser. You should see the total number of posts in the sidebar of the site, as follows:
+
+Figure 3.1: The total posts published included in the sidebar
+
+The power of custom template tags is that you can process any data and add it to any template regardless of the view executed. You can perform QuerySets or process any data to display results in your templates.
+
+Now, you will create another tag to display the latest posts in the sidebar of your blog. This time, you will use an inclusion tag. Using an inclusion tag, you can render a template with context variables returned by your template tag.
+
+Edit the blog_tags.py file and add the following code:
+
+@register.inclusion_tag('blog/post/latest_posts.html')
+def show_latest_posts(count=5):
+    latest_posts = Post.published.order_by('-publish')[:count]
+    return {'latest_posts': latest_posts}
+
+In the preceding code, you register the template tag using @register.inclusion_tag and specify the template that will be rendered with the returned values using blog/post/latest_posts.html. Your template tag will accept an optional count parameter that defaults to 5. This parameter you to specify the number of posts that you want to display. You use this variable to limit the results of the query Post.published.order_by('-publish')[:count].
+
+Note that the function returns a dictionary of variables instead of a simple value. Inclusion tags have to return a dictionary of values, which is used as the context to render the specified template. The template tag you just created allows you to specify the optional number of posts to display as {% show_latest_posts 3 %}.
+
+Now, create a new template file under blog/post/ and name it latest_posts.html. Add the following code to it:
+
+<ul>
+  {% for post in latest_posts %}
+    <li>
+      <a href="{{ post.get_absolute_url }}">{{ post.title }}</a>
+    </li>
+  {% endfor %}
+</ul>
+
+In the preceding code, you display an unordered list of posts using the latest_posts variable returned by your template tag. Now, edit the blog/base.html template and add the new template tag to display the last three posts. The sidebar code should look like the following:
+
+<div id="sidebar">
+  <h2>My blog</h2>
+  <p>This is my blog. I've written {% total_posts %} posts so far.</p>
+  <h3>Latest posts</h3>
+  {% show_latest_posts 3 %}
+</div>
+
+The template tag is called, passing the number of posts to display, and the template is rendered in place with the given context.
+
+Next, return to your browser and refresh the page. The sidebar should now look like this:
+
+Figure 3.2: The sidebar, including the latest published posts
+
+Finally, you will create a simple template tag that returns a value. You will store the result in a variable that can be reused, rather than directly outputting it. You will create a tag to display the most commented posts.
+
+Edit the blog_tags.py file and add the following import and template tag to it:
+
+from django.db.models import Count
+@register.simple_tag
+def get_most_commented_posts(count=5):
+    return Post.published.annotate(
+               total_comments=Count('comments')
+           ).order_by('-total_comments')[:count]
+
+In the preceding template tag, you build a QuerySet using the annotate() function to aggregate the total number of comments for each post. You use the Count aggregation function to store the number of comments in the computed field total_comments for each Post object. You order the QuerySet by the computed field in descending order. You also provide an optional count variable to limit the total number of objects returned.
+
+In addition to Count, Django offers the aggregation functions Avg, Max, Min, and Sum. You can read more about aggregation functions at https://docs.djangoproject.com/en/3.0/topics/db/aggregation/.
+
+Next, edit the blog/base.html template and append the following code to the sidebar <div> element:
+
+<h3>Most commented posts</h3>
+{% get_most_commented_posts as most_commented_posts %}
+<ul>
+  {% for post in most_commented_posts %}
+    <li>
+      <a href="{{ post.get_absolute_url }}">{{ post.title }}</a>
+    </li>
+  {% endfor %}
+</ul>
+
+In the preceding code, you store the result in a custom variable using the as argument followed by the variable name. For your template tag, you use {% get_most_commented_posts as most_commented_posts %} to store the result of the template tag in a new variable named most_commented_posts. Then, you display the returned posts using an unordered list.
+
+Now open your browser and refresh the page to see the final result. It should look like the following:
+
+Figure 3.3: The post list view, including the complete sidebar with the latest and most commented posts
+
+You have now a clear idea about how to build custom template tags. You can read more about them at https://docs.djangoproject.com/en/3.0/howto/custom-template-tags/.
+Custom template filters
+
+Django has a variety of built-in template filters that allow you to alter variables in templates. These are Python functions that take one or two parameters, the value of the variable that the filter is applied to, and an optional argument. They return a value that can be displayed or treated by another filter. A filter looks like {{ variable|my_filter }}. Filters with an argument look like {{ variable|my_filter:"foo" }}. For example, you can use the capfirst filter to capitalize the first character of the value, like {{ value|capfirst }}. If value is "django", the output will be "Django". You can apply as many filters as you like to a variable, for example, {{ variable|filter1|filter2 }}, and each of them will be applied to the output generated by the preceding filter.
+
+You can find the list of Django's built-in template filters at https://docs.djangoproject.com/en/3.0/ref/templates/builtins/#built-in-filter-reference.
+
+You will create a custom filter to enable you to use markdown syntax in your blog posts and then convert the post contents to HTML in the templates. Markdown is a plain-text formatting syntax that is very simple to use, and it's intended to be converted into HTML. You can write posts using simple markdown syntax and get the content automatically converted into HTML code. Learning markdown syntax is much easier than learning HTML. By using markdown, you can get other non-tech savvy contributors to easily write posts for your blog. You can learn the basics of the markdown format at https://daringfireball.net/projects/markdown/basics.
+
+First, install the Python markdown module via pip using the following command:
+
+pip install markdown==3.2.1
+
+Then, edit the blog_tags.py file and include the following code:
+
+from django.utils.safestring import mark_safe
+import markdown
+@register.filter(name='markdown')
+def markdown_format(text):
+    return mark_safe(markdown.markdown(text))
+
+You register template filters in the same way as template tags. To prevent a name clash between your function name and the markdown module, you name your function markdown_format and name the filter markdown for use in templates, such as {{ variable|markdown }}. Django escapes the HTML code generated by filters; characters of HTML entities are replaced with their HTML encoded characters. For example, <p> is converted to &lt;p&gt; (less than symbol, p character, greater than symbol). You use the mark_safe function provided by Django to mark the result as safe HTML to be rendered in the template. By default, Django will not trust any HTML code and will escape it before placing it in the output. The only exceptions are variables that are marked as safe from escaping. This behavior prevents Django from outputting potentially dangerous HTML and allows you to create exceptions for returning safe HTML.
+
+Now, load your template tags module in the post list and detail templates. Add the following line at the top of the blog/post/list.html and blog/post/detail.html templates after the {% extends %} tag:
+
+{% load blog_tags %}
+
+In the post/detail.html template, look for the following line:
+
+{{ post.body|linebreaks }}
+
+Replace it with the following one:
+
+{{ post.body|markdown }}
+
+Then, in the post/list.html template, find the following line:
+
+{{ post.body|truncatewords:30|linebreaks }}
+
+Replace it with the following one:
+
+{{ post.body|markdown|truncatewords_html:30 }}
+
+The truncatewords_html filter truncates a string after a certain number of words, avoiding unclosed HTML tags.
+
+Now open http://127.0.0.1:8000/admin/blog/post/add/ in your browser and add a post with the following body:
+
+This is a post formatted with markdown
+--------------------------------------
+*This is emphasized* and **this is more emphasized**.
+Here is a list:
+* One
+* Two
+* Three
+And a [link to the Django website](https://www.djangoproject.com/)
+
+Open your browser and take a look at how the post is rendered. You should see the following output:
+
+Figure 3.4: The post with markdown content rendered as HTML
+
+As you can see in the preceding screenshot, custom template filters are very useful for customizing formatting. You can find more information about custom filters at https://docs.djangoproject.com/en/3.0/howto/custom-template-tags/#writing-custom-template-filters.
+Adding a sitemap to your site
+
+Django comes with a sitemap framework, which allows you to generate sitemaps for your site dynamically. A sitemap is an XML file that tells search engines the pages of your website, their relevance, and how frequently they are updated. Using a sitemap will make your site more visible in search engine rankings: sitemaps help crawlers to index your website's content.
+
+The Django sitemap framework depends on django.contrib.sites, which allows you to associate objects to particular websites that are running with your project. This comes in handy when you want to run multiple sites using a single Django project. To install the sitemap framework, you will need to activate both the sites and the sitemap applications in your project.
+
+Edit the settings.py file of your project and add django.contrib.sites and django.contrib.sitemaps to the INSTALLED_APPS setting. Also, define a new setting for the site ID, as follows:
+
+SITE_ID = 1
+# Application definition
+INSTALLED_APPS = [
+    # ...
+    'django.contrib.sites',
+    'django.contrib.sitemaps',
+]
+
+Now run the following command to create the tables of the Django site application in the database:
+
+python manage.py migrate
+
+You should see an output that contains the following lines:
+
+Applying sites.0001_initial... OK
+Applying sites.0002_alter_domain_unique... OK
+
+The sites application is now synced with the database.
+
+Next, create a new file inside your blog application directory and name it sitemaps.py. Open the file and add the following code to it:
+
+from django.contrib.sitemaps import Sitemap
+from .models import Post
+class PostSitemap(Sitemap):
+    changefreq = 'weekly'
+    priority = 0.9
+    def items(self):
+        return Post.published.all()
+    def lastmod(self, obj):
+        return obj.updated
+
+You create a custom sitemap by inheriting the Sitemap class of the sitemaps module. The changefreq and priority attributes indicate the change frequency of your post pages and their relevance in your website (the maximum value is 1).
+
+The items() method returns the QuerySet of objects to include in this sitemap. By default, Django calls the get_absolute_url() method on each object to retrieve its URL. Remember that you created this method in Chapter 1, Building a Blog Application, to retrieve the canonical URL for posts. If you want to specify the URL for each object, you can add a location method to your sitemap class.
+
+The lastmod method receives each object returned by items() and returns the last time the object was modified.
+
+Both the changefreq and priority attributes can be either methods or attributes. You can take a look at the complete sitemap reference in the official Django documentation located at https://docs.djangoproject.com/en/3.0/ref/contrib/sitemaps/.
+
+Finally, you just need to add your sitemap URL. Edit the main urls.py file of your project and add the sitemap, as follows:
+
+from django.urls import path, include
+from django.contrib import admin
+from django.contrib.sitemaps.views import sitemap
+from blog.sitemaps import PostSitemap
+sitemaps = {
+    'posts': PostSitemap,
+}
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('blog/', include('blog.urls', namespace='blog')),
+    path('sitemap.xml', sitemap, {'sitemaps': sitemaps},
+         name='django.contrib.sitemaps.views.sitemap')
+]
+
+In the preceding code, you include the required imports and define a dictionary of sitemaps. You define a URL pattern that matches sitemap.xml and uses the sitemap view. The sitemaps dictionary is passed to the sitemap view.
+
+Now run the development server and open http://127.0.0.1:8000/sitemap.xml in your browser. You will see the following XML output:
+
+<?xml version="1.0" encoding="utf-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>http://example.com/blog/2020/1/2/markdown-post/</loc>
+    <lastmod>2020-01-02</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>
+http://example.com/blog/2020/1/1/who-was-django-reinhardt/
+</loc>
+    <lastmod>2020-01-02</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+</urlset>
+
+The URL for each post has been built calling its get_absolute_url() method.
+
+The lastmod attribute corresponds to the post updated date field, as you specified in your sitemap, and the changefreq and priority attributes are also taken from the PostSitemap class.
+
+You can see that the domain used to build the URLs is example.com. This domain comes from a Site object stored in the database. This default object was created when you synced the site's framework with your database.
+
+Open http://127.0.0.1:8000/admin/sites/site/ in your browser. You should see something like this:
+
+Figure 3.5: The Django administration list view for the Site model of the site's framework
+
+The preceding screenshot contains the list display administration view for the site's framework. Here, you can set the domain or host to be used by the site's framework and the applications that depend on it. In order to generate URLs that exist in your local environment, change the domain name to localhost:8000, as shown in the following screenshot, and save it:
+
+Figure 3.6: The Django administration edit view for the Site model of the site's framework
+
+The URLs displayed in your feed will now be built using this hostname. In a production environment, you will have to use your own domain name for the site's framework.
+Creating feeds for your blog posts
+
+Django has a built-in syndication feed framework that you can use to dynamically generate RSS or Atom feeds in a similar manner to creating sitemaps using the site's framework. A web feed is a data format (usually XML) that provides users with the most recently updated content. Users will be able to subscribe to your feed using a feed aggregator (software that is used to read feeds and get new content notifications).
+
+Create a new file in your blog application directory and name it feeds.py. Add the following lines to it:
+
+from django.contrib.syndication.views import Feed
+from django.template.defaultfilters import truncatewords
+from django.urls import reverse_lazy
+from .models import Post
+class LatestPostsFeed(Feed):
+    title = 'My blog'
+    link = reverse_lazy('blog:post_list')
+    description = 'New posts of my blog.'
+    def items(self):
+        return Post.published.all()[:5]
+    def item_title(self, item):
+        return item.title
+    def item_description(self, item):
+        return truncatewords(item.body, 30)
+
+- First, you subclass the Feed class of the syndication framework. The title, link, and description attributes correspond to the `<title>`, `<link>`, and `<description>` RSS elements, respectively.
+
+- Add RSS feed into the URLs:
+
+```py
+from .feeds import LatestPostsFeed
+
+urlpatterns = [
+    # ...
+    path('feed/', LatestPostsFeed(), name='post_feed'),
+]
+```
