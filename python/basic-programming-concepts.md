@@ -70,6 +70,70 @@
 
 - ```__repr__``` creates a representation for developers and debuggers. If __str__ magic method is not defined then ```print()``` will use ```__repr__``` representation. ```__repr__``` should be defined first (due to it being used for debugging purposes).
 
+#### __slots__
+
+- The special attribute `__slots__` allows you to explicitly state which instance attributes you expect your object instances to have, with the expected results:
+
+  - faster attribute access,
+  - space savings in memory.
+
+- The space savings comes from:
+
+  - Storing value references in slots instead of `__dict__`;
+  - Denying `__dict__` and `__weakref__` creation if parent classes deny them and you declare __slots__.
+
+- Caveats:
+
+  - Small caveat, you should only declare a particular slot one time in an inheritance tree. For example:
+
+```py
+class Base:
+  __slots__ = 'foo', 'bar'
+
+class Right(Base):
+  __slots__ = 'baz', 
+
+class Wrong(Base):
+  __slots__ = 'foo', 'bar', 'baz'  # redundant foo and bar
+```
+
+  - The biggest caveat is for multiple inheritance - multiple "parent classes with nonempty slots" cannot be combined. To accommodate this restriction, follow best practices: Factor out all but one or all parents' abstraction which their concrete class respectively and your new concrete class collectively will inherit from - giving the abstraction(s) empty slots (just like abstract base classes in the standard library).
+
+  - Even when non-empty slots are the same for multiple parents, they cannot be used together:
+
+```py
+class Foo(object): 
+    __slots__ = 'foo', 'bar'
+class Bar(object):
+    __slots__ = 'foo', 'bar'  # alas, would work if empty, i.e. ()
+
+class Baz(Foo, Bar): pass
+
+# Traceback (most recent call last):
+#   File "<stdin>", line 1, in <module>
+# TypeError: Error when calling the metaclass bases
+#     multiple bases have instance lay-out conflict
+```
+
+  - Using an empty `__slots__` in the parent seems to provide the most flexibility, allowing the child to choose to prevent or allow (by adding `__dict__` to get dynamic assignment, see section above) the creation of a `__dict__`:
+
+```py
+class Foo(object): __slots__ = ()
+class Bar(object): __slots__ = ()
+class Baz(Foo, Bar): __slots__ = ('foo', 'bar')
+b = Baz()
+b.foo, b.bar = 'foo', 'bar'
+```
+
+  - You don't have to have slots - so if you add them, and remove them later, it shouldn't cause any problems.
+
+- Requirements:
+
+- To have attributes named in `__slots__` to actually be stored in slots instead of a `__dict__`, a class must inherit from object (automatic in Python 3, but must be explicit in Python 2).
+
+- To prevent the creation of a __dict__, you must inherit from object and all classes in the inheritance must declare `__slots__` and none of them can have a `__dict__` entry.
+
+
 ### Inheritance
 
 - All classes have the class *object* as their parent.
