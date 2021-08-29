@@ -40,6 +40,12 @@
     - [Content Feed (RSS)](#content-feed-rss)
   - [This is a post formatted with markdown](#this-is-a-post-formatted-with-markdown)
 - [Application definition](#application-definition)
+    - [Full-Text Search](#full-text-search)
+      - [Simple Search Lookups](#simple-search-lookups)
+      - [Searching Against Mltiple Fields](#searching-against-mltiple-fields)
+      - [Stemming and Ranking Results](#stemming-and-ranking-results)
+      - [Weighting Queries](#weighting-queries)
+      - [Searching with Trigram Similarity](#searching-with-trigram-similarity)
 
 ## Sources
 
@@ -1536,3 +1542,70 @@ urlpatterns = [
     path('feed/', LatestPostsFeed(), name='post_feed'),
 ]
 ```
+
+### Full-Text Search
+
+- [Details about below implementations](https://learning.oreilly.com/library/view/django-3-by/9781838981952/Text/Chapter_3.xhtml#_idParaDest-69)
+- [PostgreSQL Full-Text Search](https://www.postgresql.org/docs/12/textsearch.html)
+- [Full-Text Search and Performance in Django](https://docs.djangoproject.com/en/3.0/ref/contrib/postgres/search/)
+- [Modular Search for Django with Haystack](https://django-haystack.readthedocs.io/en/master/) - it features a unified, familiar API that allows you to plug in different search backends (such as Solr, Elasticsearch, Whoosh, Xapian, etc.) without having to modify the code.
+
+- Searching for data in the database with user input is a common task for web applications. The Django ORM allows you to perform simple matching operations using, for example, the `contains` filter (or its case-insensitive version, `icontains`):
+
+```py
+from blog.models import Post
+Post.objects.filter(body__contains='framework')
+```
+
+- However, if you want to perform complex search lookups, retrieving results by similarity, or by weighting terms based on how frequently they appear in the text or by how important different fields are (for example, relevancy of the term appearing in the title versus in the body), you will need to use a full-text search engine. When you consider large blocks of text, building queries with operations on a string of characters is not enough. Full-text search examines the actual words against stored content as it tries to match search criteria.
+
+- Django provides a powerful search functionality built on top of PostgreSQL's full-text search features. The django.contrib.postgres module provides functionalities offered by PostgreSQL that are not shared by the other databases that Django supports.
+
+#### Simple Search Lookups
+
+```py
+from blog.models import Post
+Post.objects.filter(body__search='django')
+```
+
+#### Searching Against Mltiple Fields
+
+```py
+from django.contrib.postgres.search import SearchVector
+from blog.models import Post
+Post.objects.annotate(
+    search=SearchVector('title', 'body'),
+).filter(search='django')
+```
+
+#### Stemming and Ranking Results
+
+```py
+search_vector = SearchVector('title', 'body')
+search_query = SearchQuery(query)
+results = Post.published.annotate(
+              search=search_vector,
+              rank=SearchRank(search_vector, search_query)
+          ).filter(search=search_query).order_by('-rank')
+```
+
+#### Weighting Queries
+
+```py
+search_vector = SearchVector('title', weight='A') + \
+                SearchVector('body', weight='B')
+search_query = SearchQuery(query)
+results = Post.published.annotate(
+ rank=SearchRank(search_vector, search_query)
+ ).filter(rank__gte=0.3).order_by('-rank')
+```
+
+#### Searching with Trigram Similarity
+
+```py
+results = Post.published.annotate(
+    similarity=TrigramSimilarity('title', query),
+).filter(similarity__gt=0.1).order_by('-similarity')
+```
+
+
