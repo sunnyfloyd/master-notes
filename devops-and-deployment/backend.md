@@ -2,6 +2,7 @@
 
 - [Backend Topics](#backend-topics)
   - [Networking](#networking)
+    - [DNS](#dns)
     - [HTTP](#http)
       - [HTTP 1.0](#http-10)
       - [HTTP 1.1](#http-11)
@@ -20,6 +21,14 @@
       - [WebTransport](#webtransport)
 
 ## Networking
+
+### DNS
+
+- **Domain Name System** is a bridge between human-friendly name-based system and machine-friendly number-based (IP) system. It is often compared to the phonebook of the Internet.
+
+- When given domain is requested by its name it goes through hierarchy of decentralized systems that try to find the IP address for a given hostname in their cache. If query cannot be resolved it is being forwarded to the next node in the hierarchy.
+
+- Client -> DNS resolver -> DNS Root Name Server -> Name Server for given domain (i.e. *.com*) TLD -> (final) Name Server for given domain
 
 ### HTTP
 
