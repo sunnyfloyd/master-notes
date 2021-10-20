@@ -5,6 +5,7 @@
 - [Django](#django)
   - [Table of Contents](#table-of-contents)
   - [Sources](#sources)
+  - [Django Related Resources](#django-related-resources)
   - [Basics](#basics)
   - [Models](#models)
     - [Creating Model Managers](#creating-model-managers)
@@ -53,12 +54,20 @@
       - [Stemming and Ranking Results](#stemming-and-ranking-results)
       - [Weighting Queries](#weighting-queries)
       - [Searching with Trigram Similarity](#searching-with-trigram-similarity)
+  - [Django Rest Framework (DRF)](#django-rest-framework-drf)
+  - [Django App Deployment](#django-app-deployment)
+    - [Heroku](#heroku)
 
 ## Sources
 
 - [Django Official Tutorial](https://docs.djangoproject.com/en/3.2/intro/tutorial01/)
 - [CS50 Harvard Course](https://cs50.harvard.edu/web/2020/weeks/3/)
 - [Django 3 By Example - Third Edition](https://learning.oreilly.com/library/view/django-3-by/9781838981952/)
+
+## Django Related Resources
+
+- [Django Cheat Sheet](https://dev.to/ericchapman/my-beloved-django-cheat-sheet-2056)
+- [Django AdminLTE3 Tutorial](https://github.com/fseesink/django-adminlte3-tutorial)
 
 ## Basics
 
@@ -1417,4 +1426,33 @@ results = Post.published.annotate(
 ).filter(similarity__gt=0.1).order_by('-similarity')
 ```
 
+## Django Rest Framework (DRF)
 
+## Django App Deployment
+
+### Heroku
+
+- [Example of Django app deployment on Heroku](https://www.youtube.com/watch?v=qPtScmB8CgA&t=2588s)
+
+- In `settings.py` add following:
+
+```py
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+```
+
+- Install `django-heroku` and add in `settings.py`:
+
+```py
+import django_heroku
+import dj_database_url
+
+DATABASES = {"default": dj_database_url.config()}
+django_heroku.settings(locals())
+```
+
+- Add heroku PostgreSQL database to the application:
+
+```bash
+heroku addons:create heroku-postgresql:hobby-dev
+```
