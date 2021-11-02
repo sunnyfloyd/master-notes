@@ -1,5 +1,26 @@
 # JavaScript
 
+- [JavaScript](#javascript)
+  - [Sources](#sources)
+  - [Basics](#basics)
+    - [Variables and Constants](#variables-and-constants)
+    - [Operators](#operators)
+    - [Loops](#loops)
+    - [Switch](#switch)
+    - [Functions](#functions)
+      - [Function Expressions](#function-expressions)
+      - [Arrow Functions](#arrow-functions)
+    - [querySelector](#queryselector)
+    - [forEach](#foreach)
+    - [Data Attributes](#data-attributes)
+    - [Arrow Functions](#arrow-functions-1)
+    - ['this' Keyword](#this-keyword)
+    - [Using Form Input](#using-form-input)
+    - [Local Storage](#local-storage)
+    - [Other](#other)
+    - [AJAX](#ajax)
+  - [UX/UI](#uxui)
+
 ## Sources
 
 - [CS50 Harvard Course](https://cs50.harvard.edu/web/2020/weeks/5/)
@@ -12,7 +33,124 @@
 
 - `let` defines variable limited in scope to the current block.
 
-- `conts` defines a value that will not change.
+- `const` defines a value that will not change.
+
+### Operators
+
+- The plus `+` exists in two forms: **the binary form that we used above and the unary form**:
+  
+  - The unary plus or, in other words, the plus operator `+` applied to a single value, doesn’t do anything to numbers.**
+  - If the operand is not a number, the unary plus converts it into a number. It is a shorthand for `Number()`**.
+
+- **Nullish coalescing operator**. `??` returns the first argument if it’s not `null/undefined`. Otherwise, the second one: `result = a ?? b` is equivalent to `result = (a !== null && a !== undefined) ? a : b`. It can be used with multiple operands: `firstName ?? lastName ?? nickName ?? "Anonymous"`.
+
+### Loops
+
+- A **label** is an identifier with a colon before a loop. `break` can refer to a loop via its scope so it can break out of the outer loop from the inner one. The `continue` directive can also be used with a label.
+
+```js
+labelName: for (...) {
+  ...
+}
+```
+
+### Switch
+
+- The `switch` has one or more case blocks and an optional `default`. **If there is no break then the execution continues with the next case without any checks**.
+
+```js
+switch(x) {
+  case 'value1':  // if (x === 'value1')
+    ...
+    [break]
+
+  case 'value2':  // if (x === 'value2')
+    ...
+    [break]
+
+  default:
+    ...
+    [break]
+}
+```
+
+- Several variants of case which share the same code can be grouped:
+
+```js
+switch (a) {
+  case 4:
+    alert('Right!');
+    break;
+
+  case 3: // (*) grouped two cases
+  case 5:
+    alert('Wrong!');
+    alert("Why don't you take a math class?");
+    break;
+
+  default:
+    alert('The result is strange. Really.');
+}
+```
+
+### Functions
+
+- A function may access outer variables. But it works only from inside out. The code outside of the function doesn’t see its local variables.
+
+- **A function always gets a copy of the value** so changes of the passed arguments do not impact original variables.
+
+- A **parameter** is the variable listed inside the parentheses in the function declaration (it’s a declaration time term)
+- An **argument** is the value that is passed to the function when it is called (it’s a call time term).
+
+- If a function is called, but an argument is not provided, then the corresponding value becomes `undefined`.
+
+#### Function Expressions
+
+- In JavaScript, a function is a special kind of value.
+
+- There are two ways to create a function:
+
+**Function Declaration:**
+
+- A function, declared as a separate statement, in the main code flow.
+- A Function Declaration can be called earlier than it is defined. That’s due to internal algorithms. When JavaScript prepares to run the script, it first looks for global Function Declarations in it and creates the functions. We can think of it as an “initialization stage”.
+- In strict mode, when a Function Declaration is within a code block, it’s visible everywhere inside that block. But not outside of it.
+
+```js
+function sayHi() {
+    alert( "Hello" );
+}
+```
+
+**Function Expression:**
+
+- A function, created inside an expression or inside another syntax construct.
+- A Function Expression is created when the execution reaches it and is usable only from that moment.
+
+```js
+let sayHi = function() {
+  alert( "Hello" );
+};
+```
+
+- As a rule of thumb, when we need to declare a function, the first to consider is Function Declaration syntax. It gives more freedom in how to organize our code, because we can call such functions before they are declared. That’s also better for readability, as it’s easier to look up function f(…) {…} in the code than let f = function(…) {…};. Function Declarations are more “eye-catching”. But if a Function Declaration does not suit us for some reason, or we need a conditional declaration, then Function Expression should be used.
+
+#### Arrow Functions
+
+- There’s another very simple and concise syntax for creating functions, that’s often better than Function Expressions - **Arrow Functions**:
+
+```js
+let func = (arg1, arg2, ..., argN) => expression
+```
+
+- In single line expressions the expression itself is returned implicitly. In multiline expressions `return` must be called explicitly:
+
+```js
+let sum = (a, b) => {  // the curly brace opens a multiline function
+  let result = a + b;
+  return result; // if we use curly braces, then we need an explicit "return"
+};
+```
 
 ### querySelector
 

@@ -1428,6 +1428,8 @@ results = Post.published.annotate(
 
 ## Django Rest Framework (DRF)
 
+- 
+
 ## Django App Deployment
 
 ### Heroku

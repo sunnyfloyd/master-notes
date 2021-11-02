@@ -4,12 +4,28 @@
 
 - [Git](#git)
   - [Table of Content](#table-of-content)
+  - [GitHub Usage](#github-usage)
   - [General](#general)
   - [Branch Management](#branch-management)
+    - [Creating repo first/using existing repo](#creating-repo-firstusing-existing-repo)
+    - [Starting local repo and then publishing it to GitHub](#starting-local-repo-and-then-publishing-it-to-github)
+  - [Diff](#diff)
+  - [Log](#log)
   - [Merging](#merging)
   - [Tags](#tags)
   - [Remote Repos](#remote-repos)
   - [GitHub Actions](#github-actions)
+
+## GitHub Usage
+
+There are two primary ways people collaborate on GitHub:
+
+  - Shared repository
+  - Fork and pull
+
+- With a **shared repository**, individuals and teams are explicitly designated as contributors with read, write, or administrator access. This simple permission structure, combined with features like protected branches and Marketplace, helps teams progress quickly when they adopt GitHub.
+
+- For an open source project, or for projects to which anyone can contribute, managing individual permissions can be challenging, but a **fork and pull model** allows anyone who can view the project to contribute. A fork is a copy of a project under an developer’s personal account. Every developer has full control of their fork and is free to implement a fix or new feature. Work completed in forks is either kept separate, or is surfaced back to the original project via a pull request. There, maintainers can review the suggested changes before they’re merged.
 
 ## General
 
@@ -38,8 +54,6 @@ env
 
 - Within Git only source files should be stored - not the output files or large binary files (binary files do not have good diff tools so most of the time they will have to be stored fully each time they are committed).
 
-- ```git log``` shows history of all the commits that have been made up to this point.
-
 - *SHA* is an unique (most likely) identifier of a commit in a given repository whereas a *HEAD* indicates on what commit I am currently working on.
 
 - Instead of using *SHAs* to move between commits refs can be used:
@@ -61,11 +75,23 @@ git switch HEAD~3  # switches to the great great grandparent of HEAD
 
 - To revert a file to its state from the last commit use `git checkout <file_name>`.
 
+- `git reset --hard HEAD` throws away any uncommitted changes.
+
 ## Branch Management
+
+- To fetch all the remote branches from the repository `git fetch origin`.
+
+- To see the branches available for checkout `git branch -a`.
+
+- You cannot make changes directly on a remote branch. Hence, you need a copy of that branch. To copy the remote branch *fix-failing-tests*: `git checkout -b fix-failing-tests origin/fix-failing-tests`.
+
+### Creating repo first/using existing repo
 
 - When you create a branch locally, it exists only locally until it is pushed to GitHub where it becomes the remote branch:
 
 ```bash
+git clone [repo_URL]
+cd repo
 # create a new branch
 git branch new-branch
 # change environment to the new branch
@@ -79,11 +105,52 @@ git commit -m "add new file"
 git push --set-upstream origin new-branch
 ```
 
-- To fetch all the remote branches from the repository `git fetch origin`.
+### Starting local repo and then publishing it to GitHub
 
-- To see the branches available for checkout `git branch -a`.
+```bash
+# create a new directory, and initialize it with git-specific functions
+git init my-repo
 
-- You cannot make changes directly on a remote branch. Hence, you need a copy of that branch. To copy the remote branch *fix-failing-tests*: `git checkout -b fix-failing-tests origin/fix-failing-tests`.
+# change into the `my-repo` directory
+cd my-repo
+
+# create the first file in the project
+touch README.md
+
+# git isn't aware of the file, stage it
+git add README.md
+
+# take a snapshot of the staging area
+git commit -m "add README to initial commit"
+
+# provide the path for the repository you created on github
+git remote add origin https://github.com/YOUR-USERNAME/YOUR-REPOSITORY.git
+
+# push changes to github
+git push --set-upstream origin main
+```
+
+## Diff
+
+- `git diff` - difference between working tree and staging area (unstaged changes).
+
+- `git diff --staged` - difference between staged changes and the most recent commit.
+
+- `git diff HEAD` - difference between working tree and HEAD commit.
+
+## Log
+
+- ```git log``` shows history of all the commits that have been made up to this point.
+
+- `git log --oneline` provides a list of commits with commit ref and commit message.
+
+- `git log --stat` provides additional information about files changed in each commit, number of lines changed (additions/subtractions).
+
+- `git log --patch` shows actual difference of each subsequent commits.
+
+- `git log --patch --oneline` to combine oneliner with patch info.
+
+- `git log --graph --all --decorate --oneline` shows one-line summary for each commit, ASCII art graphs all of the commits with their flow and their branches.
 
 ## Merging
 
