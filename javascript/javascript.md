@@ -2,32 +2,35 @@
 
 - [JavaScript](#javascript)
   - [Sources](#sources)
-  - [Basics](#basics)
-    - [Variables and Constants](#variables-and-constants)
-    - [Operators](#operators)
-    - [Loops](#loops)
-    - [Switch](#switch)
-    - [Functions](#functions)
-      - [Function Expressions](#function-expressions)
-      - [Arrow Functions](#arrow-functions)
-    - [querySelector](#queryselector)
+  - [Variables and Constants](#variables-and-constants)
+  - [Operators](#operators)
+  - [Loops](#loops)
     - [forEach](#foreach)
+  - [Switch](#switch)
+  - [Functions](#functions)
+    - [Function Expressions](#function-expressions)
+    - [Arrow Functions](#arrow-functions)
+  - [Testing](#testing)
+  - [Debugging](#debugging)
+  - [DOM Manipulation](#dom-manipulation)
+    - [querySelector](#queryselector)
     - [Data Attributes](#data-attributes)
-    - [Arrow Functions](#arrow-functions-1)
     - ['this' Keyword](#this-keyword)
     - [Using Form Input](#using-form-input)
     - [Local Storage](#local-storage)
-    - [Other](#other)
-    - [AJAX](#ajax)
+  - [Other](#other)
+  - [AJAX](#ajax)
   - [UX/UI](#uxui)
+  - [Polyfills and Transpilers](#polyfills-and-transpilers)
+    - [Transpilers](#transpilers)
+    - [Polyfills](#polyfills)
 
 ## Sources
 
 - [CS50 Harvard Course](https://cs50.harvard.edu/web/2020/weeks/5/)
 
-## Basics
 
-### Variables and Constants
+## Variables and Constants
 
 - `var` defines **global variable**.
 
@@ -35,7 +38,7 @@
 
 - `const` defines a value that will not change.
 
-### Operators
+## Operators
 
 - The plus `+` exists in two forms: **the binary form that we used above and the unary form**:
   
@@ -44,7 +47,7 @@
 
 - **Nullish coalescing operator**. `??` returns the first argument if it’s not `null/undefined`. Otherwise, the second one: `result = a ?? b` is equivalent to `result = (a !== null && a !== undefined) ? a : b`. It can be used with multiple operands: `firstName ?? lastName ?? nickName ?? "Anonymous"`.
 
-### Loops
+## Loops
 
 - A **label** is an identifier with a colon before a loop. `break` can refer to a loop via its scope so it can break out of the outer loop from the inner one. The `continue` directive can also be used with a label.
 
@@ -54,7 +57,19 @@ labelName: for (...) {
 }
 ```
 
-### Switch
+### forEach
+
+- `forEach` runs given function on each element in the iterable:
+
+```js
+document.querySelectorAll('button').forEach(function(button) {
+    button.onclick = function() {
+        document.querySelector("#hello").style.color = button.dataset.color;
+    }
+}
+```
+
+## Switch
 
 - The `switch` has one or more case blocks and an optional `default`. **If there is no break then the execution continues with the next case without any checks**.
 
@@ -93,7 +108,7 @@ switch (a) {
 }
 ```
 
-### Functions
+## Functions
 
 - A function may access outer variables. But it works only from inside out. The code outside of the function doesn’t see its local variables.
 
@@ -104,7 +119,7 @@ switch (a) {
 
 - If a function is called, but an argument is not provided, then the corresponding value becomes `undefined`.
 
-#### Function Expressions
+### Function Expressions
 
 - In JavaScript, a function is a special kind of value.
 
@@ -135,7 +150,7 @@ let sayHi = function() {
 
 - As a rule of thumb, when we need to declare a function, the first to consider is Function Declaration syntax. It gives more freedom in how to organize our code, because we can call such functions before they are declared. That’s also better for readability, as it’s easier to look up function f(…) {…} in the code than let f = function(…) {…};. Function Declarations are more “eye-catching”. But if a Function Declaration does not suit us for some reason, or we need a conditional declaration, then Function Expression should be used.
 
-#### Arrow Functions
+### Arrow Functions
 
 - There’s another very simple and concise syntax for creating functions, that’s often better than Function Expressions - **Arrow Functions**:
 
@@ -151,6 +166,69 @@ let sum = (a, b) => {  // the curly brace opens a multiline function
   return result; // if we use curly braces, then we need an explicit "return"
 };
 ```
+
+## Testing
+
+- In **BDD** (Behaviour-Driven Development), the spec goes first, followed by implementation. At the end we have both the spec and the code.
+
+- The spec can be used in three ways:
+
+  1. As Tests – they guarantee that the code works correctly.
+  2. As Docs – the titles of describe and it tell what the function does.
+  3. As Examples – the tests are actually working examples showing how a function can be used.
+
+- With the spec, we can safely improve, change, even rewrite the function from scratch and make sure it still works right.
+
+- **Mocha** – the core framework: it provides common testing functions including describe and it and the main function that runs tests.
+- **Chai** – the library with many assertions. It allows to use a lot of different assertions.
+- **Sinon** – a library to spy over functions, emulate built-in functions and more.
+
+- Example of spec:
+
+```js
+describe("pow", function() {
+
+  it("2 raised to power 3 is 8", function() {
+    assert.equal(pow(2, 3), 8);
+  });
+
+  it("3 raised to power 4 is 81", function() {
+    assert.equal(pow(3, 4), 81);
+  });
+
+});
+```
+
+- The **nested describe** defines a new *subgroup* of tests - it is usefull to logically organize function testing:
+
+```js
+describe("pow", function() {
+
+  describe("raises x to power 3", function() {
+
+    function makeTest(x) {
+      let expected = x * x * x;
+      it(`${x} in the power 3 is ${expected}`, function() {
+        assert.equal(pow(x, 3), expected);
+      });
+    }
+
+    for (let x = 1; x <= 5; x++) {
+      makeTest(x);
+    }
+
+  });
+
+  // ... more tests to follow here, both describe and it can be added
+});
+```
+
+
+## Debugging
+
+- `debugger` is a convenient way to set the breakpoint in the code editor.
+
+## DOM Manipulation
 
 ### querySelector
 
@@ -181,18 +259,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 ```
 
-### forEach
-
-- `forEach` runs given function on each element in the iterable:
-
-```js
-document.querySelectorAll('button').forEach(function(button) {
-    button.onclick = function() {
-        document.querySelector("#hello").style.color = button.dataset.color;
-    }
-}
-```
-
 ### Data Attributes
 
 - `data-<name>` can be included as an attribute to any HTML tag. It can be used to access its value using JS:
@@ -221,33 +287,6 @@ element = document.querySelector('#inbox');
 element.myParam = 'value'; // defining a parameter
 element.addEventListener('click', foo)
 });
-```
-
-### Arrow Functions
-
-- JavaScript now gives us the ability to use **Arrow Functions** where we have an input (or parentheses when there’s no input) followed by `=>` followed by some code to be run. For example, we can alter our script above to use an anonymous arrow function:
-
-```js
-document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('button').forEach(button => {
-        button.onclick = () => {
-            document.querySelector("#hello").style.color = button.dataset.color;
-        }
-    });
-});
-```
-
-- We can also have named functions that use arrows:
-
-```js
-count = () => {
-    counter++;
-    document.querySelector('h1').innerHTML = counter;
-    
-    if (counter % 10 === 0) {
-        alert(`Count is now ${counter}`)
-    }
-}
 ```
 
 ### 'this' Keyword
@@ -345,11 +384,11 @@ function count() {
 }
 ```
 
-### Other
+## Other
 
 - `setInterval(function, 1000)` calls a function or evaluates an expression at specified intervals (in miliseconds).
 
-### AJAX
+## AJAX
 
 - **AJAX** (Asynchronous JavaScript And XML) allows to access information from external pages even after the page has loaded. In order to do this, we’ll use the `fetch` function which will allow us to send an HTTP request. The `fetch` function returns a **promise**. We can think of promise as a value that will come through at some point, but not necessarily right away. We deal with promises by giving them a `.then` attribute describing what should be done when we get a `response`:
 
@@ -439,3 +478,19 @@ document.addEventListener('click', event => {
     }
 });
 ```
+
+## Polyfills and Transpilers
+
+### Transpilers
+
+- A transpiler is a special piece of software that translates source code to another source code. It can parse (*read and understand*) modern code and rewrite it using older syntax constructs, so that it’ll also work in outdated engines.
+
+- **Babel** is one of the most prominent transpilers.
+
+- Modern project build systems, such as **webpack**, provide means to run transpiler automatically on every code change, so it’s very easy to integrate into development process.
+
+### Polyfills
+
+- New language features may include not only syntax constructs and operators, but also built-in functions. For example In some (very outdated) JavaScript engines, there’s no `Math.trunc`, so such code using this function would fail. As we’re talking about new functions, not syntax changes, there’s no need to transpile anything here. We just need to declare the missing function.
+
+- A script that updates/adds new functions is called **polyfill**. It *fills in* the gap and adds missing implementations.
