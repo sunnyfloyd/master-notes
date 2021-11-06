@@ -12,6 +12,8 @@
     - [Prototype](#prototype)
   - [Structural Patterns](#structural-patterns)
     - [Adapters](#adapters)
+    - [Decorator](#decorator)
+    - [Bridge](#bridge)
 
 ## Sources
 
@@ -55,7 +57,7 @@
 
 - Builder design pattern is especially useful in cases where there is a complex object that requires laborious, step-by-step initialization of many fields and nested objects. Approaching such problem with **subclasses** may become very hard to manage and hard to refactor. Using a **single constructor** with all possible parameters that control the object creation will stop breeding subclasses, but the constructor calls will become bloated and ugly.
 
-- Builder patters suggests extraction of the object construction code out of its own class and move it to separate objects called **builders**. The pattern organizes object construction into a set of steps (`buildWalls`, `buildDoor`, etc.). To create an object, you execute a series of these steps on a builder object. The important part is that you don’t need to call all of the steps. You can call only those steps that are necessary for producing a particular configuration of an object.
+- Builder patterns suggests extraction of the object construction code out of its own class and move it to separate objects called **builders**. The pattern organizes object construction into a set of steps (`buildWalls`, `buildDoor`, etc.). To create an object, you execute a series of these steps on a builder object. The important part is that you don’t need to call all of the steps. You can call only those steps that are necessary for producing a particular configuration of an object.
 
 - Some of the construction steps might require different implementation when you need to build various representations of the product. For example, walls of a cabin may be built of wood, but the castle walls must be built with stone. In this case, **you can create several different builder classes that implement the same set of building steps, but in a different manner**. Then you can use these builders in the construction process (i.e., an ordered set of calls to the building steps) to produce different kinds of objects.
 
@@ -85,7 +87,7 @@ class Logger(metaclass=Singleton):
 
 - Python provides its own interface of Prototype via `copy.copy` and `copy.deepcopy` functions. Any class that wants to implement custom implementations have to override `__copy__` and `__deepcopy__` member functions.
 
-- Good to remember that `__dict__` is implemented by default and it outputs all of the attributes of a given object.
+- Good to remember that `__dict__` method is implemented by default and it outputs all of the attributes of a given object.
 
 ### Structural Patterns
 
@@ -101,7 +103,7 @@ class Logger(metaclass=Singleton):
 
 - Use the pattern when you want to reuse several existing subclasses that lack some common functionality that can’t be added to the superclass.
 
-- This approach is very similar to the **Decorator pattern**. However, decorator enahnces an object without changing its interface. In additiona, decorator supports recursive composition, which isn’t possible when you use Adapter.
+- This approach is very similar to the **Decorator pattern**. However, decorator enhances an object without changing its interface. In addition, decorator supports recursive composition, which isn’t possible when you use Adapter.
 
 - There are two main possibilities to create an adapter class: **using inheritance** or **using object composition**:
 
@@ -157,3 +159,19 @@ class Adapter(Target):
     def request(self) -> str:
         return f"Adapter: (TRANSLATED) {self.adaptee.specific_request()[::-1]}"
 ```
+
+#### Decorator
+
+- **Decorator** is a structural design pattern that lets you attach new behaviors to objects by placing these objects inside special wrapper objects that contain the behaviors.
+
+- Using decorators you can wrap objects countless number of times since both target objects and decorators follow the same interface. The resulting object will get a stacking behavior of all wrappers.
+
+#### Bridge
+
+- **Bridge** is a structural design pattern that lets you split a large class or a set of closely related classes into two separate hierarchies—abstraction and implementation—which can be developed independently of each other.
+
+- Use the Bridge pattern when you want to divide and organize a monolithic class that has several variants of some functionality (for example, if the class can work with various database servers).
+
+- Use the pattern when you need to extend a class in several orthogonal (independent) dimensions.
+
+- Use the Bridge if you need to be able to switch implementations at runtime.

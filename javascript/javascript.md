@@ -10,17 +10,24 @@
   - [Functions](#functions)
     - [Function Expressions](#function-expressions)
     - [Arrow Functions](#arrow-functions)
+  - [Objects](#objects)
+    - ["for...in" Loop](#forin-loop)
+    - [Object references and copying](#object-references-and-copying)
+    - [Object Methods](#object-methods)
+    - ["this" Keyword](#this-keyword)
+    - [Constructor, operator "new"](#constructor-operator-new)
   - [Testing](#testing)
   - [Debugging](#debugging)
   - [DOM Manipulation](#dom-manipulation)
     - [querySelector](#queryselector)
     - [Data Attributes](#data-attributes)
-    - ['this' Keyword](#this-keyword)
+    - ['this' Keyword](#this-keyword-1)
     - [Using Form Input](#using-form-input)
     - [Local Storage](#local-storage)
   - [Other](#other)
   - [AJAX](#ajax)
   - [UX/UI](#uxui)
+  - [Garbage collection](#garbage-collection)
   - [Polyfills and Transpilers](#polyfills-and-transpilers)
     - [Transpilers](#transpilers)
     - [Polyfills](#polyfills)
@@ -167,6 +174,212 @@ let sum = (a, b) => {  // the curly brace opens a multiline function
 };
 ```
 
+## Objects
+
+- In contrast, objects are used to store keyed collections of various data and more complex entities. In JavaScript, objects penetrate almost every aspect of the language. So we must understand them first before going in-depth anywhere else.
+
+- An object can be created with figure brackets `{…}` with an optional list of properties. A property is a “key: value” pair, where `key` is a string (also called a “property name”), and `value` can be anything.
+
+```js
+let user = new Object(); // "object constructor" syntax
+let user = {};  // "object literal" syntax
+```
+
+- To remove a property: `delete user.age;`.
+
+- Multiword property names must be quoted:
+
+```js
+let user = {
+  "likes birds": true  // multiword property name must be quoted
+};
+```
+
+- There’s an alternative “square bracket notation” that works with any string (required for multiword properties).
+
+- We can use square brackets in an object literal, when creating an object. That’s called computed properties:
+
+```js
+let fruit = prompt("Which fruit to buy?", "apple");
+
+let bag = {
+  [fruit]: 5, // the name of the property is taken from the variable fruit
+};
+
+alert( bag.apple ); // 5 if fruit="apple"
+```
+
+- Objects are **ordered in a special fashion**: integer properties (a string that can be converted to-and-from an integer without a change) are sorted, others appear in creation order.
+
+- The use-case of making a property from a variable is so common, that there’s a special property value shorthand to make it shorter. Instead of `name:name` we can just write `name`, like this:
+
+```js
+function makeUser(name, age) {
+  return {
+    name, // same as name: name
+    age,  // same as age: age
+    // ...
+  };
+}
+```
+
+- A notable feature of objects in JavaScript, compared to many other languages, is that it’s possible to access any property. There will be no error if the property doesn’t exist! Reading a non-existing property just returns `undefined`. So we can easily test whether the property exists.
+
+```js
+let user = {};
+alert( user.noSuchProperty === undefined ); // true means "no such property"
+
+// OR
+"noSuchProperty" in user
+```
+
+### "for...in" Loop
+
+```js
+let user = {
+  name: "John",
+  age: 30,
+  isAdmin: true
+};
+
+for (let key in user) {
+  // keys
+  alert( key );  // name, age, isAdmin
+  // values for the keys
+  alert( user[key] ); // John, 30, true
+}
+```
+
+### Object references and copying
+
+- One of the fundamental differences of objects versus primitives is that objects are stored and copied “by reference”, whereas primitive values: strings, numbers, booleans, etc – are always copied “as a whole value”.
+
+- Two objects are equal only if they are the same object.
+
+- For comparisons like `obj1 > obj2` or for a comparison against a primitive `obj == 5`, objects are converted to primitives.
+
+- There’s no built-in method for object copying in JavaScript. But if we really want that, then we need to create a new object and replicate the structure of the existing one by iterating over its properties and copying them on the primitive level. This can be done with `Object.assign` method for shallow copy or `_.cloneDeep(obj).` for deep copy:
+
+```js
+let user = { name: "John" };
+
+let permissions1 = { canView: true };
+let permissions2 = { canEdit: true };
+
+// copies all properties from permissions1 and permissions2 into user
+Object.assign(user, permissions1, permissions2);
+
+// now user = { name: "John", canView: true, canEdit: true }
+```
+
+- An important side effect of storing objects as references is that an object declared as `const` can be modified. `const` must always reference the same object, but properties of that object are free to change.
+
+### Object Methods
+
+```js
+let user = {
+  name: "John",
+  age: 30
+};
+
+user.sayHi = function() {
+  alert("Hello!");
+};
+
+// OR
+
+// first, declare
+function sayHi() {
+  alert("Hello!");
+};
+
+// then add as a method
+user.sayHi = sayHi;
+```
+
+- There exists a shorter syntax for methods in an object literal:
+
+```js
+// these objects do the same
+user = {
+  sayHi: function() {
+    alert("Hello");
+  }
+};
+
+user = {
+  sayHi() { // same as "sayHi: function(){...}"
+    alert("Hello");
+  }
+};
+```
+
+### "this" Keyword
+
+- It’s common that an object method needs to access the information stored in the object to do its job. To access the object, a method can use the `this` keyword.
+
+- In JavaScript, keyword this behaves unlike most other programming languages. It can be used in any function, even if it’s not a method of an object.
+
+- The value of this is evaluated during the run-time, depending on the context. For instance, here the same function is assigned to two different objects and has different “this” in the calls:
+
+```js
+let user = { name: "John" };
+let admin = { name: "Admin" };
+
+function sayHi() {
+  alert( this.name );
+}
+
+// use the same function in two objects
+user.f = sayHi;
+admin.f = sayHi;
+
+// these calls have different this
+// "this" inside the function is the object "before the dot"
+user.f(); // John  (this == user)
+admin.f(); // Admin  (this == admin)
+```
+
+- Arrow functions are special: they don’t have their “own” this. If we reference this from such a function, it’s taken from the outer “normal” function. For instance, here `arrow()` uses this from the outer `user.sayHi()` method:
+
+```js
+let user = {
+  firstName: "Ilya",
+  sayHi() {
+    let arrow = () => alert(this.firstName);
+    arrow();
+  }
+};
+
+user.sayHi(); // Ilya
+```
+
+### Constructor, operator "new"
+
+- Constructor functions technically are regular functions. There are two conventions though:
+
+  - They are named with capital letter first.
+  - They should be executed only with `new` operator.
+
+```js
+function User(name) {
+  this.name = name;
+  this.isAdmin = false;
+}
+
+let user = new User("Jack");
+
+alert(user.name); // Jack
+alert(user.isAdmin); // false
+```
+
+- The main purpose of constructors is to implement reusable object creation code.
+
+- Usually, constructors do not have a `return` statement. Their task is to write all necessary stuff into this, and it automatically becomes the result. But if there is a return statement, then the rule is simple:
+
+  - If return is called with an object, then the object is returned instead of `this`.
+  - If return is called with a primitive, it’s ignored.
+
 ## Testing
 
 - In **BDD** (Behaviour-Driven Development), the spec goes first, followed by implementation. At the end we have both the spec and the code.
@@ -222,7 +435,6 @@ describe("pow", function() {
   // ... more tests to follow here, both describe and it can be added
 });
 ```
-
 
 ## Debugging
 
@@ -478,6 +690,20 @@ document.addEventListener('click', event => {
     }
 });
 ```
+
+## Garbage collection
+
+- Garbage collection is performed automatically. We cannot force or prevent it.
+
+- Objects are retained in memory while they are reachable.
+
+- Being referenced is not the same as being reachable (from a root): a pack of interlinked objects can become unreachable as a whole.
+
+- Modern engines implement advanced algorithms of garbage collection:
+
+  - **Generational collection** – objects are split into two sets: “new ones” and “old ones”. Many objects appear, do their job and die fast, they can be cleaned up aggressively. Those that survive for long enough, become “old” and are examined less often.
+  - **Incremental collection** – if there are many objects, and we try to walk and mark the whole object set at once, it may take some time and introduce visible delays in the execution. So the engine tries to split the garbage collection into pieces. Then the pieces are executed one by one, separately. That requires some extra bookkeeping between them to track changes, but we have many tiny delays instead of a big one.
+  - **Idle-time collection** – the garbage collector tries to run only while the CPU is idle, to reduce the possible effect on the execution
 
 ## Polyfills and Transpilers
 

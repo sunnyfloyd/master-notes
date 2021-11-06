@@ -37,6 +37,7 @@
     - [Using a Custom User Model](#using-a-custom-user-model)
     - [Custom Authentication Backend](#custom-authentication-backend)
     - [Social Authentication](#social-authentication)
+    - [django-guardian](#django-guardian)
   - [Session Management](#session-management)
   - [Message Framework](#message-framework)
   - [Static Files](#static-files)
@@ -179,6 +180,8 @@ class Post (models.Model)
 ```
 
 - Django creates a primary key automatically for each model, but you can also override this by specifying primary_key=True in one of your model fields. The default primary key is an id column, which consists of an integer that is incremented automatically. This column corresponds to the id field that is automatically added to your models.
+
+- **Database indexes** improve query performance. Consider setting `db_index=True` for fields that you frequently query using `filter()`, `exclude()`, or `order_by()`. `ForeignKey` fields or fields with `unique=True` imply the creation of an index. You can also use `Meta.index_together` or `Meta.indexes` to create indexes for multiple fields. [More about database indexes](https://docs.djangoproject.com/en/3.0/ref/models/options/#django.db.models.Options.indexes).
 
 ### Creating Model Managers
 
@@ -1177,6 +1180,10 @@ class EmailAuthBackend(object):
 ### Social Authentication
 
 - You might also want to add social authentication to your site using services such as Facebook, Twitter, or Google. [**Python Social Auth**](https://github.com/python-social-auth/social-app-django) is a Python module that simplifies the process of adding social authentication to your website. Using this module, you can let your users log in to your website using their accounts from other services.
+
+### django-guardian
+
+- **django-guardian** is an implementation of per object permissions on top of Django's authorization backend. [django-guardian GitHub](https://github.com/django-guardian/django-guardian)
 
 ## Session Management
 
