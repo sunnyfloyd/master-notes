@@ -9,29 +9,34 @@
   - [Basics](#basics)
   - [Models](#models)
     - [Creating Model Managers](#creating-model-managers)
+    - [Custom Many-to-Many Relationship](#custom-many-to-many-relationship)
+    - [Activity Stream](#activity-stream)
   - [Databases and ORMs](#databases-and-orms)
     - [ORM Methods](#orm-methods)
       - [QuerySet API](#queryset-api)
         - [annotate](#annotate)
         - [values_list](#values_list)
+    - [Optimizing QuerySets that Involve Related Objects](#optimizing-querysets-that-involve-related-objects)
+      - [select_related](#select_related)
+      - [prefetch_related](#prefetch_related)
+    - [Using Signals for Denormalizing Counts](#using-signals-for-denormalizing-counts)
   - [Admin Panel and Customization](#admin-panel-and-customization)
   - [Views](#views)
-    - [URLs](#urls)
-    - [Templates](#templates)
-      - [Custom Template Tags](#custom-template-tags)
-      - [Filters](#filters)
-      - [Custom Template Filters](#custom-template-filters)
-      - [Pagination](#pagination)
     - [Generic Views](#generic-views)
-      - [Generic Views (from Django tutorial)](#generic-views-from-django-tutorial)
-  - [Templates](#templates-1)
+    - [Generic Views (from Django tutorial)](#generic-views-from-django-tutorial)
+  - [URLs](#urls)
+  - [Templates](#templates)
+    - [Custom Template Tags](#custom-template-tags)
+    - [Filters](#filters)
+    - [Custom Template Filters](#custom-template-filters)
+    - [Pagination](#pagination)
   - [Testing](#testing)
     - [Client Testing](#client-testing)
     - [Testing Frontend with Selenium](#testing-frontend-with-selenium)
   - [Forms](#forms)
     - [Form Class Forms](#form-class-forms)
     - [ModelForm Class Forms](#modelform-class-forms)
-  - [Authentication](#authentication)
+  - [Authentication and Authorization](#authentication-and-authorization)
     - [Django Authentication Views](#django-authentication-views)
     - [Extending the User Model](#extending-the-user-model)
     - [Using a Custom User Model](#using-a-custom-user-model)
@@ -55,6 +60,10 @@
       - [Stemming and Ranking Results](#stemming-and-ranking-results)
       - [Weighting Queries](#weighting-queries)
       - [Searching with Trigram Similarity](#searching-with-trigram-similarity)
+  - [Redis](#redis)
+    - [Redis with Django](#redis-with-django)
+    - [Storing a view count in Redis](#storing-a-view-count-in-redis)
+    - [Storing a ranking in Redis](#storing-a-ranking-in-redis)
   - [Django Rest Framework (DRF)](#django-rest-framework-drf)
   - [Django App Deployment](#django-app-deployment)
     - [Heroku](#heroku)
@@ -183,6 +192,9 @@ class Post (models.Model)
 
 - **Database indexes** improve query performance. Consider setting `db_index=True` for fields that you frequently query using `filter()`, `exclude()`, or `order_by()`. `ForeignKey` fields or fields with `unique=True` imply the creation of an index. You can also use `Meta.index_together` or `Meta.indexes` to create indexes for multiple fields. [More about database indexes](https://docs.djangoproject.com/en/3.0/ref/models/options/#django.db.models.Options.indexes).
 
+- A **database index** is automatically created on the `ForeignKey` fields. You use `db_index=True` to create a database index for the created field. This will improve query performance when ordering QuerySets by this field.
+
+
 ### Creating Model Managers
 
 - `objects` is the default manager of every model that retrieves all objects in the database. However, you can also define custom managers for your models. There are **two ways to add or customize managers** for your models:
@@ -206,6 +218,71 @@ class Post(models.Model):
 - The first manager declared in a model becomes the default manager. You can use the `Meta` attribute `default_manager_name` to specify a different default manager. If no manager is defined in the model, Django automatically creates the `objects` default manager for it. If you declare any managers for your model but you want to keep the `objects` manager as well, you have to add it explicitly to your model.
 
 - The `get_queryset()` method of a manager returns the `QuerySet` that will be executed.
+
+### Custom Many-to-Many Relationship
+
+- When you need additional fields in a many-to-many relationship, create a custom model with a ForeignKey for each side of the relationship. Add a ManyToManyField in one of the related models and indicate to Django that your intermediary model should be used by including it in the through parameter.
+
+```py
+class Contact(models.Model):
+    user_from = models.ForeignKey('auth.User',
+                                  related_name='rel_from_set',
+                                  on_delete=models.CASCADE)
+    user_to = models.ForeignKey('auth.User',
+                                related_name='rel_to_set',
+                                on_delete=models.CASCADE)
+    created = models.DateTimeField(auto_now_add=True,
+                                   db_index=True)
+    class Meta:
+        ordering = ('-created',)
+    def __str__(self):
+        return f'{self.user_from} follows {self.user_to}'
+
+# On the User Model
+following = models.ManyToManyField('self',
+                                   through=Contact,
+                                   related_name='followers',
+                                   symmetrical=False)
+```
+
+### Activity Stream
+
+- An **activity stream** is a list of recent activities performed by a user or a group of users. For example, Facebook's News Feed is an activity stream. Sample actions can be *user X bookmarked image Y* or *user X is now following user Y*.
+
+- Django includes a `contenttypes` framework located at `django.contrib.contenttypes`. This application can track all models installed in your project and provides a generic interface to interact with your models.
+
+- The contenttypes application contains a ContentType model. Instances of this model represent the actual models of your application, and new instances of ContentType are automatically created when new models are installed in your project. The ContentType model has the following fields:
+
+  - `app_label`: This indicates the name of the application that the model belongs to. This is automatically taken from the app_label attribute of the model `Meta` options. For example, your `Image` model belongs to the `images` application.
+  - `model`: The name of the model class.
+  - `name`: This indicates the human-readable name of the model. This is automatically taken from the `verbose_name` attribute of the model `Meta` options.
+
+```py
+from django.db import models
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey
+class Action(models.Model):
+    user = models.ForeignKey('auth.User',
+                             related_name='actions',
+                             db_index=True,
+                             on_delete=models.CASCADE)
+    verb = models.CharField(max_length=255)
+    target_ct = models.ForeignKey(ContentType,
+                                  blank=True,
+                                  null=True,
+                                  related_name='target_obj',
+                                  on_delete=models.CASCADE)
+    target_id = models.PositiveIntegerField(null=True,
+                                            blank=True,
+                                            db_index=True)
+    target = GenericForeignKey('target_ct', 'target_id')
+    created = models.DateTimeField(auto_now_add=True,
+                                   db_index=True)
+    class Meta:
+        ordering = ('-created',)
+```
+
+- Django does not create any field in the database for `GenericForeignKey` fields. The only fields that are mapped to database fields are `target_ct` and `target_id`. Both fields have `blank=True` and `null=True` attributes, so that a target object is not required when saving `Action` objects.
 
 ## Databases and ORMs
 
@@ -368,6 +445,54 @@ similar_posts = Post.published.filter(tags__in=post_tags_ids)\
                                 .exclude(id=post.id)
 ```
 
+### Optimizing QuerySets that Involve Related Objects
+
+#### select_related
+
+- Django offers a QuerySet method called `select_related()` that allows you to retrieve related objects for one-to-many relationships. This translates to a single, more complex QuerySet, but you avoid additional queries when accessing the related objects. The `select_related` method is for `ForeignKey` and OneToOne fields. It works by performing a SQL `JOIN` and including the fields of the related object in the `SELECT` statement.
+
+- You use `user__profile` to join the `Profile` table in a single SQL query. If you call `select_related()` without passing any arguments to it, it will retrieve objects from all `ForeignKey` relationships. Always limit `select_related()` to the relationships that will be accessed afterward.
+
+```py
+actions = actions.select_related('user', 'user__profile')[:10]
+```
+
+#### prefetch_related
+
+- Django offers a different QuerySet method called `prefetch_related` that works for many-to-many and many-to-one relationships in addition to the relationships supported by `select_related()`. The `prefetch_related()` method performs a separate lookup for each relationship and joins the results using Python. This method also supports the prefetching of `GenericRelation` and `GenericForeignKey`.
+
+```py
+actions = actions.select_related('user', 'user__profile') \
+                 .prefetch_related('target')[:10]
+```
+
+### Using Signals for Denormalizing Counts
+
+- There are some cases when you may want to denormalize your data. Denormalization is making data redundant in such a way that it optimizes read performance. For example, you might be copying related data to an object to avoid expensive read queries to the database when retrieving the related data. You have to be careful about denormalization and only start using it when you really need it. The biggest issue you will find with denormalization is that it's difficult to keep your denormalized data updated.
+
+```py
+# This query is poorly optimized as it required computation
+# of 'total_likes' field.
+images_by_popularity = Image.objects.annotate(
+    total_likes=Count('users_like')).order_by('-total_likes')
+
+# Instead we can denormalize 'total_likes' count by creating additonal
+# field in the model
+class Image(models.Model):
+    # ...
+    total_likes = models.PositiveIntegerField(db_index=True,
+                                              default=0)
+
+# Updating count can be then performed using signals
+from django.db.models.signals import m2m_changed
+from django.dispatch import receiver
+from .models import Image
+@receiver(m2m_changed, sender=Image.users_like.through)
+def users_like_changed(sender, instance, **kwargs):
+    instance.total_likes = instance.users_like.count()
+    instance.save()
+```
+
 ## Admin Panel and Customization
 
 - `python manage.py createsuperuser` creates a user who can login to the admin site.
@@ -468,7 +593,89 @@ def detail(request, question_id):
     return render(request, 'polls/detail.html', {'question': question})
 ```
 
-### URLs
+### Generic Views
+
+- **Class-based** views are an alternative way to implement views as Python objects instead of functions. Since a view is a callable that takes a web request and returns a web response, you can also define your views as class methods. Django provides base view classes for this. All of them inherit from the View class, which handles HTTP method dispatching and other common functionalities.
+
+- Class-based views offer advantages over function-based views for some use cases. They have the following features:
+
+    - Organizing code related to HTTP methods, such as `GET`, `POST`, or `PUT`, in separate methods, instead of using conditional branching
+    - Using multiple inheritance to create reusable view classes (also known as *mixins*)
+
+- Class-based view is analogous to the previous `post_list` view. In the code below you are telling `ListView` to do the following things:
+
+    - Use a specific QuerySet instead of retrieving all objects. Instead of defining a `queryset` attribute, you could have specified `model = Post` and Django would have built the generic `Post.objects.all()` QuerySet for you.
+    - Use the context variable posts for the query results. The default variable is `object_list` if you don't specify any `context_object_name`.
+    - Paginate the result, displaying three objects per page.
+    - Use a custom template to render the page. If you don't set a default template, ListView will use blog/post_list.html.
+
+```py
+# views.py
+from django.views.generic import ListView
+
+class PostListView(ListView):
+    queryset = Post.published.all()
+    context_object_name = 'posts'
+    paginate_by = 3
+    template_name = 'blog/post/list.html'
+
+# urls.py
+urlpatterns = [
+    path('', views.PostListView.as_view(), name='post_list'),
+]
+
+# list.html
+{% include "pagination.html" with page=page_obj %}
+```
+
+### Generic Views (from Django tutorial)
+
+```py
+from django.http import HttpResponseRedirect
+from django.shortcuts import get_object_or_404, render
+from django.urls import reverse
+from django.views import generic
+
+from .models import Choice, Question
+
+
+class IndexView(generic.ListView):
+    template_name = 'polls/index.html'
+    context_object_name = 'latest_question_list'
+
+    def get_queryset(self):
+        # This 'overwrites' default 'get_queryset' method in Question class.
+        # It first take the normal output from `get_queryset` (Question.objects)
+        # and then it filters it with provided criteria.
+        """Return the last five published questions."""
+        return Question.objects.order_by('-pub_date')[:5]
+
+
+class DetailView(generic.DetailView):
+    model = Question
+    template_name = 'polls/detail.html'
+```
+
+- Above example is using two generic views: ```ListView``` and ```DetailView```. Respectively, those two views abstract the concepts of “display a list of objects” and “display a detail page for a particular type of object.”
+
+- Each generic view needs to know what model it will be acting upon. This is provided using the model attribute.
+
+- The DetailView generic view expects the primary key value captured from the URL to be called *pk* so changes in the `urlpatterns` are needed:
+
+```py
+urlpatterns = [
+    path('', views.IndexView.as_view(), name='index'),
+    path('<int:pk>/', views.DetailView.as_view(), name='detail'),
+    path('<int:pk>/results/', views.ResultsView.as_view(), name='results'),
+    path('<int:question_id>/vote/', views.vote, name='vote'),
+]
+```
+
+- By default, the `DetailView` generic view uses a template called `<app name>/<model name>_detail.html`. In this case, it would use the template *polls/question_detail.html*. The `template_name` attribute is used to tell Django to use a specific template name instead of the autogenerated default template name.
+
+- For `DetailView` the question variable is provided automatically – since we’re using a Django model (`Question`), Django is able to determine an appropriate name for the context variable. However, for `ListView`, the automatically generated context variable is `question_list`. To override this we provide the `context_object_name` attribute, specifying that we want to use `latest_question_list` instead.
+
+## URLs
 
 - You use angle brackets to capture the values from the URL. Any value specified in the URL pattern as `<parameter>` is captured as a string. You use path converters, such as `<int:year>`, to specifically match and return an integer. [All path converters in Django docs](https://docs.djangoproject.com/en/3.0/topics/http/urls/#path-converters).
 
@@ -518,7 +725,7 @@ class Post(models.Model):
 {% endfor %}
 ```
 
-### Templates
+## Templates
 
 - [Django docs on templates](https://docs.djangoproject.com/en/3.0/ref/templates/language/).
 
@@ -540,7 +747,7 @@ class Post(models.Model):
 
 - To store the result in a custom variable use the `as` argument followed by the variable name: `{% template_tag_function as variable_name %}`.
 
-#### Custom Template Tags
+### Custom Template Tags
 
 - [Custom template tags in Django](https://docs.djangoproject.com/en/3.0/howto/custom-template-tags/)
 
@@ -576,7 +783,7 @@ def total_posts():
 
 - **Inclusion tags** registration includes path to the template that will be renders: `@register.inclusion_tag('path/to/html_file.html')`. Inclusion tags have to return a dictionary of values instead of a simple value - it will be used as the context to render the specified template. The template tag can also allow to specify an argument (that can also be optioanl): {% show_latest_posts 3 %}.
 
-#### Filters
+### Filters
 
 - [Built-in template filters](https://docs.djangoproject.com/en/3.0/ref/templates/builtins/#built-in-filter-reference)
 
@@ -593,7 +800,7 @@ def total_posts():
   - `pluralize` displays a plural suffix for the given word
   - `join` works the same as the Python string `join()` method concatenating elements from iterable
 
-#### Custom Template Filters
+### Custom Template Filters
 
 - You register template filters in the same way as template tags:
 
@@ -603,7 +810,7 @@ def markdown_format(text):
     return mark_safe(markdown.markdown(text))
 ```
 
-#### Pagination
+### Pagination
 
 - Django has a built-in pagination class that allows you to manage paginated data easily:
 
@@ -660,132 +867,6 @@ def post_list(request):
 # `posts` object will be accessible in pagination snippet via `page` variable/argument
 {% include "pagination.html" with page=posts %}
 ```
-
-### Generic Views
-
-- **Class-based** views are an alternative way to implement views as Python objects instead of functions. Since a view is a callable that takes a web request and returns a web response, you can also define your views as class methods. Django provides base view classes for this. All of them inherit from the View class, which handles HTTP method dispatching and other common functionalities.
-
-- Class-based views offer advantages over function-based views for some use cases. They have the following features:
-
-    - Organizing code related to HTTP methods, such as `GET`, `POST`, or `PUT`, in separate methods, instead of using conditional branching
-    - Using multiple inheritance to create reusable view classes (also known as *mixins*)
-
-- Class-based view is analogous to the previous `post_list` view. In the code below you are telling `ListView` to do the following things:
-
-    - Use a specific QuerySet instead of retrieving all objects. Instead of defining a `queryset` attribute, you could have specified `model = Post` and Django would have built the generic `Post.objects.all()` QuerySet for you.
-    - Use the context variable posts for the query results. The default variable is `object_list` if you don't specify any `context_object_name`.
-    - Paginate the result, displaying three objects per page.
-    - Use a custom template to render the page. If you don't set a default template, ListView will use blog/post_list.html.
-
-```py
-# views.py
-from django.views.generic import ListView
-
-class PostListView(ListView):
-    queryset = Post.published.all()
-    context_object_name = 'posts'
-    paginate_by = 3
-    template_name = 'blog/post/list.html'
-
-# urls.py
-urlpatterns = [
-    path('', views.PostListView.as_view(), name='post_list'),
-]
-
-# list.html
-{% include "pagination.html" with page=page_obj %}
-```
-
-#### Generic Views (from Django tutorial)
-
-```py
-from django.http import HttpResponseRedirect
-from django.shortcuts import get_object_or_404, render
-from django.urls import reverse
-from django.views import generic
-
-from .models import Choice, Question
-
-
-class IndexView(generic.ListView):
-    template_name = 'polls/index.html'
-    context_object_name = 'latest_question_list'
-
-    def get_queryset(self):
-        # This 'overwrites' default 'get_queryset' method in Question class.
-        # It first take the normal output from `get_queryset` (Question.objects)
-        # and then it filters it with provided criteria.
-        """Return the last five published questions."""
-        return Question.objects.order_by('-pub_date')[:5]
-
-
-class DetailView(generic.DetailView):
-    model = Question
-    template_name = 'polls/detail.html'
-```
-
-- Above example is using two generic views: ```ListView``` and ```DetailView```. Respectively, those two views abstract the concepts of “display a list of objects” and “display a detail page for a particular type of object.”
-
-- Each generic view needs to know what model it will be acting upon. This is provided using the model attribute.
-
-- The DetailView generic view expects the primary key value captured from the URL to be called *pk* so changes in the `urlpatterns` are needed:
-
-```py
-urlpatterns = [
-    path('', views.IndexView.as_view(), name='index'),
-    path('<int:pk>/', views.DetailView.as_view(), name='detail'),
-    path('<int:pk>/results/', views.ResultsView.as_view(), name='results'),
-    path('<int:question_id>/vote/', views.vote, name='vote'),
-]
-```
-
-- By default, the `DetailView` generic view uses a template called `<app name>/<model name>_detail.html`. In this case, it would use the template *polls/question_detail.html*. The `template_name` attribute is used to tell Django to use a specific template name instead of the autogenerated default template name.
-
-- For `DetailView` the question variable is provided automatically – since we’re using a Django model (`Question`), Django is able to determine an appropriate name for the context variable. However, for `ListView`, the automatically generated context variable is `question_list`. To override this we provide the `context_object_name` attribute, specifying that we want to use `latest_question_list` instead.
-
-## Templates
-
-- The template system uses dot-lookup syntax to access variable attributes. In the example of `{{ question.question_text }}`, first Django does a dictionary lookup on the object question. Failing that, it tries an attribute lookup – which works, in this case. If attribute lookup had failed, it would’ve tried a list-index lookup.
-
-```html
-<h1>{{ question.question_text }}</h1>
-<ul>
-{% for choice in question.choice_set.all %}
-    <li>{{ choice.choice_text }}</li>
-{% endfor %}
-</ul>
-```
-
-- If the name argument is defined in the `path()` functions in the `polls.urls` module, reliance on a specific URL paths defined in url configurations can be removed by using the `{% url %}` template tag.
-
-```html
-<li><a href="{% url 'detail' question.id %}">{{ question.question_text }}</a></li>
-<!-- instead of: -->
-<li><a href="/polls/{{ question.id }}/">{{ question.question_text }}</a></li>
-```
-
-- To use the same view name in multiple apps namespace should be added to `URLconf`:
-
-```python
-# app/urls.py
-app_name = 'polls'
-```
-
-- Then in templates URLs should be called like this:
-
-```python
-<li><a href="{% url 'polls:detail' question.id %}">{{ question.question_text }}</a></li>
-```
-
-- `forloop.counter` indicates how many times the `for` tag has gone through its loop:
-
-```html
-{% for choice in question.choice_set.all %}
-    {{ forloop.counter }}
-{% endfor %}
-```
-
-- All POST forms that are targeted at internal URLs should use the `{% csrf_token %}` template tag.
 
 ## Testing
 
@@ -1058,7 +1139,7 @@ class CommentForm(forms.ModelForm):
 
 - `save()` method in `ModelForm` class creates an instance of the model that the form is linked to and saves it to the database. If you call it using `commit=False`, you create the model instance, but don't save it to the database yet. This comes in handy when you want to modify the object before finally saving it, which is what you will do next. The `save()` method is available for ModelForm but not for `Form` instances, since they are not linked to any model.
 
-## Authentication
+## Authentication and Authorization
 
 - Django comes with a built-in authentication framework that can handle user authentication, sessions, permissions, and user groups. The authentication system includes views for common user actions such as log in, log out, password change, and password reset.
 
@@ -1431,6 +1512,81 @@ results = Post.published.annotate(
 results = Post.published.annotate(
     similarity=TrigramSimilarity('title', query),
 ).filter(similarity__gt=0.1).order_by('-similarity')
+```
+
+## Redis
+
+- **Redis** is an advanced key/value database that allows you to save different types of data. It also has extremely fast I/O operations. Redis stores everything in memory, but the data can be persisted by dumping the dataset to disk every once in a while, or by adding each command to a log. Redis is very versatile compared to other key/value stores: it provides a set of powerful commands and supports diverse data structures, such as strings, hashes, lists, sets, ordered sets, and even bitmaps or HyperLogLogs.
+
+- Although SQL is best suited to schema-defined persistent data storage, Redis offers numerous advantages when dealing with rapidly changing data, volatile storage, or when a quick cache is needed.
+
+### Redis with Django
+
+- The convention for naming Redis keys is to use a colon sign as a separator for creating namespaced keys. By doing so, the key names are especially verbose and related keys share part of the same schema in their names.
+
+- Configuration in Django settings:
+
+```py
+REDIS_HOST = 'localhost'
+REDIS_PORT = 6379
+REDIS_DB = 0
+```
+
+- Setting up connection to Redis Sever:
+
+```py
+# In views.py
+import redis
+from django.conf import settings
+# connect to redis
+r = redis.Redis(host=settings.REDIS_HOST,
+                port=settings.REDIS_PORT,
+                db=settings.REDIS_DB)
+```
+
+### Storing a view count in Redis
+
+```py
+def image_detail(request, id, slug):
+    image = get_object_or_404(Image, id=id, slug=slug)
+    # increment total image views by 1
+    total_views = r.incr(f'image:{image.id}:views')
+    return render(request,
+                  'images/image/detail.html',
+                  {'section': 'images',
+                   'image': image,
+                   'total_views': total_views})
+```
+
+### Storing a ranking in Redis
+
+```py
+def image_detail(request, id, slug):
+    image = get_object_or_404(Image, id=id, slug=slug)
+    # increment total image views by 1
+    total_views = r.incr(f'image:{image.id}:views')
+    # increment image ranking by 1
+    r.zincrby('image_ranking', 1, image.id)
+    return render(request,
+                  'images/image/detail.html',
+                  {'section': 'images',
+                   'image': image,
+                   'total_views': total_views})
+
+@login_required
+def image_ranking(request):
+    # get image ranking dictionary
+    image_ranking = r.zrange('image_ranking', 0, -1,
+                             desc=True)[:10]
+    image_ranking_ids = [int(id) for id in image_ranking]
+    # get most viewed images
+    most_viewed = list(Image.objects.filter(
+                           id__in=image_ranking_ids))
+    most_viewed.sort(key=lambda x: image_ranking_ids.index(x.id))
+    return render(request,
+                  'images/image/ranking.html',
+                  {'section': 'images',
+                   'most_viewed': most_viewed})
 ```
 
 ## Django Rest Framework (DRF)

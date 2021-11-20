@@ -11,14 +11,15 @@
       - [HTTP/2 over QUIC (HTTP/3)](#http2-over-quic-http3)
       - [Multiplexing](#multiplexing)
       - [HTTP E-Tags](#http-e-tags)
-    - [OSI (Open Systems Interconnection) Model](#osi-open-systems-interconnection-model)
-    - [TCP vs UDP](#tcp-vs-udp)
-      - [TCP](#tcp)
-      - [UDP](#udp)
     - [Bi-directional Connection](#bi-directional-connection)
       - [WebSockets](#websockets)
       - [WebRTC](#webrtc)
       - [WebTransport](#webtransport)
+      - [gRPC](#grpc)
+    - [OSI (Open Systems Interconnection) Model](#osi-open-systems-interconnection-model)
+    - [TCP vs UDP](#tcp-vs-udp)
+      - [TCP](#tcp)
+      - [UDP](#udp)
 
 ## Networking
 
@@ -167,6 +168,57 @@
   - If E-Tags are not supported within given client by default the logic to handle E-Tags has to be coded and therefore the code is harder to write.
   - E-Tags can be used to track people. They can be made unique for a client and therefore identify the user session since E-Tags are managed by browser and they cannot be easily deleted. Even when session is closed when renewed it will be identified by the request made with previously saved E-Tag.
 
+### Bi-directional Connection
+
+- [Source](https://www.youtube.com/watch?v=2Nt-ZrNP22A)
+
+#### WebSockets
+
+- The **WebSocket API** (WebSockets) is an advanced technology that makes it possible to open a two-way interactive communication session between the user's browser and a server. With this API, you can send messages to a server and receive event-driven responses without having to poll the server for a reply.
+
+- It is a stateful connection since both client and server are aware of each other.
+
+- **WebSockets Handshake** is initialized with the HTTP GET request with **UPGRADE header**. If server respons with 101 switching protocols response then persisting websocket (ws:// or wss://) connection is established (requires HTTP 1.1 or higher).
+
+- **Use cases**:
+
+  - chatting
+  - live feed
+  - multiplayer gaming
+  - showing client progress/logging
+
+- Pros:
+
+  - full-duplex (no polling)
+  - HTTP compatible
+  - firewall friendly (standard)
+
+- Cons:
+
+  - proxying is tricky (especially if proxy is implemented at the application layer)
+  - layer 7 load balancing is challenging (due to the timeouts)
+  - stateful, difficult to scale horizontally
+
+- Alternatives: long polling, [EventSource](https://developer.mozilla.org/en-US/docs/Web/API/EventSource)
+
+- **Socket.IO** enables real-time, bidirectional and event-based communication. It is more advanced websockets implementation.
+
+#### WebRTC
+
+- **WebRTC** provides real-time communication capabilities to the application that works on top of an open standard. It supports video, voice, and generic data to be sent between peers, allowing developers to build powerful voice- and video-communication solutions. The technology is available on all modern browsers as well as on native clients for all major platforms.
+
+- The WebRTC standard covers, on a high level, two different technologies: **media capture devices** and **peer-to-peer connectivity**.
+
+#### WebTransport
+
+- **WebTransport** is a web API that uses the HTTP/3 protocol as a bidirectional transport. It's intended for two-way communications between a web client and an HTTP/3 server. It supports sending data both unreliably via its datagram APIs, and reliably via its streams APIs.
+
+#### gRPC
+
+- **gRPC** (gRPC Remote Procedure Calls) is an open source remote procedure call (RPC) system. It uses HTTP/2 for transport, Protocol Buffers as the interface description language, and provides features such as authentication, bidirectional streaming and flow control, blocking or nonblocking bindings, and cancellation and timeouts. It generates cross-platform client and server bindings for many languages. Most common usage scenarios include connecting services in a microservices style architecture, or connecting mobile device clients to backend services.
+
+- gRPC's complex use of HTTP/2 makes it impossible to implement a gRPC client in the browser, instead requiring a proxy.
+
 ### OSI (Open Systems Interconnection) Model
 
 [Source](https://www.youtube.com/watch?v=7IS7gigunyI)
@@ -216,6 +268,8 @@
 
 - TCP, as a packet based protocol, can be used for multiplexed connections if the higher level application protocol (e.g. HTTP) allows sending of multiple messages.
 
+- **TCP Slow Start** is a congestion control related feature. It is used to *test* the network between host and client to establish optimal window size (minimal number of lost packets, errors, etc.).
+
 #### UDP
 
 - **User Datagram Protocol (UDP)**
@@ -233,48 +287,3 @@
   - **no congestion control** - UDP does not care about network capacity
   - **no ordered packets**
   - **security** - since there is no connection server does not know who is sending the data; this is why UDP is often blocked in the firewalls.
-
-### Bi-directional Connection
-
-- [Source](https://www.youtube.com/watch?v=2Nt-ZrNP22A)
-
-#### WebSockets
-
-- The **WebSocket API** (WebSockets) is an advanced technology that makes it possible to open a two-way interactive communication session between the user's browser and a server. With this API, you can send messages to a server and receive event-driven responses without having to poll the server for a reply.
-
-- It is a stateful connection since both client and server are aware of each other.
-
-- **WebSockets Handshake** is initialized with the HTTP GET request with **UPGRADE header**. If server respons with 101 switching protocols response then persisting websocket (ws:// or wss://) connection is established (requires HTTP 1.1 or higher).
-
-- **Use cases**:
-
-  - chatting
-  - live feed
-  - multiplayer gaming
-  - showing client progress/logging
-
-- Pros:
-
-  - full-duplex (no polling)
-  - HTTP compatible
-  - firewall friendly (standard)
-
-- Cons:
-
-  - proxying is tricky (especially if proxy is implemented at the application layer)
-  - layer 7 load balancing is challenging (due to the timeouts)
-  - stateful, difficult to scale horizontally
-
-- Alternatives: long polling, [EventSource](https://developer.mozilla.org/en-US/docs/Web/API/EventSource)
-
-- **Socket.IO** enables real-time, bidirectional and event-based communication. It is more advanced websockets implementation.
-
-#### WebRTC
-
-- **WebRTC** provides real-time communication capabilities to the application that works on top of an open standard. It supports video, voice, and generic data to be sent between peers, allowing developers to build powerful voice- and video-communication solutions. The technology is available on all modern browsers as well as on native clients for all major platforms.
-
-- The WebRTC standard covers, on a high level, two different technologies: **media capture devices** and **peer-to-peer connectivity**.
-
-#### WebTransport
-
-- **WebTransport** is a web API that uses the HTTP/3 protocol as a bidirectional transport. It's intended for two-way communications between a web client and an HTTP/3 server. It supports sending data both unreliably via its datagram APIs, and reliably via its streams APIs.

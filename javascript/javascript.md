@@ -16,6 +16,9 @@
     - [Object Methods](#object-methods)
     - ["this" Keyword](#this-keyword)
     - [Constructor, operator "new"](#constructor-operator-new)
+    - [Optional Chaining](#optional-chaining)
+    - [Symbol](#symbol)
+    - [Objects to Primitive Conversion](#objects-to-primitive-conversion)
   - [Testing](#testing)
   - [Debugging](#debugging)
   - [DOM Manipulation](#dom-manipulation)
@@ -35,7 +38,6 @@
 ## Sources
 
 - [CS50 Harvard Course](https://cs50.harvard.edu/web/2020/weeks/5/)
-
 
 ## Variables and Constants
 
@@ -379,6 +381,110 @@ alert(user.isAdmin); // false
 
   - If return is called with an object, then the object is returned instead of `this`.
   - If return is called with a primitive, it’s ignored.
+
+```js
+function BigUser() {
+
+  this.name = "John";
+
+  return { name: "Godzilla" };  // <-- returns this object
+}
+
+alert( new BigUser().name );  // Godzilla, got that object
+
+function SmallUser() {
+
+  this.name = "John";
+
+  return; // <-- returns this
+}
+```
+
+### Optional Chaining
+
+- The optional chaining `?.` is a safe way to access nested object properties, even if an intermediate property doesn’t exist.
+
+```js
+let user = {}; // a user without "address" property
+alert(user.address.street); // Error!
+
+// AND
+
+let html = document.querySelector('.elem').innerHTML; // error if it's null
+```
+
+- In other words, value?.prop:
+
+  - works as value.prop, if value exists,
+  - otherwise (when value is undefined/null) it returns undefined.
+
+- Please note: the `?.` syntax **makes optional the value before it, but not any further**. E.g. in `user?.address.street.name` the `?.` allows user to safely be null/undefined (and returns undefined in that case), but that’s only for user. Further properties are accessed in a regular way. If we want some of them to be optional, then we’ll need to replace more `.` with `?.`.
+
+- We should use `?.` only where it’s ok that something doesn’t exist. For example, if according to our coding logic user object must exist, but address is optional, then we should write `user.address?.street`, but not `user?.address?.street`.
+
+- There are other variants of optional chaining. For example, `?.()` is used to call a function that may not exist. The `?.[]` syntax also works, if we’d like to use brackets `[]` to access properties instead of dot `.`.
+
+- Also we can use `?.` with delete to delete an object or attribute if it exists: `delete user?.name;`.
+
+### Symbol
+
+- `Symbol` is a primitive type for unique identifiers.
+
+- Symbols are created with `Symbol()` call with an optional description (name).
+
+- Symbols are always different values, even if they have the same name. If we want same-named symbols to be equal, then we should use the global registry: `Symbol.for(key)` returns (creates if needed) a global symbol with key as the name. Multiple calls of `Symbol.for` with the same key return exactly the same symbol.
+
+- Symbols have two main use cases:
+
+  - *Hidden* object properties. If we want to add a property into an object that “belongs” to another script or a library, we can create a symbol and use it as a property key. A symbolic property does not appear in `for..in`, so it won’t be accidentally processed together with other properties. Also it won’t be accessed directly, because another script does not have our symbol. So the property will be protected from accidental use or overwrite. So we can “covertly” hide something into objects that we need, but others should not see, using symbolic properties.
+  
+  - There are many system symbols used by JavaScript which are accessible as `Symbol.*`. We can use them to alter some built-in behaviors. E.g. `Symbol.iterator` can be used for iterables and `Symbol.toPrimitive` to setup object-to-primitive conversion.
+
+### Objects to Primitive Conversion
+
+- The object-to-primitive conversion is called automatically by many built-in functions and operators that expect a primitive as a value.
+
+- There are 3 types (hints) of it:
+
+  - "string" (for alert and other operations that need a string)
+  - "number" (for maths)
+  - "default" (few operators)
+
+- To do the conversion, JavaScript tries to find and call three object methods:
+
+  - Call obj[Symbol.toPrimitive](hint) – the method with the symbolic key `Symbol.toPrimitive` (system symbol), if such method exists,
+  - Otherwise if hint is "string" try `obj.toString()` and `obj.valueOf()`, whatever exists.
+  - Otherwise if hint is "number" or "default" try `obj.valueOf()` and `obj.toString()`, whatever exists.
+
+```js
+let user = {
+  name: "John",
+  money: 1000,
+
+  [Symbol.toPrimitive](hint) {
+    alert(`hint: ${hint}`);
+    return hint == "string" ? `{name: "${this.name}"}` : this.money;
+  }
+};
+
+// toString and valueOf methods for object conversion
+
+let user = {
+  name: "John",
+  money: 1000,
+
+  // for hint="string"
+  toString() {
+    return `{name: "${this.name}"}`;
+  },
+
+  // for hint="number" or "default"
+  valueOf() {
+    return this.money;
+  }
+
+};
+```
 
 ## Testing
 
