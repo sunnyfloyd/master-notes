@@ -24,6 +24,10 @@
     - [Numbers](#numbers)
     - [Strings](#strings)
     - [Arrays](#arrays)
+      - [Array Methods](#array-methods)
+    - [Iterables](#iterables)
+    - [Map](#map)
+    - [Set](#set)
   - [Testing](#testing)
   - [Debugging](#debugging)
   - [DOM Manipulation](#dom-manipulation)
@@ -577,6 +581,115 @@ let arr = new Array(item1, item2...);
   - `for (let i in arr)` – never use.
 
 - To compare arrays, don’t use the `==` operator (as well as `>`, `<` and others), as they have no special treatment for arrays. They handle them as any objects, and it’s not what we usually want. Instead you can use `for..of` loop to compare arrays item-by-item.
+
+#### Array Methods
+
+- To add/remove elements:
+  - `push(...items)` – adds items to the end,
+  - ``pop()` – extracts an item from the end,
+  - shift()` – extracts an item from the beginning,
+  - `unshift(...items)` – adds items to the beginning.
+  - `splice(pos, deleteCount, ...items)` – at index pos deletes deleteCount elements and inserts items.
+  - `slice(start, end)` – creates a new array, copies elements from index start till end (not inclusive) into it.
+  - `concat(...items)` – returns a new array: copies all members of the current one and adds items to it. If - any of items is an array, then its elements are taken.
+
+- To search among elements:
+  - `indexOf`/`lastIndexOf(item, pos)` – look for item starting from position `pos`, return the index or `-1` if not found.
+  - `includes(value)` – returns true if the array has value, otherwise false.
+  - `find/filter(func)` – filter elements through the function, return first/all values that make it return true.
+  - `findIndex` is like `find`, but returns the index instead of a value.
+
+- To iterate over elements:
+  - `forEach(func)` – calls `func` for every element, does not return anything.
+
+- To transform the array:
+  - `map(func)` – creates a new array from results of calling func for every element.
+  - `sort(func)` – sorts the array in-place, then returns it.
+  - `reverse()` – reverses the array in-place, then returns it.
+  - `split`/`join` – convert a string to array and back.
+  - `reduce`/`reduceRight(func, initial)` – calculate a single value over the array by calling `func` for each - element and passing an intermediate result between the calls.
+
+- Additionally:
+  - `Array.isArray(arr)` checks `arr` for being an array.
+
+- Note that methods `sort`, `reverse` and `splice` modify the array itself.
+
+- There are few others array methods:
+
+  - `arr.some(fn)`/`arr.every(fn)` check the array. The function `fn` is called on each element of the array similar to `map`. If any/all results are true, returns true, otherwise false. These methods behave sort of like `||` and `&&` operators: if `fn` returns a truthy value, `arr.some()` immediately returns true and stops iterating over the rest of items; if `fn` returns a falsy value, `arr.every()` immediately returns false and stops iterating over the rest of items as well.
+
+  - `arr.fill(value, start, end)` – fills the array with repeating value from index start to end.
+
+  - `arr.copyWithin(target, start, end)` – copies its elements from position start till position end into itself, at position target (overwrites existing).
+
+  - `arr.flat(depth)`/`arr.flatMap(fn)` create a new flat array from a multidimensional array.
+
+### Iterables
+
+- Objects that can be used in `for..of` are called **iterable**.
+
+- Technically, iterables must implement the method named Symbol.iterator.
+    - The result of `obj[Symbol.iterator]()` is called an iterator. It handles further iteration process.
+    - An iterator must have the method named `next()` that returns an object `{done: Boolean, value: any`, here `done:true` denotes the end of the iteration process, otherwise the value is the next value.
+
+- The `Symbol.iterator` method is called automatically by `for..of`, but we also can do it directly.
+
+- Built-in iterables like strings or arrays, also implement `Symbol.iterator`.
+
+- String iterator knows about surrogate pairs.
+
+- Objects that have indexed properties and length are called array-like. Such objects may also have other properties and methods, but lack the built-in methods of arrays.
+
+- If we look inside the specification – we’ll see that most built-in methods assume that they work with iterables or array-likes instead of “real” arrays, because that’s more abstract.
+
+- `Array.from(obj[, mapFn, thisArg])` makes a real Array from an iterable or array-like obj, and we can then use array methods on it. The optional arguments `mapFn` and `thisArg` allow us to apply a function to each item.
+
+### Map
+
+- `Map` – is a collection of keyed values.
+
+- Methods and properties:
+
+  - `new Map([iterable])` – creates the map, with optional iterable (e.g. array) of `[key,value]` pairs for initialization.
+  - `map.set(key, value)` – stores the value by the key, returns the map itself.
+  - `map.get(key)` – returns the value by the key, undefined if key doesn’t exist in map.
+  - `map.has(key)` – returns true if the key exists, false otherwise.
+  - `map.delete(key)` – removes the value by the key, returns true if key existed at the moment of the call, otherwise false.
+  - `map.clear()` – removes everything from the map.
+  - `map.size` – returns the current element count.
+
+- The differences from a regular Object:
+
+  - Any keys, objects can be keys.
+  - Additional convenient methods, the size property.
+
+- For looping over a map, there are 3 methods:
+
+  - `map.keys()` – returns an iterable for keys,
+  - `map.values()` – returns an iterable for values,
+  - `map.entries()` – returns an iterable for entries [key, value], it’s used by default in `for..of`,
+  - besides that, `Map` has a built-in `forEach` method, similar to Array.
+
+- Create `Map` from a plain object with `new Map(Object.entries(obj))`.
+
+- To transform `Map` into an object `Object.fromEntries(map.entries())` or just `Object.fromEntries(map)`.
+
+- Iteration over `Map` and `Set` is always in the insertion order, so we can’t say that these collections are unordered, but we can’t reorder elements or directly get an element by its number.
+
+### Set
+
+- `Set` – is a collection of unique values.
+
+- Methods and properties:
+
+  - `new Set([iterable])` – creates the set, with optional iterable (e.g. array) of values for initialization.
+  - `set.add(value)` – adds a value (does nothing if value exists), returns the set itself.
+  - `set.delete(value)` – removes the value, returns true if value existed at the moment of the call, otherwise false.
+  - `set.has(value)` – returns true if the value exists in the set, otherwise false.
+  - `set.clear()` – removes everything from the set.
+  - `set.size` – is the elements count.
+
+- Iterations and iteration-related methods for sets are pretty much the same as for maps. In case of keys and values those are duplicated for sets to ensure compatibility with maps.
 
 ## Testing
 
