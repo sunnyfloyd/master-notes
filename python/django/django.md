@@ -30,6 +30,7 @@
     - [Filters](#filters)
     - [Custom Template Filters](#custom-template-filters)
     - [Pagination](#pagination)
+    - [Context Processors](#context-processors)
   - [Testing](#testing)
     - [Client Testing](#client-testing)
     - [Testing Frontend with Selenium](#testing-frontend-with-selenium)
@@ -64,6 +65,10 @@
     - [Redis with Django](#redis-with-django)
     - [Storing a view count in Redis](#storing-a-view-count-in-redis)
     - [Storing a ranking in Redis](#storing-a-ranking-in-redis)
+  - [Celery](#celery)
+    - [Adding Celery to the Project](#adding-celery-to-the-project)
+    - [Asynchronous Task Example](#asynchronous-task-example)
+    - [Monitoring Celery](#monitoring-celery)
   - [Django Rest Framework (DRF)](#django-rest-framework-drf)
   - [Django App Deployment](#django-app-deployment)
     - [Heroku](#heroku)
@@ -868,6 +873,36 @@ def post_list(request):
 {% include "pagination.html" with page=posts %}
 ```
 
+### Context Processors
+
+- A **context processor** is a Python function that takes the request object as an argument and returns a dictionary that gets added to the request context. Context processors come in handy when you need to make something available globally to all templates.
+
+- Context processors are executed in all the requests that use `RequestContext`. You might want to create a custom template tag instead of a context processor if your functionality is not needed in all templates, especially if it involves database queries.
+
+- Simple context processor example:
+
+```py
+# settings.py
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                # ...
+                'cart.context_processors.cart',
+            ],
+        },
+    },
+]
+
+# context_processors.py
+from .cart import Cart
+def cart(request):
+    return {'cart': Cart(request)}
+```
+
 ## Testing
 
 - It is a good idea to follow a discipline called *test-driven development*. It means that tests are created before any actual code is written. This might seem counter-intuitive, but in fact it’s similar to what most people will often do anyway: they describe a problem, then create some code to solve it. Test-driven development formalizes the problem in a Python test case.
@@ -1268,6 +1303,12 @@ class EmailAuthBackend(object):
 
 ## Session Management
 
+- [Django Sessions](https://docs.djangoproject.com/en/3.2/topics/http/sessions/)
+
+- Example of sessions usage is available in Chapter 7 of Django by Example 3. [Shopping cart implementation using Django Sessions](https://github.com/PacktPublishing/Django-3-by-Example/blob/master/Chapter07/myshop/cart/cart.py)
+
+- Django provides a **session framework** that supports anonymous and user sessions. The session framework allows you to store arbitrary data for each visitor. Session data is stored on the server side, and cookies contain the session ID unless you use the cookie-based session engine. The session middleware manages the sending and receiving of cookies. The default session engine stores session data in the database, but you can choose other session engines.
+
 - Data can be stored in client session (first `python manage.py migrate` needs to be run to create all of the default tables inside a Django database):
 
 ```python
@@ -1275,6 +1316,16 @@ def add(request):
     if 'tasks' not in request.session:
         request.session['tasks'] += [task]
 ```
+
+- When users log in to the site, their anonymous session is lost and a new session is created for authenticated users. If you store items in an anonymous session that you need to keep after the user logs in, you will have to copy the old session data into the new session. You can do this by retrieving the session data before you log in the user using the login() function of the Django authentication system and storing it in the session after that.
+
+- Django offers the following options for storing session data. For better performance use a cache-based session engine. Django supports **Memcached** out of the box and you can find third-party cache backends for Redis and other cache systems.:
+
+    - **Database sessions**: Session data is stored in the database. This is the default session engine.
+    - **File-based sessions**: Session data is stored in the filesystem.
+    - **Cached sessions**: Session data is stored in a cache backend. You can specify cache backends using the CACHES setting. Storing session data in a cache system provides the best performance.
+    - **Cached database sessions**: Session data is stored in a write-through cache and database. Reads only use the database if the data is not already in the cache.
+    - **Cookie-based sessions**: Session data is stored in the cookies that are sent to the browser.
 
 ## Message Framework
 
@@ -1588,6 +1639,77 @@ def image_ranking(request):
                   {'section': 'images',
                    'most_viewed': most_viewed})
 ```
+
+## Celery
+
+- **Celery** is a distributed task queue that can process vast amounts of messages. Using Celery, not only can you create asynchronous tasks easily and let them be executed by workers as soon as possible, but you can also schedule them to run at a specific time.
+
+- There are several options for a message broker for Celery, including key/value stores such as Redis, or an actual message system such as **RabbitMQ**. RabbitMQ is the recommended message worker for Celery. RabbitMQ is lightweight, it supports multiple messaging protocols, and it can be used when scalability and high availability are required.
+
+### Adding Celery to the Project
+
+- You have to provide a configuration for the Celery instance. Create a new file next to the `settings.py` file of myshop and name it `celery.py`. This file will contain the Celery configuration for your project. Add the following code to it:
+
+```py
+import os
+from celery import Celery
+# set the default Django settings module for the 'celery' program.
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'myshop.settings')
+app = Celery('myshop')
+app.config_from_object('django.conf:settings', namespace='CELERY')
+app.autodiscover_tasks()
+```
+
+- This code does the following:
+
+
+    - You set the `DJANGO_SETTINGS_MODULE` variable for the Celery command-line program.
+    - You create an instance of the application with `app = Celery('myshop')`.
+    - You load any custom configuration from your project settings using the `config_from_object()` method. The namespace attribute specifies the prefix that Celery-related settings will have in your `settings.py` file. By setting the `CELERY` namespace, all Celery settings need to include the `CELERY_` prefix in their name (for example, `CELERY_BROKER_URL`).
+    - Finally, you tell Celery to auto-discover asynchronous tasks for your applications. Celery will look for a `tasks.py` file in each application directory of applications added to INSTALLED_APPS in order to load asynchronous tasks defined in it.
+
+- You need to import the celery module in the `__init__.py` file of your project to make sure it is loaded when Django starts. Edit the `myshop/__init__.py` file and add the following code to it:
+
+```py
+import celery
+from .celery import app as celery_app
+```
+
+- The `CELERY_ALWAYS_EAGER` setting allows you to execute tasks locally in a synchronous way, instead of sending them to the queue. This is useful for running unit tests or executing the application in your local environment without running Celery.
+
+### Asynchronous Task Example
+
+- Create a new file inside the orders application and name it `tasks.py`. This is the place where Celery will look for asynchronous tasks. Add the following code to it:
+
+```py
+from celery import task
+from django.core.mail import send_mail
+from .models import Order
+@task
+def order_created(order_id):
+    """
+    Task to send an e-mail notification when an order is
+    successfully created.
+    """
+    order = Order.objects.get(id=order_id)
+    subject = f'Order nr. {order.id}'
+    message = f'Dear {order.first_name},\n\n' \
+              f'You have successfully placed an order.' \
+              f'Your order ID is {order.id}.'
+    mail_sent = send_mail(subject,
+                          message,
+                          'admin@myshop.com',
+                          [order.email])
+    return mail_sent
+```
+
+- In the `view.py` you should add `order_created.delay(order.id)`- You call the `delay()` method of the task to execute it asynchronously.
+
+- Use `celery -A myshop worker -l info` in a shell to see logs from Celery workers.
+
+### Monitoring Celery
+
+- You might want to monitor the asynchronous tasks that are executed. **Flower** is a web-based tool for monitoring Celery.
 
 ## Django Rest Framework (DRF)
 

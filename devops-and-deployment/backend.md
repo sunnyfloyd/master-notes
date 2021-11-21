@@ -230,7 +230,12 @@
   - application layer to physical layer called **encapsulation**
   - physical layer to application layer called **decapsulation**.
 
-- **Protocol Data Unit** (PDU) is a data that is being prepared by 3 layers: application (prepares application flows), presentation (f.e. encryption in HTTPS), session (establishes session).
+- **Protocol Data Units** (PDU) represent a data prepared by specific layer/layers in OSI model.
+  
+  - Data - application layer (prepares application flows), presentation layer (f.e. encryption in HTTPS, session layer (establishes session)
+  - Segment - transport layer
+  - Packet - network layer
+  - Frame - data link layer
 
 - **Transport** layer create segments adding port (source and destination) to each segment to identify to what application given data is addressed (in most cases done by TCP protocol).
 
