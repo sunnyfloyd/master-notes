@@ -19,6 +19,8 @@
     - [Optional Chaining](#optional-chaining)
     - [Symbol](#symbol)
     - [Objects to Primitive Conversion](#objects-to-primitive-conversion)
+    - [Object.keys, Object.values, Object.entries](#objectkeys-objectvalues-objectentries)
+    - [Destructuring Assignments](#destructuring-assignments)
   - [Data Types](#data-types)
     - [Methods of Primitives](#methods-of-primitives)
     - [Numbers](#numbers)
@@ -28,6 +30,9 @@
     - [Iterables](#iterables)
     - [Map](#map)
     - [Set](#set)
+    - [WeakMap and WeakSet](#weakmap-and-weakset)
+    - [Date and Time](#date-and-time)
+    - [JSON Methods](#json-methods)
   - [Testing](#testing)
   - [Debugging](#debugging)
   - [DOM Manipulation](#dom-manipulation)
@@ -495,6 +500,64 @@ let user = {
 };
 ```
 
+### Object.keys, Object.values, Object.entries
+
+- Plain objects support similar methods as the ones for `Map`, `Set`, `Array` (e.g. `keys()`, `values()`, `entries()`), but the syntax is a bit different.
+
+- For plain objects, the following methods are available:
+
+  - `Object.keys(obj)` – returns an array of keys.
+  - `Object.values(obj)` – returns an array of values.
+  - `Object.entries(obj)` – returns an array of `[key, value]` pairs.
+
+- Additionally, object methods return Array instead of an iterable.
+
+### Destructuring Assignments
+
+- **Destructuring assignment** allows for instantly mapping an object or array onto many variables.
+
+- The full object syntax:
+
+```js
+let {prop : varName = default, ...rest} = object
+```
+
+- This means that property prop should go into the variable `varName` and, if no such property exists, then the default value should be used.
+
+- Object properties that have no mapping are copied to the `rest` object.
+
+- The full array syntax:
+
+```js
+let [item1 = default, item2, ...rest] = array
+```
+
+- The first item goes to `item1`; the second goes into `item2`, all the rest makes the array `rest`.
+
+- It’s possible to extract data from nested arrays/objects, for that the left side must have the same structure as the right one.
+
+- Destructuring can be used in function declaration:
+
+```js
+let options = {
+  title: "My menu",
+  items: ["Item1", "Item2"]
+};
+
+function showMenu({
+  title = "Untitled",
+  width: w = 100,  // width goes to w
+  height: h = 200, // height goes to h
+  items: [item1, item2] // items first element goes to item1, second to item2
+}) {
+  alert( `${title} ${w} ${h}` ); // My Menu 100 200
+  alert( item1 ); // Item1
+  alert( item2 ); // Item2
+}
+
+showMenu(options);
+```
+
 ## Data Types
 
 ### Methods of Primitives
@@ -690,6 +753,50 @@ let arr = new Array(item1, item2...);
   - `set.size` – is the elements count.
 
 - Iterations and iteration-related methods for sets are pretty much the same as for maps. In case of keys and values those are duplicated for sets to ensure compatibility with maps.
+
+### WeakMap and WeakSet
+
+- `WeakMap` is `Map`-like collection that allows only objects as keys and removes them together with associated value once they become inaccessible by other means.
+
+- `WeakSet` is `Set`-like collection that stores only objects and removes them once they become inaccessible by other means.
+
+- Their main advantages are that they have weak reference to objects, so they can easily be removed by garbage collector.
+
+- That comes at the cost of not having support for `clear`, `size`, `keys`, `values`…
+
+- `WeakMap` and `WeakSet` are used as “secondary” data structures in addition to the “primary” object storage. Once the object is removed from the primary storage, if it is only found as the key of `WeakMap` or in a `WeakSet`, it will be cleaned up automatically.
+
+### Date and Time
+
+- Date and time in JavaScript are represented with the `Date` object. We can’t create “only date” or “only time”: `Date` objects always carry both.
+
+- Months are counted from zero (yes, January is a zero month).
+
+- Days of week in `getDay()` are also counted from zero (that’s Sunday).
+
+- `Date` auto-corrects itself when out-of-range components are set. Good for adding/subtracting days/months/hours.
+
+- Dates can be subtracted, giving their difference in milliseconds. That’s because a `Date` becomes the timestamp when converted to a number.
+
+- Use `Date.now()` to get the current timestamp fast.
+
+- The method Date.parse(str) can read a date from a string. The string format should be: `YYYY-MM-DDTHH:mm:ss.sssZ`.
+
+- Note that unlike many other systems, timestamps in JavaScript are in milliseconds, not in seconds.
+
+- Sometimes we need more precise time measurements. JavaScript itself does not have a way to measure time in microseconds (1 millionth of a second), but most environments provide it. For instance, browser has `performance.now()` that gives the number of milliseconds from the start of page loading with microsecond precision (3 digits after the point).
+
+### JSON Methods
+
+- JSON is a data format that has its own independent standard and libraries for most programming languages.
+
+- JSON supports plain objects, arrays, strings, numbers, booleans, and `null`.
+
+- JavaScript provides methods `JSON.stringify` to serialize into JSON and `JSON.parse` to read from JSON.
+
+- Both methods support transformer functions for smart reading/writing.
+
+- If an object has `toJSON`, then it is called by `JSON.stringify`.
 
 ## Testing
 
