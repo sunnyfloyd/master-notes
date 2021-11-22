@@ -14,6 +14,8 @@
     - [Adapters](#adapters)
     - [Decorator](#decorator)
     - [Bridge](#bridge)
+    - [Proxy](#proxy)
+    - [Facade](#facade)
 
 ## Sources
 
@@ -175,3 +177,19 @@ class Adapter(Target):
 - Use the pattern when you need to extend a class in several orthogonal (independent) dimensions.
 
 - Use the Bridge if you need to be able to switch implementations at runtime.
+
+#### Proxy
+
+- **Proxy** is a structural design pattern that lets you provide a substitute or placeholder for another object. A proxy controls access to the original object, allowing you to perform something either before or after the request gets through to the original object.
+
+- Adapter provides a different interface to the wrapped object, Proxy provides it with the same interface, and Decorator provides it with an enhanced interface.
+
+- Facade is similar to Proxy in that both buffer a complex entity and initialize it on its own. Unlike Facade, Proxy has the same interface as its service object, which makes them interchangeable.
+
+- Decorator and Proxy have similar structures, but very different intents. Both patterns are built on the composition principle, where one object is supposed to delegate some of the work to another. The difference is that a Proxy usually manages the life cycle of its service object on its own, whereas the composition of Decorators is always controlled by the client.
+
+#### Facade
+
+- **Facade** is a structural design pattern that provides a simplified interface to a library, a framework, or any other complex set of classes.
+
+- Use the Facade pattern when you need to have a limited but straightforward interface to a complex subsystem.
