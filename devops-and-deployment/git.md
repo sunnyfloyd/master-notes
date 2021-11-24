@@ -14,6 +14,7 @@
   - [Merging](#merging)
   - [Tags](#tags)
   - [Remote Repos](#remote-repos)
+  - [Useful Info](#useful-info)
   - [GitHub Actions](#github-actions)
 
 ## GitHub Usage
@@ -199,10 +200,22 @@ git push --set-upstream origin main
   - cloning a repo: ```git clone git@github.com:sunnyfloyd/python-learning-points-and-improvements.git``` OR add remote repo with `git remote add name-of-repo https://github.com/me50/sunnyfloyd.git OR userna5@desination:/home/userna5/production.git`;
   - checking whether remote repo is already configured: ```git remote -v```;
   - configuring remote repo: ```git remote add <remote_stream_name> https://github.com/ORIGINAL_OWNER/ORIGINAL_REPOSITORY.git```;
-  - OPTIONAL (if assigning local git repo to a remote one instead of cloning): `git push --set-upstream <remote_stream_name> <branch name (master)>`. This might also need configuring on the branch level as well: `git branch --set-upstream-to=<remote_upstream>/<remote_branch> <local_branch>`;
+  - OPTIONAL (if assigning local git repo to a remote one instead of cloning): `git push --set-upstream <remote_stream_name> <branch name (master)>`. This might also need configuring on the branch level as well: `git branch --set-upstream-to=<remote_upstream>/<remote_branch> <local_branch>`; Alternatively `git push origin master` can be used everytime a push is made or `git push -u origin master` to set upstream easily;
   - fetching (retrieving latest meta-data info from the online repo) a repo: ```git fetch```;
   - pulling (combination of ```fetch``` and ```merge``` since it actually brings copy of eventual changes from the remote repo): ```git pull```;
   - pushing: ```git push```.
+
+## Useful Info
+
+- Usual workflow for working with remote repos: `git pull` -> `git checkout -b branch_name` -> make required changes -> `git add files` -> `git commit -m "commit message"` -> `git push` -> create a pull request on the remote repo -> merge pull request/make required changes on the branch and repeat previous steps
+
+- If working on some branch for a long time it is useful to run `git diff master` to check out whether there were any changes on the master branch and if so, it is a good idea to merge current branch with new changes on master branch using `git merge master`.
+
+- To unstage all of the files use `git reset` or to unstage a specific file use `git reset file_name`.
+
+- To unstage changes to the last commit `git reset HEAD~1` or to a specifc one `git reset commit_hash`.
+
+- To remove changes to the given commit use `git reset --hard commit_hash`.
 
 ## GitHub Actions
 
