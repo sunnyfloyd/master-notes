@@ -21,6 +21,8 @@
       - [prefetch_related](#prefetch_related)
     - [Using Signals for Denormalizing Counts](#using-signals-for-denormalizing-counts)
   - [Admin Panel and Customization](#admin-panel-and-customization)
+    - [Adding Custom Actions to the Administration Site](#adding-custom-actions-to-the-administration-site)
+    - [Extending the Administration Site with Custom Views](#extending-the-administration-site-with-custom-views)
   - [Views](#views)
     - [Generic Views](#generic-views)
     - [Generic Views (from Django tutorial)](#generic-views-from-django-tutorial)
@@ -68,7 +70,9 @@
   - [Celery](#celery)
     - [Adding Celery to the Project](#adding-celery-to-the-project)
     - [Asynchronous Task Example](#asynchronous-task-example)
-    - [Monitoring Celery](#monitoring-celery)
+    - [Monitoring Celery with Flower](#monitoring-celery-with-flower)
+    - [Braintree](#braintree)
+    - [Outputting PDF](#outputting-pdf)
   - [Django Rest Framework (DRF)](#django-rest-framework-drf)
   - [Django App Deployment](#django-app-deployment)
     - [Heroku](#heroku)
@@ -529,6 +533,62 @@ class PostAdmin(admin.ModelAdmin):
 ```
 
 - Above workflow applies to all the changes in admin options for a model: create a model admin class -> pass it as the second argument to `admin.site.register()`.
+
+### Adding Custom Actions to the Administration Site
+
+- You can create a custom action by writing a regular function that receives the following parameters:
+
+  - The current `ModelAdmin` being displayed
+  - The current request object as an `HttpRequest` instance
+  - A `QuerySet` for the objects selected by the user
+
+```py
+import csv
+import datetime
+from django.http import HttpResponse
+def export_to_csv(modeladmin, request, queryset):
+    opts = modeladmin.model._meta
+    content_disposition = 'attachment; filename={opts.verbose_name}.csv'
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = content_disposition
+    writer = csv.writer(response)
+    fields = [field for field in opts.get_fields() if not \
+    field.many_to_many and not field.one_to_many] 
+    # Write a first row with header information
+    writer.writerow([field.verbose_name for field in fields])
+    # Write data rows
+    for obj in queryset:
+        data_row = []
+        for field in fields:
+            value = getattr(obj, field.name)
+            if isinstance(value, datetime.datetime):
+                value = value.strftime('%d/%m/%Y')
+            data_row.append(value)
+        writer.writerow(data_row)
+    return response
+export_to_csv.short_description = 'Export to CSV'
+
+# Adding custom action to the Admin Site
+class OrderAdmin(admin.ModelAdmin):
+    # ...
+    actions = [export_to_csv]
+```
+
+### Extending the Administration Site with Custom Views
+
+- Admin [base template](https://github.com/django/django/blob/main/django/contrib/admin/templates/admin/base.html)
+
+```py
+from django.contrib.admin.views.decorators import staff_member_required
+from django.shortcuts import get_object_or_404
+from .models import Order
+@staff_member_required
+def admin_order_detail(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+    return render(request,
+                  'admin/orders/order/detail.html',
+                  {'order': order})
+```
 
 ## Views
 
@@ -1707,9 +1767,23 @@ def order_created(order_id):
 
 - Use `celery -A myshop worker -l info` in a shell to see logs from Celery workers.
 
-### Monitoring Celery
+### Monitoring Celery with Flower
 
 - You might want to monitor the asynchronous tasks that are executed. **Flower** is a web-based tool for monitoring Celery.
+
+### Braintree
+
+- [Docs](https://developer.paypal.com/braintree/docs/guides/hosted-fields/overview/javascript/v3)
+
+- [Braintree Sandbox](https://www.braintreepayments.com/pl/sandbox)
+
+- [Braintree Python](https://github.com/braintree/braintree_python)
+
+### Outputting PDF
+
+- [Outputting PDFs with Django](https://docs.djangoproject.com/en/3.2/howto/outputting-pdf/)
+
+- [WeasyPrint](https://doc.courtbouillon.org/weasyprint/latest/first_steps.html)
 
 ## Django Rest Framework (DRF)
 
