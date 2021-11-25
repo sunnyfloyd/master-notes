@@ -3,6 +3,7 @@
 - [JavaScript](#javascript)
   - [Sources](#sources)
   - [Variables and Constants](#variables-and-constants)
+    - [The Old "var"](#the-old-var)
   - [Operators](#operators)
   - [Loops](#loops)
     - [forEach](#foreach)
@@ -10,6 +11,7 @@
   - [Functions](#functions)
     - [Function Expressions](#function-expressions)
     - [Arrow Functions](#arrow-functions)
+    - [Rest Parameters and Spread Syntax](#rest-parameters-and-spread-syntax)
   - [Objects](#objects)
     - ["for...in" Loop](#forin-loop)
     - [Object references and copying](#object-references-and-copying)
@@ -21,6 +23,8 @@
     - [Objects to Primitive Conversion](#objects-to-primitive-conversion)
     - [Object.keys, Object.values, Object.entries](#objectkeys-objectvalues-objectentries)
     - [Destructuring Assignments](#destructuring-assignments)
+    - [Global Object](#global-object)
+    - [Function Object](#function-object)
   - [Data Types](#data-types)
     - [Methods of Primitives](#methods-of-primitives)
     - [Numbers](#numbers)
@@ -60,6 +64,17 @@
 - `let` defines variable limited in scope to the current block.
 
 - `const` defines a value that will not change.
+
+### The Old "var"
+
+- There are two main differences of `var` compared to `let`/`const`:
+
+  - `var` variables have no block scope, their visibility is scoped to current function, or global, if declared outside function.
+  - `var` declarations are processed at function start (script start for globals).
+
+- There’s one more very minor difference related to the global object, that we’ll cover in the next chapter.
+
+- These differences make `var` worse than `let` most of the time. Block-level variables is such a great thing. That’s why `let` was introduced in the standard long ago, and is now a major way (along with `const`) to declare a variable.
 
 ## Operators
 
@@ -189,6 +204,26 @@ let sum = (a, b) => {  // the curly brace opens a multiline function
   return result; // if we use curly braces, then we need an explicit "return"
 };
 ```
+
+### Rest Parameters and Spread Syntax
+
+- When we see `...` in the code, it is either **rest parameters** or the **spread syntax**.
+
+- There’s an easy way to distinguish between them:
+
+  - When `...` is at the end of function parameters, it’s “rest parameters” and gathers the rest of the list of arguments into an array.
+  - When `...` occurs in a function call or alike, it’s called a “spread syntax” and expands an array into a list.
+
+- Use patterns:
+
+  - Rest parameters are used to create functions that accept any number of arguments.
+  - The spread syntax is used to pass an array to functions that normally require a list of many arguments.
+
+- Together they help to travel between a list and an array of parameters with ease.
+
+- All arguments of a function call are also available in “old-style” `arguments`: array-like iterable object.
+
+- We can use spread syntax to make a copy of an array or an object: `[...arr]` or `{...obj}`.
 
 ## Objects
 
@@ -557,6 +592,35 @@ function showMenu({
 
 showMenu(options);
 ```
+
+### Global Object
+
+- The global object holds variables that should be available everywhere.
+
+- That includes JavaScript built-ins, such as `Array` and environment-specific values, such as `window.innerHeight` – the window height in the browser.
+
+- The global object has a universal name `globalThis`. …But more often is referred by “old-school” environment-specific names, such as `window` (browser) and `global` (Node.js).
+
+- We should store values in the global object only if they’re truly global for our project. And keep their number at minimum.
+
+- In-browser, unless we’re using modules, global functions and variables declared with `var` become a property of the global object.
+
+- To make our code future-proof and easier to understand, we should access properties of the global object directly, as `window.x`.
+
+### Function Object
+
+- Functions are objects.
+
+- Here we covered their properties:
+
+  - `name` – the function name. Usually taken from the function definition, but if there’s none, JavaScript tries to guess it from the context (e.g. an assignment).
+  - `length` – the number of arguments in the function definition. Rest parameters are not counted.
+
+- If the function is declared as a Function Expression (not in the main code flow), and it carries the name, then it is called a Named Function Expression. The name can be used inside to reference itself, for recursive calls or such.
+
+- Also, functions may carry additional properties. Many well-known JavaScript libraries make great use of this feature.
+
+- They create a “main” function and attach many other “helper” functions to it. For instance, the jQuery library creates a function named `$`. The lodash library creates a function `_`, and then adds `_.clone`, `_.keyBy` and other properties to it (see the docs when you want to learn more about them). Actually, they do it to lessen their pollution of the global space, so that a single library gives only one global variable. That reduces the possibility of naming conflicts. So, a function can do a useful job by itself and also carry a bunch of other functionality in properties.
 
 ## Data Types
 
