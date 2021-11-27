@@ -11,6 +11,8 @@
     - [Creating Model Managers](#creating-model-managers)
     - [Custom Many-to-Many Relationship](#custom-many-to-many-relationship)
     - [Activity Stream](#activity-stream)
+    - [Relationship fields](#relationship-fields)
+      - [on_delete](#on_delete)
   - [Databases and ORMs](#databases-and-orms)
     - [ORM Methods](#orm-methods)
       - [QuerySet API](#queryset-api)
@@ -63,6 +65,10 @@
       - [Stemming and Ranking Results](#stemming-and-ranking-results)
       - [Weighting Queries](#weighting-queries)
       - [Searching with Trigram Similarity](#searching-with-trigram-similarity)
+    - [Translations](#translations)
+      - [Translation Template Tags](#translation-template-tags)
+      - [Rosetta](#rosetta)
+    - [Recommendation Engine](#recommendation-engine)
   - [Redis](#redis)
     - [Redis with Django](#redis-with-django)
     - [Storing a view count in Redis](#storing-a-view-count-in-redis)
@@ -292,6 +298,45 @@ class Action(models.Model):
 ```
 
 - Django does not create any field in the database for `GenericForeignKey` fields. The only fields that are mapped to database fields are `target_ct` and `target_id`. Both fields have `blank=True` and `null=True` attributes, so that a target object is not required when saving `Action` objects.
+
+### Relationship fields
+
+#### on_delete
+
+- `models.CASCADE` - cascade deletes. Django emulates the behavior of the SQL constraint `ON DELETE CASCADE` and also deletes the object containing the ForeignKey.
+
+- `models.PROTECT` - prevents deletion of the referenced object by raising `ProtectedError`, a subclass of `django.db.IntegrityError`.
+
+- `models.RESTRICT` - prevents deletion of the referenced object by raising `RestrictedError` (a subclass of `django.db.IntegrityError`). Unlike `PROTECT`, deletion of the referenced object is allowed if it also references a different object that is being deleted in the same operation, but via a `CASCADE` relationship.
+
+```py
+class Artist(models.Model):
+    name = models.CharField(max_length=10)
+
+class Album(models.Model):
+    artist = models.ForeignKey(Artist, on_delete=models.CASCADE)
+
+class Song(models.Model):
+    artist = models.ForeignKey(Artist, on_delete=models.CASCADE)
+    album = models.ForeignKey(Album, on_delete=models.RESTRICT)
+
+artist_one = Artist.objects.create(name='artist one')
+artist_two = Artist.objects.create(name='artist two')
+album_one = Album.objects.create(artist=artist_one)
+album_two = Album.objects.create(artist=artist_two)
+song_one = Song.objects.create(artist=artist_one, album=album_one)
+song_two = Song.objects.create(artist=artist_one, album=album_two)
+album_one.delete()
+# Raises RestrictedError.
+artist_two.delete()
+# Raises RestrictedError.
+artist_one.delete()
+# (4, {'Song': 2, 'Album': 1, 'Artist': 1})
+```
+
+- `models.SET_NULL` - sets the ForeignKey `null`; this is only possible if `null` is `True`.
+
+- `models.SET_DEFAULT` - sets the ForeignKey to its default value; a default for the ForeignKey must be set.
 
 ## Databases and ORMs
 
@@ -1625,6 +1670,64 @@ results = Post.published.annotate(
 ).filter(similarity__gt=0.1).order_by('-similarity')
 ```
 
+### Translations
+
+- To internationalize your project do the following:
+
+  1. Mark strings for translation in your Python code and your templates.
+  2. Run the `makemessages` command to create or update message files that include all translation strings from your code.
+  3. Translate the strings contained in the message files and compile them using the `compilemessages` management command.
+
+- To translate literals in your Python code, you can mark strings for translation using the `gettext()` function included in `django.utils.translation`. This function translates the message and returns a string. The convention is to import this function as a shorter alias named `_` (underscore character).
+
+- Django includes **lazy** versions for all of its translation functions, which have the suffix `_lazy()`. When using the lazy functions, strings are translated when the value is accessed, rather than when the function is called (this is why they are translated **lazily**). The lazy translation functions come in handy when strings marked for translation are in paths that are executed when modules are loaded.
+
+- By using placeholders, you can reorder the text variables. For example, an English translation of the previous example might be today is April 14, while the Spanish one might be hoy es 14 de Abril. Always use string interpolation instead of positional interpolation when you have more than one parameter for the translation string. By doing so, you will be able to reorder the placeholder text.
+
+```py
+from django.utils.translation import gettext as _
+month = _('April')
+day = '14'
+output = _('Today is %(month)s %(day)s') % {'month': month,
+                                            'day': day}
+```
+
+- Creating message files for defined languages `django-admin makemessages --all`.
+
+- Compiling messages `django-admin compilemessages`.
+
+#### Translation Template Tags
+
+- Django offers the `{% trans %}` and `{% blocktrans %}` template tags to translate strings in templates. In order to use the translation template tags, you have to add `{% load i18n %}` at the top of your template to load them.
+
+```py
+{% trans "Text to be translated" %}`
+
+# OR
+
+{% trans "Hello!" as greeting %}
+<h1>{{ greeting }}</h1>
+```
+
+- The `{% blocktrans %}` template tag allows you to mark content that includes literals and variable content using placeholders. The following example shows you how to use the {% blocktrans %} tag, including a name variable in the content for translation:
+
+```py
+{% blocktrans %}Hello {{ name }}!{% endblocktrans %}
+```
+
+#### Rosetta
+
+- **Rosetta** is a third-party application that allows you to edit translations using the same interface as the Django administration site. Rosetta makes it easy to edit `.po` files and it updates compiled translation files. Let's add it to your project.
+
+### Recommendation Engine
+
+- Recommendation engine that suggests products that are usually bought together. You will suggest products based on historical sales, thus identifying products that are usually bought together. You are going to suggest complementary products in two different scenarios:
+
+  - **Product detail page**: You will display a list of products that are usually bought with the given product. This will be displayed as users who bought this also bought X, Y, Z. You need a data structure that allows you to store the number of times that each product has been bought together with the product being displayed.
+  - **Cart detail page**: Based on the products users add to the cart, you are going to suggest products that are usually bought together with these ones. In this case, the score you calculate to obtain related products has to be aggregated.
+
+- [Example of recommendation engine](https://learning.oreilly.com/library/view/django-3-by/9781838981952/Text/Chapter_9.xhtml) and [Chapter 09](https://github.com/PacktPublishing/Django-3-by-Example/blob/master/Chapter09/myshop/shop/recommender.py) in Django 3 by Example GitHub.
+
 ## Redis
 
 - **Redis** is an advanced key/value database that allows you to save different types of data. It also has extremely fast I/O operations. Redis stores everything in memory, but the data can be persisted by dumping the dataset to disk every once in a while, or by adding each command to a log. Redis is very versatile compared to other key/value stores: it provides a set of powerful commands and supports diverse data structures, such as strings, hashes, lists, sets, ordered sets, and even bitmaps or HyperLogLogs.
@@ -1721,7 +1824,6 @@ app.autodiscover_tasks()
 ```
 
 - This code does the following:
-
 
     - You set the `DJANGO_SETTINGS_MODULE` variable for the Celery command-line program.
     - You create an instance of the application with `app = Celery('myshop')`.
