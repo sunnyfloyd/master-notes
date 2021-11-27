@@ -20,6 +20,7 @@
     - [TCP vs UDP](#tcp-vs-udp)
       - [TCP](#tcp)
       - [UDP](#udp)
+  - [CCNA](#ccna)
 
 ## Networking
 
@@ -292,3 +293,9 @@
   - **no congestion control** - UDP does not care about network capacity
   - **no ordered packets**
   - **security** - since there is no connection server does not know who is sending the data; this is why UDP is often blocked in the firewalls.
+
+## CCNA
+
+- [Web Notes](https://study-ccna.com/)
+
+- [GitHub Notes](https://github.com/dkrym/ccna-notes/blob/master/CCNA.ctb.pdfhttps://github.com/dkrym/ccna-notes/blob/master/CCNA.ctb.pdf)
