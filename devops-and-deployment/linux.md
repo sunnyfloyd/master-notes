@@ -24,7 +24,7 @@
 
 - `mkdir`
 - `touch file_name`
-- `mv file_name file_name2_and_location`
+- `mv file_name file_name2_and_location` or `mv file_name1 file_name2 file_name3 location/' which will move all of the specified files into a given location
 - `rm file_name`, supports wildcards `rm file*`
 - `rm -r directory_name`
 
@@ -32,7 +32,14 @@
 
 - `cat file_name`, when long file `more file_name`, use this to scroll both ways `less file_name`
 - `head -n 5 file_name`, `tail -n 5 file_name`
+- `tail -f` shows last part of a text file, but keeps it open and prints any new lines that appear in it (good for looking at the logs)
 - `cat file.txt > file2.txt`, `echo blabla > file.txt`, `ls -l > files.txt`
+- `cat file1.txt file2.txt` concatenates the files and outputs the result
+
+## Redirect Standard Input
+
+- `>` redirects standard input overwriting a file
+- `>>` redirects standard input appending content to a file
 
 ### grep
 
