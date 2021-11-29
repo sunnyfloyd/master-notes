@@ -25,6 +25,9 @@
     - [Destructuring Assignments](#destructuring-assignments)
     - [Global Object](#global-object)
     - [Function Object](#function-object)
+    - ["new Function()" Syntax](#new-function-syntax)
+    - [Closure](#closure)
+    - [Function Scheduling](#function-scheduling)
   - [Data Types](#data-types)
     - [Methods of Primitives](#methods-of-primitives)
     - [Numbers](#numbers)
@@ -621,6 +624,44 @@ showMenu(options);
 - Also, functions may carry additional properties. Many well-known JavaScript libraries make great use of this feature.
 
 - They create a “main” function and attach many other “helper” functions to it. For instance, the jQuery library creates a function named `$`. The lodash library creates a function `_`, and then adds `_.clone`, `_.keyBy` and other properties to it (see the docs when you want to learn more about them). Actually, they do it to lessen their pollution of the global space, so that a single library gives only one global variable. That reduces the possibility of naming conflicts. So, a function can do a useful job by itself and also carry a bunch of other functionality in properties.
+
+### "new Function()" Syntax
+
+- Functions created with `new Function`, have `[[Environment]]` referencing the global Lexical Environment, not the outer one. Hence, they cannot use outer variables. But that’s actually good, because it insures us from errors. Passing parameters explicitly is a much better method architecturally and causes no problems with minifiers.
+
+```js
+let func = new Function ([arg1, arg2, ...argN], functionBody);
+
+new Function('a', 'b', 'return a + b'); // basic syntax
+new Function('a,b', 'return a + b'); // comma-separated
+new Function('a , b', 'return a + b'); // comma-separated with spaces
+```
+
+### Closure
+
+- A **closure** is a function that remembers its outer variables and can access them. In some languages, that’s not possible, or a function should be written in a special way to make it happen. But as explained above, in JavaScript, all functions are naturally closures. That is: they automatically remember where they were created using a hidden `[[Environment]]` property, and then their code can access outer variables.
+
+- When on an interview, a frontend developer gets a question about “what’s a closure?”, a valid answer would be a definition of the closure and an explanation that all functions in JavaScript are closures, and maybe a few more words about technical details: the `[[Environment]]` property and how Lexical Environments work.
+
+### Function Scheduling
+
+- Methods `setTimeout(func, delay, ...args)` and `setInterval(func, delay, ...args)` allow us to run the func once/regularly after delay milliseconds.
+
+- To cancel the execution, we should call `clearTimeout`/`clearInterval` with the value returned by `setTimeout`/`setInterval`.
+
+- Nested `setTimeout` calls are a more flexible alternative to `setInterval`, allowing us to set the time between executions more precisely.
+
+- Zero delay scheduling with `setTimeout(func, 0)` (the same as `setTimeout(func))` is used to schedule the call “as soon as possible, but after the current script is complete”.
+
+- The browser limits the minimal delay for five or more nested calls of `setTimeout` or for `setInterval` (after 5th call) to 4ms. That’s for historical reasons.
+
+- Please note that all scheduling methods do not guarantee the exact delay. For example, the in-browser timer may slow down for a lot of reasons:
+
+    - The CPU is overloaded.
+    - The browser tab is in the background mode.
+    - The laptop is on battery.
+
+- All that may increase the minimal timer resolution (the minimal delay) to 300ms or even 1000ms depending on the browser and OS-level performance settings.
 
 ## Data Types
 
