@@ -23,6 +23,7 @@
     - [Functions](#functions)
       - [Caching](#caching)
       - [map, filter, reduce, lambda](#map-filter-reduce-lambda)
+      - [Structural Pattern Matching](#structural-pattern-matching)
     - [IO and Data Objects](#io-and-data-objects)
       - [Files](#files)
       - [JSON](#json)
@@ -541,6 +542,198 @@ print(most_repeating_word(WORDS))
 s = ['s','t','r','i','n','g']
 s_joined1 = reduce(lambda x, y: x + y, s)
 s_joined2 = ''.join(s)
+```
+
+#### Structural Pattern Matching
+
+- **Pattern matching** removes the verbiage and tedium of `if` statements and “getters” that interrogate the structure of an object to extract the information you want.
+
+- `match` is a **soft keyword**. A soft keyword, like the `match` statement, is a keyword that does not cause a syntax error if used in a context that is unambiguously not part of a match pattern matching block. That means you can continue to use `match` as a variable or function name, for instance.
+
+```py
+match <expression>:
+    case <pattern 1> [<if guard>]:
+        <handle pattern 1>
+    case <pattern n> [<if guard>]:
+        <handle pattern n>
+```
+
+- Basic example:
+
+```py
+def greet_person(p):
+    """Let's greet a person"""
+    match p:
+        case {"greeting": greeting, "name": name}:
+            print(f"{greeting}, {name}")
+        case {"name": name}:
+            print(f"Hello, {name}!")
+        case {"greeting": _} | {}:
+            print("I didn't quite catch your name?")
+        case str() as person if person.isupper():
+            print("No need to shout - I'm not deaf")
+        case str() as person:
+            print(f"Nice to meet you, {person}.")
+        case _:
+            print("I didn't quite understand that!")
+```
+
+- Capture patterns use **bound names** that are not variables, but can be accessed in the code after pattern is successfully matched:
+
+```py
+def greet_person(p):
+    """Let's greet a person"""
+    match p:
+        case {"greeting": greeting, "name": name}:
+            print(f"{greeting}, {name}")
+```
+
+- Literal patterns:
+
+```py
+def literal_pattern(p):
+    match p:
+        case 1:
+            print("You said the number 1")
+        case 42:
+            print("You said the number 42")
+        case "Hello":
+            print("You said Hello")
+        case True:
+            print("You said True")
+        case 3.14:
+            print("You said Pi")
+        case _:
+            print("You said something else")
+```
+
+- To ensure specific data type:
+
+```py
+case int(1):
+    print("You said the integer 1")
+# or
+case float(1.0):
+    print("You said the floating point number 1.0")
+```
+
+- To bind declaration in pattern to a name that you can use later, you must use the `as` pattern:
+
+```py
+def as_pattern(p):
+    match p:
+        case int() as number:
+            print(f"You said a {number=}")
+        case str() as string:
+            print(f"Here is your {string=}")
+```
+
+- Guards:
+
+```py
+def greet_person(p):
+    """Let's greet a person"""
+    match p:
+        # ... etc ...
+        case str() as person if person.isupper():
+            print("No need to shout - I'm not deaf")
+        case str() as person:
+            print(f"Nice to meet you, {person}.")
+
+# OR
+match json.loads(record):
+    case {"user_id": user_id, "name": name} if not has_user(user_id):
+        return create_user(user_id=user_id, name=name)
+    case {"user_id": user_id}:
+        return get_user(user_id)
+    case _:
+        raise ValueError('Record is invalid')
+```
+
+- `OR` patterns:
+
+```py
+def or_pattern(p):
+    match p:
+        case ("Hello" | "Hi" | "Howdy") as greeting:
+            print(f"You said {greeting=}")
+        case {"greeting": "Hi" | "Hello",
+              "name": ({"first_name": name} | {"name": name})}:
+            print(f"Salutations, {name}")
+```
+
+- Wildcard patterns:
+
+```py
+match p:
+    # ... etc ...
+    case _:
+        # ... do something. ..
+
+# interrogating structures using wildcards
+def wildcardpattern(p):
+    match p:
+        case [_, middle, _]:
+            print(middle)
+
+# *args and **kwargs
+def star_wildcard(p):
+    match p:
+        case [_, _, *rest]:
+            print(rest)
+        case {"name": _, **rest}:
+            print(rest)
+
+# **rest for dict
+match {"a": 1, "b": 2}:
+    case {"a": 1, **rest} as d if not rest:
+         print(d)
+```
+
+- In order to create a dynamic value for a pattern variable/constant needs to used as an attribute:
+
+```py
+import constants
+
+def value_pattern_working(p):
+    match p:
+        case {"greeting": constants.PREFERRED_GREETING, "name": name} as d:
+            print(d)
+        case _:
+            print('No match!')
+```
+
+- Class patterns:
+
+```py
+from collections import namedtuple
+
+Customer = namedtuple('Customer', 'name product')
+
+def read_customer(p):
+    match p:
+        case Customer(name=name, product=product):
+            print(f'{name}, you must really like {product}.')
+```
+
+- Class pattern in the anti-pattern class. Thankfully, Python is clever enough to **not create instance of Connection during the pattern matching step** so `connect` method is not called:
+
+```py
+class Connection:
+
+    def connect(self):
+        print(f'Connecting to server {self.host}')
+        # ... do something complicated ...
+
+    def __init__(self, host, port):
+        self.host = host
+        self.port = port
+        self.connect()
+
+def parse_connection(p):
+    match p:
+        case Connection(host=host, port=port):
+            print(f'This Connection object talks to {host}')
 ```
 
 ### IO and Data Objects
