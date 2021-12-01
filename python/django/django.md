@@ -1889,8 +1889,6 @@ def order_created(order_id):
 
 ## Django Rest Framework (DRF)
 
-- 
-
 ## Django App Deployment
 
 ### Heroku
