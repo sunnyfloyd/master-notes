@@ -59,6 +59,7 @@
 ## Sources
 
 - [CS50 Harvard Course](https://cs50.harvard.edu/web/2020/weeks/5/)
+- [javascript.info](https://javascript.info/)
 
 ## Variables and Constants
 

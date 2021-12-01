@@ -546,6 +546,8 @@ s_joined2 = ''.join(s)
 
 #### Structural Pattern Matching
 
+- [Mastering Structural Pattern Matching](https://www.inspiredpython.com/course/pattern-matching/mastering-structural-pattern-matching)
+
 - **Pattern matching** removes the verbiage and tedium of `if` statements and “getters” that interrogate the structure of an object to extract the information you want.
 
 - `match` is a **soft keyword**. A soft keyword, like the `match` statement, is a keyword that does not cause a syntax error if used in a context that is unambiguously not part of a match pattern matching block. That means you can continue to use `match` as a variable or function name, for instance.
