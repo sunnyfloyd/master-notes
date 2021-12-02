@@ -10,9 +10,16 @@
   - [Models](#models)
     - [Creating Model Managers](#creating-model-managers)
     - [Custom Many-to-Many Relationship](#custom-many-to-many-relationship)
+    - [Generic Relations](#generic-relations)
+    - [Model Inheritance](#model-inheritance)
+      - [Abstract Models](#abstract-models)
+      - [Multi-table Model Inheritance](#multi-table-model-inheritance)
+      - [Proxy Models](#proxy-models)
+    - [Custom Model Fields](#custom-model-fields)
     - [Activity Stream](#activity-stream)
     - [Relationship fields](#relationship-fields)
       - [on_delete](#on_delete)
+    - [Fixtures](#fixtures)
   - [Databases and ORMs](#databases-and-orms)
     - [ORM Methods](#orm-methods)
       - [QuerySet API](#queryset-api)
@@ -41,6 +48,7 @@
   - [Forms](#forms)
     - [Form Class Forms](#form-class-forms)
     - [ModelForm Class Forms](#modelform-class-forms)
+    - [FormSets](#formsets)
   - [Authentication and Authorization](#authentication-and-authorization)
     - [Django Authentication Views](#django-authentication-views)
     - [Extending the User Model](#extending-the-user-model)
@@ -260,6 +268,136 @@ following = models.ManyToManyField('self',
                                    symmetrical=False)
 ```
 
+### Generic Relations
+
+- Generic relations allow to create foreign keys that can point to the objects of any model. This is useful if we need a model that needs to refer to other model that might need to store different types of data (text, file, image, URL, etc.):
+
+```py
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey
+
+class Content(models.Model):
+    module = models.ForeignKey(Module,
+                               related_name='contents',
+                               on_delete=models.CASCADE)
+    content_type = models.ForeignKey(ContentType,
+                   on_delete=models.CASCADE,
+                   limit_choices_to={'model__in':(
+                                     'text',
+                                     'video',
+                                     'image',
+                                     'file')})
+    object_id = models.PositiveIntegerField()
+    item = GenericForeignKey('content_type', 'object_id')
+
+class ItemBase(models.Model):
+    owner = models.ForeignKey(User,
+                              related_name='%(class)s_related',
+                              on_delete=models.CASCADE)
+    title = models.CharField(max_length=250)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+    class Meta:
+        abstract = True
+    def __str__(self):
+        return self.title
+class Text(ItemBase):
+    content = models.TextField()
+class File(ItemBase):
+    file = models.FileField(upload_to='files')
+class Image(ItemBase):
+    file = models.FileField(upload_to='images')
+class Video(ItemBase):
+    url = models.URLField()
+```
+
+### Model Inheritance
+
+- Django supports **model inheritance**. It works in a similar way to standard class inheritance in Python. Django offers the following three options to use model inheritance:
+
+    - **Abstract models**: Useful when you want to put some common information into several models.
+    - **Multi-table model inheritance**: Applicable when each model in the hierarchy is considered a complete model by itself.
+    - **Proxy models**: Useful when you need to change the behavior of a model, for example, by including additional methods, changing the default manager, or using different meta options.
+
+#### Abstract Models
+
+- To mark a model as abstract, you need to include `abstract=True` in its `Meta` class.
+
+```py
+from django.db import models
+class BaseContent(models.Model):
+    title = models.CharField(max_length=100)
+    created = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        abstract = True
+class Text(BaseContent):
+    body = models.TextField()
+```
+
+#### Multi-table Model Inheritance
+
+- In **multi-table inheritance**, each model corresponds to a database table. Django creates a `OneToOneField` field for the relationship between the child model and its parent model. To use multi-table inheritance, you have to subclass an existing model. **Django will create a database table for both the original model and the sub-model**. The following example shows multi-table inheritance:
+
+```py
+from django.db import models
+class BaseContent(models.Model):
+    title = models.CharField(max_length=100)
+    created = models.DateTimeField(auto_now_add=True)
+class Text(BaseContent):
+    body = models.TextField()
+```
+
+#### Proxy Models
+
+- A proxy model changes the behavior of a model. Both models operate on the database table of the original model. To create a proxy model, add `proxy=True` to the `Meta` class of the model. The following example illustrates how to create a proxy model:
+
+```py
+from django.db import models
+from django.utils import timezone
+class BaseContent(models.Model):
+    title = models.CharField(max_length=100)
+    created = models.DateTimeField(auto_now_add=True)
+class OrderedContent(BaseContent):
+    class Meta:
+        proxy = True
+        ordering = ['created']
+    def created_delta(self):
+        return timezone.now() - self.created
+```
+
+### Custom Model Fields
+
+- Creating a custom `OrderField` that inherits from `PositiveIntegerField`:
+
+```py
+from django.db import models
+from django.core.exceptions import ObjectDoesNotExist
+class OrderField(models.PositiveIntegerField):
+    def __init__(self, for_fields=None, *args, **kwargs):
+        self.for_fields = for_fields
+        super().__init__(*args, **kwargs)
+    def pre_save(self, model_instance, add):
+        if getattr(model_instance, self.attname) is None:
+            # no current value
+            try:
+                qs = self.model.objects.all()
+                if self.for_fields:
+                    # filter by objects with the same field values
+                    # for the fields in "for_fields"
+                    query = {field: getattr(model_instance, field)\
+                    for field in self.for_fields}
+                    qs = qs.filter(**query)
+                # get the order of the last item
+                last_item = qs.latest(self.attname)
+                value = last_item.order + 1
+            except ObjectDoesNotExist:
+                value = 0
+            setattr(model_instance, self.attname, value)
+            return value
+        else:
+            return super().pre_save(model_instance, add)
+```
+
 ### Activity Stream
 
 - An **activity stream** is a list of recent activities performed by a user or a group of users. For example, Facebook's News Feed is an activity stream. Sample actions can be *user X bookmarked image Y* or *user X is now following user Y*.
@@ -337,6 +475,31 @@ artist_one.delete()
 - `models.SET_NULL` - sets the ForeignKey `null`; this is only possible if `null` is `True`.
 
 - `models.SET_DEFAULT` - sets the ForeignKey to its default value; a default for the ForeignKey must be set.
+
+### Fixtures
+
+- **Fixtures** can be used to provide initial data for models.
+
+- Dumping current data from a database to the fixture files:
+
+```bash
+# dumping entire database
+python manage.py dumpdata --indent=2
+# dumping tables relate to specific application
+python manage.py dumpdata courses --indent=2
+# dumping table for specific model
+python manage.py dumpdata courses.subject --indent=2
+# dumping data to a specific location
+python manage.py dumpdata courses --indent=2 --output=courses/fixtures/subjects.json
+```
+
+- Loading fixtures into a database:
+
+```bash
+python manage.py loaddata subjects.json
+```
+
+- By default, Django looks for files in the `fixtures/` directory of each application, but you can specify the complete path to the fixture file for the `loaddata` command. You can also use the `FIXTURE_DIRS` setting to tell Django additional directories to look in for fixtures.
 
 ## Databases and ORMs
 
@@ -1278,6 +1441,24 @@ class CommentForm(forms.ModelForm):
 ```
 
 - `save()` method in `ModelForm` class creates an instance of the model that the form is linked to and saves it to the database. If you call it using `commit=False`, you create the model instance, but don't save it to the database yet. This comes in handy when you want to modify the object before finally saving it, which is what you will do next. The `save()` method is available for ModelForm but not for `Form` instances, since they are not linked to any model.
+
+### FormSets
+
+- Django comes with an abstraction layer to work with multiple forms on the same page. These groups of forms are known as **formsets**. Formsets manage multiple instances of a certain `Form` or `ModelForm`. All forms are submitted at once and the formset takes care of the initial number of forms to display, limiting the maximum number of forms that can be submitted and validating all the forms.
+
+- Formsets include an `is_valid()` method to validate all forms at once. You can also provide initial data for the forms and specify how many additional empty forms to display.
+
+```py
+from django import forms
+from django.forms.models import inlineformset_factory
+from .models import Course, Module
+ModuleFormSet = inlineformset_factory(Course,
+                                      Module,
+                                      fields=['title',
+                                              'description'],
+                                      extra=2,
+                                      can_delete=True)
+```
 
 ## Authentication and Authorization
 
