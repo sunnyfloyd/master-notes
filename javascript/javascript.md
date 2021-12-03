@@ -12,6 +12,8 @@
     - [Function Expressions](#function-expressions)
     - [Arrow Functions](#arrow-functions)
     - [Rest Parameters and Spread Syntax](#rest-parameters-and-spread-syntax)
+    - [Decorators](#decorators)
+    - [Call Forwarding](#call-forwarding)
   - [Objects](#objects)
     - ["for...in" Loop](#forin-loop)
     - [Object references and copying](#object-references-and-copying)
@@ -228,6 +230,89 @@ let sum = (a, b) => {  // the curly brace opens a multiline function
 - All arguments of a function call are also available in “old-style” `arguments`: array-like iterable object.
 
 - We can use spread syntax to make a copy of an array or an object: `[...arr]` or `{...obj}`.
+
+### Decorators
+
+- **Decorator** is a wrapper around a function that alters its behavior. The main job is still carried out by the function. Decorators can be seen as “features” or “aspects” that can be added to a function. We can add one or add many.
+
+To implement decorator, we studied methods:
+
+  - `func.call(context, arg1, arg2…)` – calls func with given context and arguments.
+  - `func.apply(context, args)` – calls func passing context as this and array-like args into a list of arguments.
+
+```js
+function slow(x) {
+  // there can be a heavy CPU-intensive job here
+  alert(`Called with ${x}`);
+  return x;
+}
+
+function cachingDecorator(func) {
+  let cache = new Map();
+
+  return function(x) {
+    if (cache.has(x)) {    // if there's such key in cache
+      return cache.get(x); // read the result from it
+    }
+
+    let result = func(x);  // otherwise call func
+
+    cache.set(x, result);  // and cache (remember) the result
+    return result;
+  };
+}
+
+slow = cachingDecorator(slow);
+
+alert( slow(1) ); // slow(1) is cached and the result returned
+alert( "Again: " + slow(1) ); // slow(1) result returned from cache
+
+alert( slow(2) ); // slow(2) is cached and the result returned
+alert( "Again: " + slow(2) ); // slow(2) result returned from cache
+```
+
+- For object methods:
+
+```js
+let worker = {
+  someMethod() {
+    return 1;
+  },
+
+  slow(x) {
+    alert("Called with " + x);
+    return x * this.someMethod(); // (*)
+  }
+};
+
+function cachingDecorator(func) {
+  let cache = new Map();
+  return function(x) {
+    if (cache.has(x)) {
+      return cache.get(x);
+    }
+    let result = func.call(this, x); // "this" is passed correctly now
+    cache.set(x, result);
+    return result;
+  };
+}
+
+// decorated function becomes a proper object method so it refer to proper 'this'
+worker.slow = cachingDecorator(worker.slow); // now make it caching
+
+alert( worker.slow(2) ); // works
+alert( worker.slow(2) ); // works, doesn't call the original (cached)
+```
+
+### Call Forwarding
+
+- The generic **call forwarding** is usually done with `apply`:
+
+```js
+let wrapper = function() {
+  return original.apply(this, arguments);
+};
+```
 
 ## Objects
 
