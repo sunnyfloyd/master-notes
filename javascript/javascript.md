@@ -14,6 +14,7 @@
     - [Rest Parameters and Spread Syntax](#rest-parameters-and-spread-syntax)
     - [Decorators](#decorators)
     - [Call Forwarding](#call-forwarding)
+    - [Function Binding](#function-binding)
   - [Objects](#objects)
     - ["for...in" Loop](#forin-loop)
     - [Object references and copying](#object-references-and-copying)
@@ -210,6 +211,12 @@ let sum = (a, b) => {  // the curly brace opens a multiline function
   return result; // if we use curly braces, then we need an explicit "return"
 };
 ```
+  
+- **Arrow functions do not have `this`**. If `this` is accessed, it is taken from the outside (from the outer lixical environment).
+
+- Arrow functions also have no `arguments` variable.
+
+- Arrow functions can’t be called with `new`.
 
 ### Rest Parameters and Spread Syntax
 
@@ -312,6 +319,38 @@ alert( worker.slow(2) ); // works, doesn't call the original (cached)
 let wrapper = function() {
   return original.apply(this, arguments);
 };
+```
+
+### Function Binding
+
+- Method `func.bind(context, ...args)` returns a “bound variant” of function func that fixes the context this and first arguments if given.
+
+- Usually we apply `bind` to fix this for an object method, so that we can pass it somewhere. For example, to `setTimeout`.
+
+- When we fix some arguments of an existing function, the resulting (less universal) function is called **partially applied** or **partial**:
+
+```js
+function mul(a, b) {
+  return a * b;
+}
+
+let triple = mul.bind(null, 3);
+```
+
+- Partials are convenient when we don’t want to repeat the same argument over and over again. Like if we have a `send(from, to)` function, and `from` should always be the same for our task, we can get a partial and go on with it.
+
+- Partials without passing a context
+
+```js
+let user = {
+  firstName: "John",
+  say(time, phrase) {
+    alert(`[${time}] ${this.firstName}: ${phrase}!`);
+  }
+};
+
+// add a partial method with fixed time
+user.sayNow = partial(user.say, new Date().getHours() + ':' + new Date().getMinutes());
 ```
 
 ## Objects
