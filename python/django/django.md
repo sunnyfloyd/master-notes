@@ -59,6 +59,12 @@
   - [Session Management](#session-management)
   - [Message Framework](#message-framework)
   - [Static Files](#static-files)
+  - [Caching](#caching)
+    - [Memcached](#memcached)
+      - [Low-level Cache API](#low-level-cache-api)
+      - [Caching Template Fragments](#caching-template-fragments)
+      - [Caching Views](#caching-views)
+    - [Redis Cache](#redis-cache)
   - [Configuration](#configuration)
     - [Development Server Through HTTPS](#development-server-through-https)
   - [Utilities](#utilities)
@@ -1629,6 +1635,139 @@ messages.error(request, 'Something went wrong')
 ## Static Files
 
 - Django’s `STATICFILES_FINDERS` setting contains a list of finders that know how to discover static files from various sources. One of the defaults is `AppDirectoriesFinder` which looks for a *static* subdirectory in each of the `INSTALLED_APPS`.
+
+## Caching
+
+- [Cache Django Docs](https://docs.djangoproject.com/en/3.2/topics/cache/)
+
+- The overhead in some requests can be significant when your site starts getting more and more traffic. This is where **caching** becomes precious. By caching queries, calculation results, or rendered content in an HTTP request, you will avoid expensive operations in the following requests. This translates into shorter response times and less processing on the server side.
+
+- Django includes a robust cache system that allows you to cache data with different levels of granularity. You can cache a single query, the output of a specific view, parts of rendered template content, or your entire site. Items are stored in the cache system for a default time. You can specify the default timeout for cached data.
+
+- Django comes with several cache backends. These are the following:
+
+  - `backends.memcached.MemcachedCache` or `backends.memcached.PyLibMCCache`: A Memcached backend. Memcached is a fast and efficient memory-based cache server. The backend to use depends on the Memcached Python bindings you choose.
+  - `backends.db.DatabaseCache`: Use the database as a cache system.
+  - `backends.filebased.FileBasedCache`: Use the file storage system. This serializes and stores each cache value as a separate file.
+  - `backends.locmem.LocMemCache`: A local memory cache backend. This the default cache backend.
+  - `backends.dummy.DummyCache`: A dummy cache backend intended only for development. It implements the cache interface without actually caching anything. This cache is per-process and thread-safe.
+
+- For optimal performance, use a memory-based cache backend such as the Memcached backend.
+
+### Memcached
+
+- Configuring the cache:
+
+```py
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+        'LOCATION': '127.0.0.1:11211',
+    }
+}
+```
+
+- Extending Django Admin Panel to show addition info about cache usage:
+
+```py
+# use memcache admin index site
+admin.site.index_template = 'memcache_status/admin_index.html'
+```
+
+- Cache levels provided by Django:
+
+  - Low-level cache API: Provides the highest granularity. Allows you to cache specific queries or calculations.
+  - Template cache: Allows you to cache template fragments.
+  - Per-view cache: Provides caching for individual views.
+  - Per-site cache: The highest-level cache. It caches your entire site.
+
+#### Low-level Cache API
+
+```py
+subjects = cache.get('all_subjects')
+if not subjects:
+    subjects = Subject.objects.annotate(
+                   total_courses=Count('courses'))
+    cache.set('all_subjects', subjects)
+```
+
+- Caching based on dynamic data:
+
+```py
+def get(self, request, subject=None):
+    subjects = cache.get('all_subjects')
+    if not subjects:
+        subjects = Subject.objects.annotate(
+                        total_courses=Count('courses'))
+        cache.set('all_subjects', subjects)
+    all_courses = Course.objects.annotate(
+                        total_modules=Count('modules'))
+    if subject:
+        subject = get_object_or_404(Subject, slug=subject)
+        key = f'subject_{subject.id}_courses'  # dynamic key creation
+        courses = cache.get(key)
+        if not courses:
+            courses = all_courses.filter(subject=subject)
+            cache.set(key, courses)
+    else:
+        courses = cache.get('all_courses')
+        if not courses:
+            courses = all_courses
+            cache.set('all_courses', courses)
+    return self.render_to_response({'subjects': subjects,
+                                    'subject': subject,
+                                    'courses': courses})
+```
+
+#### Caching Template Fragments
+
+```html
+{% load cache %}
+...
+{% cache 600 module_contents module %}
+  {% for content in module.contents.all %}
+    {% with item=content.item %}
+      <h2>{{ item.title }}</h2>
+      {{ item.render }}
+    {% endwith %}
+  {% endfor %}
+{% endcache %}
+```
+
+#### Caching Views
+
+```py
+from django.views.decorators.cache import cache_page
+
+path('course/<pk>/',
+     cache_page(60 * 15)(views.StudentCourseDetailView.as_view()),
+     name='student_course_detail'),
+path('course/<pk>/<module_id>/',
+     cache_page(60 * 15)(views.StudentCourseDetailView.as_view()),
+     name='student_course_detail_module'),
+```
+
+### Redis Cache
+
+- [django-rediq](https://github.com/jazzband/django-redis)
+
+- Redis Cache will become a default Django Cache starting from version 4.0.
+
+- Installation: `python -m pip install django-redis`.
+
+- Configuration:
+
+```py
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
+```
 
 ## Configuration
 
