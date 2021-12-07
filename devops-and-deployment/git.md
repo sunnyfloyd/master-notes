@@ -38,6 +38,8 @@ There are two primary ways people collaborate on GitHub:
 
 - Adding a file to the stage so changes to the file will be ready for the next commit ```git add file_name```.
 
+- To stage only part of the file use `git add -p file_name` and git will go through each of the changes made in that file one by one asking us whether given part of a change should be staged or not.
+
 - Commiting ```git commit -m "commit message"```.
 
 - To stage and commit all of the files with changes use `git commit -am "commit message"` (this applies only to the files that have already been added before).
@@ -180,6 +182,8 @@ git push --set-upstream origin main
 - To move branch to the other commits ```git branch -f main HEAD~3``` can be used.
 
 - To delete a branch `git branch -d <branch_name>` - this is especially useful when some bug fixing/new feature development has happened on a new branch and master branch has already been merged with such branch so it can be deleted.
+
+- When conflict occur mergin/rebasing can be reverted with: `git merge --abort` or `git rebase --abort`.
 
 ## Tags
 
