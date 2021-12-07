@@ -36,7 +36,7 @@
 - `cat file.txt > file2.txt`, `echo blabla > file.txt`, `ls -l > files.txt`
 - `cat file1.txt file2.txt` concatenates the files and outputs the result
 
-## Redirect Standard Input
+### Redirect Standard Input
 
 - `>` redirects standard input overwriting a file
 - `>>` redirects standard input appending content to a file
@@ -50,9 +50,9 @@
 - `grep -c 'nixcraft' frontpage.m` displays count of hits for given word
 - `grep -w 'word'` forces to search for entire words
 
-## Bash
+### wc
 
-- grep, sed, tr, awk, cut, paste, join, head, tail.
+- `wc file_name` returns 3 values: new lines count, words count and bytes count for a given file.
 
 ### sed
 
