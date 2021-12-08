@@ -94,6 +94,8 @@
     - [Braintree](#braintree)
     - [Outputting PDF](#outputting-pdf)
   - [Django Rest Framework (DRF)](#django-rest-framework-drf)
+    - [Adding Additional Actions to ViewSets](#adding-additional-actions-to-viewsets)
+    - [Creating Custom Permissions](#creating-custom-permissions)
   - [Django App Deployment](#django-app-deployment)
     - [Heroku](#heroku)
 
@@ -2208,6 +2210,63 @@ def order_created(order_id):
 - [WeasyPrint](https://doc.courtbouillon.org/weasyprint/latest/first_steps.html)
 
 ## Django Rest Framework (DRF)
+
+### Adding Additional Actions to ViewSets
+
+- You can add extra actions to viewsets:
+
+```py
+from rest_framework.decorators import action
+class CourseViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Course.objects.all()
+    serializer_class = CourseSerializer
+    @action(detail=True,
+            methods=['post'],
+            authentication_classes=[BasicAuthentication],
+            permission_classes=[IsAuthenticated])
+    def enroll(self, request, *args, **kwargs):
+        course = self.get_object()
+        course.students.add(request.user)
+        return Response({'enrolled': True})
+```
+
+- Modifying `urls.py`:
+
+```py
+path('courses/<pk>/enroll/',
+     views.CourseEnrollView.as_view(),
+     name='course_enroll'),
+```
+
+- Actions can be also used to alter default behaviours of the given ViewSet methods. For instance mimicing `retrieve()` method, but using different serializer:
+
+```py
+from .permissions import IsEnrolled
+from .serializers import CourseWithContentsSerializer
+class CourseViewSet(viewsets.ReadOnlyModelViewSet):
+    # ...
+    @action(detail=True,
+            methods=['get'],
+            serializer_class=CourseWithContentsSerializer,
+            authentication_classes=[BasicAuthentication],
+            permission_classes=[IsAuthenticated, IsEnrolled])
+    def contents(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+```
+
+### Creating Custom Permissions
+
+Django provides a `BasePermission` class that allows you to define the following methods (these methods should return `True` to grant access, or `False` otherwise):
+
+  - `has_permission()`: View-level permission check
+  - `has_object_permission()`: Instance-level permission check
+
+```py
+from rest_framework.permissions import BasePermission
+class IsEnrolled(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        return obj.students.filter(id=request.user.id).exists()
+```
 
 ## Django App Deployment
 
