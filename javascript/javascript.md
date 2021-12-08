@@ -13,6 +13,8 @@
     - [Arrow Functions](#arrow-functions)
     - [Rest Parameters and Spread Syntax](#rest-parameters-and-spread-syntax)
     - [Decorators](#decorators)
+    - ["new Function()" Syntax](#new-function-syntax)
+    - [Closure](#closure)
     - [Call Forwarding](#call-forwarding)
     - [Function Binding](#function-binding)
   - [Objects](#objects)
@@ -28,9 +30,9 @@
     - [Destructuring Assignments](#destructuring-assignments)
     - [Global Object](#global-object)
     - [Function Object](#function-object)
-    - ["new Function()" Syntax](#new-function-syntax)
-    - [Closure](#closure)
     - [Function Scheduling](#function-scheduling)
+    - [Property Flags and Descriptors](#property-flags-and-descriptors)
+    - [Property Getters and Setters](#property-getters-and-setters)
   - [Data Types](#data-types)
     - [Methods of Primitives](#methods-of-primitives)
     - [Numbers](#numbers)
@@ -310,6 +312,24 @@ worker.slow = cachingDecorator(worker.slow); // now make it caching
 alert( worker.slow(2) ); // works
 alert( worker.slow(2) ); // works, doesn't call the original (cached)
 ```
+
+### "new Function()" Syntax
+
+- Functions created with `new Function`, have `[[Environment]]` referencing the global Lexical Environment, not the outer one. Hence, they cannot use outer variables. But that’s actually good, because it insures us from errors. Passing parameters explicitly is a much better method architecturally and causes no problems with minifiers.
+
+```js
+let func = new Function ([arg1, arg2, ...argN], functionBody);
+
+new Function('a', 'b', 'return a + b'); // basic syntax
+new Function('a,b', 'return a + b'); // comma-separated
+new Function('a , b', 'return a + b'); // comma-separated with spaces
+```
+
+### Closure
+
+- A **closure** is a function that remembers its outer variables and can access them. In some languages, that’s not possible, or a function should be written in a special way to make it happen. But as explained above, in JavaScript, all functions are naturally closures. That is: they automatically remember where they were created using a hidden `[[Environment]]` property, and then their code can access outer variables.
+
+- When on an interview, a frontend developer gets a question about “what’s a closure?”, a valid answer would be a definition of the closure and an explanation that all functions in JavaScript are closures, and maybe a few more words about technical details: the `[[Environment]]` property and how Lexical Environments work.
 
 ### Call Forwarding
 
@@ -750,24 +770,6 @@ showMenu(options);
 
 - They create a “main” function and attach many other “helper” functions to it. For instance, the jQuery library creates a function named `$`. The lodash library creates a function `_`, and then adds `_.clone`, `_.keyBy` and other properties to it (see the docs when you want to learn more about them). Actually, they do it to lessen their pollution of the global space, so that a single library gives only one global variable. That reduces the possibility of naming conflicts. So, a function can do a useful job by itself and also carry a bunch of other functionality in properties.
 
-### "new Function()" Syntax
-
-- Functions created with `new Function`, have `[[Environment]]` referencing the global Lexical Environment, not the outer one. Hence, they cannot use outer variables. But that’s actually good, because it insures us from errors. Passing parameters explicitly is a much better method architecturally and causes no problems with minifiers.
-
-```js
-let func = new Function ([arg1, arg2, ...argN], functionBody);
-
-new Function('a', 'b', 'return a + b'); // basic syntax
-new Function('a,b', 'return a + b'); // comma-separated
-new Function('a , b', 'return a + b'); // comma-separated with spaces
-```
-
-### Closure
-
-- A **closure** is a function that remembers its outer variables and can access them. In some languages, that’s not possible, or a function should be written in a special way to make it happen. But as explained above, in JavaScript, all functions are naturally closures. That is: they automatically remember where they were created using a hidden `[[Environment]]` property, and then their code can access outer variables.
-
-- When on an interview, a frontend developer gets a question about “what’s a closure?”, a valid answer would be a definition of the closure and an explanation that all functions in JavaScript are closures, and maybe a few more words about technical details: the `[[Environment]]` property and how Lexical Environments work.
-
 ### Function Scheduling
 
 - Methods `setTimeout(func, delay, ...args)` and `setInterval(func, delay, ...args)` allow us to run the func once/regularly after delay milliseconds.
@@ -787,6 +789,147 @@ new Function('a , b', 'return a + b'); // comma-separated with spaces
     - The laptop is on battery.
 
 - All that may increase the minimal timer resolution (the minimal delay) to 300ms or even 1000ms depending on the browser and OS-level performance settings.
+
+### Property Flags and Descriptors
+
+- Object properties, besides a value, have three special attributes (so-called “flags”):
+
+  - `writable` – if `true`, the value can be changed, otherwise it’s read-only.
+  - `enumerable` – if `true`, then listed in loops, otherwise not listed.
+  - `configurable` – if `true`, the property can be deleted and these attributes can be modified, otherwise not.
+
+- To query the full information about a property use:
+
+```js
+let descriptor = Object.getOwnPropertyDescriptor(obj, propertyName);
+
+let user = {
+  name: "John"
+};
+
+let descriptor = Object.getOwnPropertyDescriptor(user, 'name');
+
+alert( JSON.stringify(descriptor, null, 2 ) );
+/* property descriptor:
+{
+  "value": "John",
+  "writable": true,
+  "enumerable": true,
+  "configurable": true
+}
+*/
+```
+
+- To change the flags use:
+
+```js
+Object.defineProperty(obj, propertyName, descriptor)
+
+let user = {};
+
+Object.defineProperty(user, "name", {
+  value: "John"
+});
+
+
+Object.defineProperty(user, "name", {
+  writable: false
+});
+
+user.name = "Pete"; // Error: Cannot assign to read only property 'name'
+```
+
+` There’s a method that allows to define many properties at once:
+
+```js
+Object.defineProperties(obj, {
+  prop1: descriptor1,
+  prop2: descriptor2
+  // ...
+});
+
+// e.g.
+Object.defineProperties(user, {
+  name: { value: "John", writable: false },
+  surname: { value: "Smith", writable: false },
+  // ...
+});
+```
+
+- To get all property descriptors at once, we can use the method `Object.getOwnPropertyDescriptors(obj)`. Together with `Object.defineProperties` it can be used as a “flags-aware” way of cloning an object:
+
+```js
+let clone = Object.defineProperties({}, Object.getOwnPropertyDescriptors(obj));
+```
+
+### Property Getters and Setters
+
+- Accessor properties are represented by “getter” and “setter” methods. In an object literal they are denoted by `get` and `set`:
+
+```js
+let obj = {
+  get propName() {
+    // getter, the code executed on getting obj.propName
+  },
+
+  set propName(value) {
+    // setter, the code executed on setting obj.propName = value
+  }
+};
+```
+
+- Descriptors for accessor properties are different from those for data properties. For accessor properties, there is no `value` or `writable`, but instead there are `get` and `set` functions. That is, an accessor descriptor may have:
+
+  - `get` – a function without arguments, that works when a property is read,
+  - `set` – a function with one argument, that is called when the property is set,
+  - `enumerable` – same as for data properties,
+  - `configurable` – same as for data properties.
+
+```js
+let user = {
+  name: "John",
+  surname: "Smith"
+};
+
+Object.defineProperty(user, 'fullName', {
+  get() {
+    return `${this.name} ${this.surname}`;
+  },
+
+  set(value) {
+    [this.name, this.surname] = value.split(" ");
+  }
+});
+
+alert(user.fullName); // John Smith
+
+for(let key in user) alert(key); // name, surname
+```
+
+- Can be used together with `_variableName` convention to indicate *private* properties:
+
+```js
+let user = {
+  get name() {
+    return this._name;
+  },
+
+  set name(value) {
+    if (value.length < 4) {
+      alert("Name is too short, need at least 4 characters");
+      return;
+    }
+    this._name = value;
+  }
+};
+
+user.name = "Pete";
+alert(user.name); // Pete
+
+user.name = ""; // Name is too short...
+```
+
+- One of the great uses of accessors is that they allow to take control over a “regular” data property at any moment by replacing it with a getter and a setter and tweak its behavior. This is especially useful for compatibility if some code needs to change (e.g. `age` property needs to be changed to `birthday`, but former one still needs to be accessed by older code).
 
 ## Data Types
 
