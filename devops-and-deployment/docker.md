@@ -14,6 +14,7 @@
 
 - [CS50 Harvard Course](https://cs50.harvard.edu/web/2020/weeks/7/)
 - [Docker-Compose for Django and React with Nginx reverse-proxy and Let's encrypt certificate](https://saasitive.com/tutorial/docker-compose-django-react-nginx-let-s-encrypt/)
+- [Docker & Kubernetes: The Practical Guide](https://www.udemy.com/course/docker-kubernetes-the-practical-guide/)
 
 ## General
 
@@ -25,19 +26,19 @@
 
 ## Commands
 
-- To run a new instance of an app use: ```docker run [container]```. Use ```run -d``` to run a container in a detached mode. To attach a container running in a detached state use ```docker attach [container_id]```.
+- To run a new instance of an app use: `docker run [container]`. Use `run -d` to run a container in a detached mode. To attach a container running in a detached state use `docker attach [container_id]`.
 
-- To list all installed images ```docker images``` or ```docker image ls```.
+- To list all installed images `docker images` or `docker image ls`.
 
-- ```docker ps``` - lists currently running containers. ```docker ps -a``` - lists all containers (running currently or in the past).
+- `docker ps` - lists currently running containers. `docker ps -a` - lists all containers (running currently or in the past).
 
-- ```docker stop [container]``` - stops running container.
+- `docker stop [container]` - stops running container.
 
-- ```docker rm [container]``` - removes a container permanently.
+- `docker rm [container]` - removes a container permanently.
 
-- ```docker rmi [image]``` - removes an image (all related containers must be stopped before deleting an image).
+- `docker rmi [image]` - removes an image (all related containers must be stopped before deleting an image).
 
-- ```docker pull [docker-hub-user/image-name]``` - pull image without running it.
+- `docker pull [docker-hub-user/image-name]` - pull image without running it.
 
 ## Dockerfile
 
@@ -49,7 +50,7 @@ COPY . /app
 CMD node /app/app.js
 ```
 
-- To build an image ```docker build -t app-tag .``` or to specify dockerfile location ```docker build -f Dockerfile -t app-tag```.
+- To build an image `docker build -t app-tag .` or to specify dockerfile location `docker build -f Dockerfile -t app-tag`.
 
 ## Django Docker Set-up (vide CS50)
 
@@ -88,6 +89,7 @@ services:
 
 - Specify that we’re using version 3 of Docker Compose
 - Outline two services:
+
   - `db` sets up our database container based on an image already written by Postgres.
   - `web` sets up our server’s container by instructing Docker to:
     - Use the Dockerfile within the current directory.
@@ -96,4 +98,4 @@ services:
 
 - Now, we’re ready to start up our services with the command `docker-compose up`. This will launch both of our servers inside of new Docker containers.
 
-- At this point, we may want to run commands within our Docker container to add database entries or run tests. To do this, we’ll first run `docker ps` to show all of the docker containers that are running. Then, well find the **CONTAINER ID** of the container we wish to enter and run `docker exec -it CONTAINER_ID bash -l`. This will move you inside the *usr/src/app* directory we set up within our container. We can run any commands we wish inside that container and then exit by running **CTRL-D**.
+- At this point, we may want to run commands within our Docker container to add database entries or run tests. To do this, we’ll first run `docker ps` to show all of the docker containers that are running. Then, well find the **CONTAINER ID** of the container we wish to enter and run `docker exec -it CONTAINER_ID bash -l`. This will move you inside the _usr/src/app_ directory we set up within our container. We can run any commands we wish inside that container and then exit by running **CTRL-D**.
