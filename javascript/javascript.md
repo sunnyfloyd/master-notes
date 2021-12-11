@@ -33,6 +33,10 @@
     - [Function Scheduling](#function-scheduling)
     - [Property Flags and Descriptors](#property-flags-and-descriptors)
     - [Property Getters and Setters](#property-getters-and-setters)
+    - [Prototypal Inheritance](#prototypal-inheritance)
+    - [F.prototype](#fprototype)
+    - [Native Prototypes](#native-prototypes)
+    - [Prototype Methods and Objects without __proto__](#prototype-methods-and-objects-without-proto)
   - [Data Types](#data-types)
     - [Methods of Primitives](#methods-of-primitives)
     - [Numbers](#numbers)
@@ -930,6 +934,159 @@ user.name = ""; // Name is too short...
 ```
 
 - One of the great uses of accessors is that they allow to take control over a “regular” data property at any moment by replacing it with a getter and a setter and tweak its behavior. This is especially useful for compatibility if some code needs to change (e.g. `age` property needs to be changed to `birthday`, but former one still needs to be accessed by older code).
+
+### Prototypal Inheritance
+
+- In JavaScript, all objects have a hidden `[[Prototype]]` property that’s either another object or `null`.
+
+- We can use `obj.__proto__` to access it (a historical getter/setter, there are other ways, to be covered soon).
+
+- The object referenced by `[[Prototype]]` is called a “prototype”.
+
+- If we want to read a property of obj or call a method, and it doesn’t exist, then JavaScript tries to find it in the prototype.
+
+- Write/delete operations act directly on the object, they don’t use the prototype (assuming it’s a data property, not a setter).
+
+- If we call `obj.method()`, and the method is taken from the prototype, `this` still references obj. So methods always work with the current object even if they are inherited.
+
+- The `for..in` loop iterates over both its own and its inherited properties. All other key/value-getting methods only operate on the object itself.
+
+### F.prototype
+
+- The `F.prototype` property (don’t mistake it for `[[Prototype]]`) sets `[[Prototype]]` of new objects when `new F()` is called.
+
+```js
+let animal = {
+  eats: true
+};
+
+function Rabbit(name) {
+  this.name = name;
+}
+
+Rabbit.prototype = animal;
+let rabbit = new Rabbit("White Rabbit"); //  rabbit.__proto__ == animal
+```
+
+```js
+function Rabbit() {}
+Rabbit.prototype = {
+  jumps: true
+};
+
+let rabbit = new Rabbit();
+alert(rabbit.constructor === Rabbit); // false
+
+// instead use:
+function Rabbit() {}
+
+// Not overwrite Rabbit.prototype totally
+// just add to it
+Rabbit.prototype.jumps = true
+// the default Rabbit.prototype.constructor is preserved
+
+// OR
+Rabbit.prototype = {
+  jumps: true,
+  constructor: Rabbit
+};
+// now constructor is also correct, because we added it
+```
+
+- The value of `F.prototype` should be either an object or `null`: other values won’t work.
+
+- The "prototype" property only has such a special effect when set on a constructor function, and invoked with `new`.
+
+- On regular objects the prototype is nothing special:
+
+```js
+let user = {
+  name: "John",
+  prototype: "Bla-bla" // no magic at all
+};
+```
+
+- By default all functions have `F.prototype = { constructor: F }`, so we can get the constructor of an object by accessing its "constructor" property.
+
+### Native Prototypes
+
+- All built-in objects follow the same pattern:
+  
+  - The methods are stored in the prototype (`Array.prototype`, `Object.prototype`, `Date.prototype`, etc.)
+  - The object itself stores only the data (array items, object properties, the date)
+
+- Primitives also store methods in prototypes of wrapper objects: `Number.prototype`, `String.prototype` and `Boolean.prototype`. Only `undefined` and `null` do not have wrapper objects
+
+- Built-in prototypes can be modified or populated with new methods. But it’s not recommended to change them. The only allowable case is probably when we add-in a new standard, but it’s not yet supported by the JavaScript engine
+
+- Method borrowing from prototypes. Below code works because the internal algorithm of the built-in `join` method only cares about the correct indexes and the `length` property. It doesn’t check if the object is indeed an array. Many built-in methods are like that. Another possibility is to inherit by setting `obj.__proto__` to `Array.prototype`, so all `Array` methods are automatically available in `obj`. But that’s impossible if `obj` already inherits from another object. Remember, **we only can inherit from one object at a time**.
+
+```js
+let obj = {
+  0: "Hello",
+  1: "world!",
+  length: 2,
+};
+
+obj.join = Array.prototype.join;
+
+alert( obj.join(',') ); // Hello,world!
+```
+
+### Prototype Methods and Objects without __proto__
+
+- Modern methods to set up and directly access the prototype are:
+
+  - `Object.create(proto, [descriptors])` – creates an empty object with a given proto as `[[Prototype]]` (can be null) and optional property descriptors.
+  - `Object.getPrototypeOf(obj)` – returns the `[[Prototype]]` of obj (same as `__proto__` getter).
+  - `Object.setPrototypeOf(obj, proto)` – sets the `[[Prototype]]` of obj to 1 (same as `__proto__` setter).
+
+```js
+let animal = {
+  eats: true
+};
+
+// create a new object with animal as a prototype
+let rabbit = Object.create(animal);
+alert(rabbit.eats); // true
+alert(Object.getPrototypeOf(rabbit) === animal); // true
+```
+
+```js
+let animal = {
+  eats: true
+};
+
+let rabbit = Object.create(animal, {
+  jumps: {
+    value: true
+  }
+});
+
+alert(rabbit.jumps); // true
+```
+
+- The built-in `__proto__` getter/setter is unsafe if we’d want to put user-generated keys into an object. Just because a user may enter "__proto__" as the key, and there’ll be an error, with hopefully light, but generally unpredictable consequences. So we can either use `Object.create(null)` to create a “very plain” object without `__proto__`, or stick to `Map` objects for that.
+
+- `Object.create` provides an easy way to shallow-copy an object with all descriptors:
+
+```js
+let clone = Object.create(Object.getPrototypeOf(obj), Object.getOwnPropertyDescriptors(obj));
+```
+
+- We also made it clear that `__proto__` is a getter/setter for `[[Prototype]]` and resides in `Object.prototype`, just like other methods.
+
+- We can create an object without a prototype by `Object.create(null)`. Such objects are used as “pure dictionaries”, they have no issues with "__proto__" as the key.
+
+- Other methods:
+
+  - `Object.keys(obj)` / `Object.values(obj)` / `Object.entries(obj)` – returns an array of enumerable own string property names/values/key-value pairs.
+  - `Object.getOwnPropertySymbols(obj)` – returns an array of all own symbolic keys.
+  - `Object.getOwnPropertyNames(obj)` – returns an array of all own string keys.
+  - `Reflect.ownKeys(obj)` – returns an array of all own keys.
+  - `obj.hasOwnProperty(key)`: returns `true` if obj has its own (not inherited) key named key.
+
+- All methods that return object properties (like `Object.keys` and others) – return “own” properties. If we want inherited ones, we can use `for..in`.
 
 ## Data Types
 
