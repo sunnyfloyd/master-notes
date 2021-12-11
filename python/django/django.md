@@ -96,6 +96,12 @@
   - [Django Rest Framework (DRF)](#django-rest-framework-drf)
     - [Adding Additional Actions to ViewSets](#adding-additional-actions-to-viewsets)
     - [Creating Custom Permissions](#creating-custom-permissions)
+  - [Django Channels](#django-channels)
+    - [Writing a Consumer](#writing-a-consumer)
+    - [Routing](#routing)
+    - [Implementing The WebSocket Client](#implementing-the-websocket-client)
+    - [Enabling a Channel Layer](#enabling-a-channel-layer)
+      - [Setting up a channel layer with Redis](#setting-up-a-channel-layer-with-redis)
   - [Django App Deployment](#django-app-deployment)
     - [Heroku](#heroku)
 
@@ -2267,6 +2273,165 @@ class IsEnrolled(BasePermission):
     def has_object_permission(self, request, view, obj):
         return obj.students.filter(id=request.user.id).exists()
 ```
+
+## Django Channels
+
+- Django 3 comes with support for running asynchronous Python through ASGI, but it does not yet support asynchronous views or middleware. However, as mentioned, Channels extends Django to handle not only HTTP, but also protocols that require long-running connections, such as WebSockets and chatbots.
+
+- **WebSockets** provide full-duplex communication by establishing a persistent, open, bidirectional Transmission Control Protocol (TCP) connection between servers and clients. You are going to use WebSockets to implement your chat server.
+
+- **Channels** replaces Django's request/response cycle with messages that are sent across channels. HTTP requests are still routed to view functions using Django, but they get routed over channels. This allows for WebSockets message handling as well, where you have producers and consumers that exchange messages across a channel layer. Channels preserves Django's synchronous architecture, allowing you to choose between writing synchronous code and asynchronous code, or a combination of both.
+
+- Channels expects you to define a single root application that will be executed for all requests. You can define the root application by adding the ASGI_APPLICATION setting to your project. This is similar to the ROOT_URLCONF setting that points to the base URL patterns of your project. You can place the root application anywhere in your project, but it is recommended to put it in a project-level file named `routing.py`:
+
+```py
+from channels.routing import ProtocolTypeRouter
+application = ProtocolTypeRouter({
+    # empty for now
+})
+
+# Then, add the following line to the settings.py file of your project:
+ASGI_APPLICATION = 'educa.routing.application'
+```
+
+- When Channels is added to the `INSTALLED_APPS` setting, it takes control over the runserver command, replacing the standard Django development server. Besides handling URL routing to Django views for synchronous requests, the Channels development server also manages routes to WebSocket consumers.
+
+- Steps to run asynchronous application via Channels:
+
+    - **Set up a consumer**: Consumers are individual pieces of code that can handle WebSockets in a very similar way to traditional HTTP views. You will build a consumer to read and write messages to a communication channel.
+    - **Configure routing**: Channels provides routing classes that allow you to combine and stack your consumers. You will configure URL routing for your chat consumer.
+    - **Implement a WebSocket client**: When the student accesses the chat room, you will connect to the WebSocket from the browser and send or receive messages using JavaScript.
+    - **Enable a channel layer**: Channel layers allow you to talk between different instances of an application. They're a useful part of making a distributed real-time application. You will set up a channel layer using Redis.
+
+### Writing a Consumer
+
+```py
+import json
+from channels.generic.websocket import WebsocketConsumer
+class ChatConsumer(WebsocketConsumer):
+    def connect(self):
+        # accept connection
+        self.accept()
+    def disconnect(self, close_code):
+        pass
+    # receive message from WebSocket
+    def receive(self, text_data):
+        text_data_json = json.loads(text_data)
+        message = text_data_json['message']
+        # send message to WebSocket
+        self.send(text_data=json.dumps({'message': message}))
+```
+
+### Routing
+
+- Channels provides routing classes that allow you to combine and stack consumers to dispatch based on what the connection is. You can think of them as the URL routing system of Django for asynchronous applications.
+
+- Create a new file inside the `chat` application directory and name it `routing.py`. Add the following code to it:
+
+```py
+from django.urls import re_path
+from . import consumers
+websocket_urlpatterns = [
+    re_path(r'ws/chat/room/(?P<course_id>\d+)/$', consumers.ChatConsumer),
+]
+```
+
+- It is a good practice to prepend WebSocket URLs with `/ws/` to differentiate them from URLs used for standard synchronous HTTP requests. This also simplifies the production setup when an HTTP server routes requests based on the path.
+
+- Edit the global `routing.py` file located next to the `settings.py` file so that it looks like this:
+
+```py
+from channels.auth import AuthMiddlewareStack
+from channels.routing import ProtocolTypeRouter, URLRouter
+import chat.routing
+application = ProtocolTypeRouter({
+    'websocket': AuthMiddlewareStack(
+        URLRouter(
+            chat.routing.websocket_urlpatterns
+        )
+    ),
+})
+```
+
+### Implementing The WebSocket Client
+
+- This part is specific to the used front-end client.
+
+### Enabling a Channel Layer
+
+- Channel layers allow you to communicate between different instances of an application. A channel layer is the transport mechanism that allows multiple consumer instances to communicate with each other and with other parts of Django.
+
+- Channel layers provide two abstractions to manage communications: channels and groups:
+
+    - **Channel**: You can think of a channel as an inbox where messages can be sent to or as a task queue. Each channel has a name. Messages are sent to a channel by anyone who knows the channel name and then given to consumers listening on that channel.
+    - **Group**: Multiple channels can be grouped into a group. Each group has a name. A channel can be added or removed from a group by anyone who knows the group name. Using the group name, you can also send a message to all channels in the group.
+
+#### Setting up a channel layer with Redis
+
+- Redis is the preferred option for a channel layer, though Channels has support for other types of channel layers. Redis works as the communication store for the channel layer.
+
+```py
+# pip install channels-redis==2.4.2
+# Edit the settings.py file of the educa project and add the following code to it:
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [('127.0.0.1', 6379)],
+        },
+    },
+}
+
+# editing a consumer class
+import json
+from channels.generic.websocket import AsyncWebsocketConsumer
+from asgiref.sync import async_to_sync
+from django.utils import timezone
+class ChatConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        self.user = self.scope['user']
+        self.id = self.scope['url_route']['kwargs']['course_id']
+        self.room_group_name = 'chat_%s' % self.id
+        # join room group
+        await self.channel_layer.group_add(
+            self.room_group_name,
+            self.channel_name
+        )
+        # accept connection
+        await self.accept()
+    async def disconnect(self, close_code):
+        # leave room group
+        await self.channel_layer.group_discard(
+            self.room_group_name,
+            self.channel_name
+        )
+    # receive message from WebSocket
+    async def receive(self, text_data):
+        text_data_json = json.loads(text_data)
+        message = text_data_json['message']
+        now = timezone.now()
+        # send message to room group
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'chat_message',
+                'message': message,
+                'user': self.user.username,
+                'datetime': now.isoformat(),
+            }
+        )
+    # receive message from room group
+    async def chat_message(self, event):
+        # send message to WebSocket
+        await self.send(text_data=json.dumps(event))
+```
+
+- Above you pass the following information in the event sent to the group:
+
+    - `type`: The event type. This is a special key that corresponds to the name of the method that should be invoked on consumers that receive the event. You can implement a method in the consumer named the same as the message type so that it gets executed every time a message with that specific type is received.
+    - `message`: The actual message you are sending.
+
 
 ## Django App Deployment
 
