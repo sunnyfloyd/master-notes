@@ -44,17 +44,31 @@
 
 - After creating a 'Dockerfile' it should be populated with instructions:
 
-```docker
-FROM node:alpine
+```dockerfile
+# image upon on which new image will be created
+FROM node
+# set up working directory from which commands will be run
+WORKDIR /app
+# copy the code from the current folder to the workdir (explicitly; instead can be just "."
+# since workdir has been set)
 COPY . /app
-CMD node /app/app.js
+# runs the command to create an image
+RUN npm install
+# this command is optional and is used solely for documentation purpose
+EXPOSE 80
+# runs when new container is created based on this image
+CMD ["node", "server.js"]
 ```
 
-- To build an image `docker build -t app-tag .` or to specify dockerfile location `docker build -f Dockerfile -t app-tag`.
+- `docker build .` - to build a new custom image based on the Dockerfile.
+
+- `docker run -p local_port:exposed_port container_id` - to run a container and expose specific port.
+
+- To build an image `docker build -t app-tag .` or to specify Dockerfile location `docker build -f docker_file -t app-tag`.
 
 ## Django Docker Set-up (vide CS50)
 
-- First step is to create a Docker File which we’ll name Dockerfile. Inside this file, we’ll provide instructions for how to create a Docker Image which describes the libraries and binaries we wish to include in our container. Here’s an example of what our Dockerfile might look like:
+- First step is to create a Dockerfile which we’ll name Dockerfile. Inside this file, we’ll provide instructions for how to create a Docker Image which describes the libraries and binaries we wish to include in our container. Here’s an example of what our Dockerfile might look like:
 
 ```docker
 FROM python:3
