@@ -37,6 +37,8 @@
     - [F.prototype](#fprototype)
     - [Native Prototypes](#native-prototypes)
     - [Prototype Methods and Objects without __proto__](#prototype-methods-and-objects-without-proto)
+  - [Classes](#classes)
+    - [Class Inheritance](#class-inheritance)
   - [Data Types](#data-types)
     - [Methods of Primitives](#methods-of-primitives)
     - [Numbers](#numbers)
@@ -1087,6 +1089,45 @@ let clone = Object.create(Object.getPrototypeOf(obj), Object.getOwnPropertyDescr
   - `obj.hasOwnProperty(key)`: returns `true` if obj has its own (not inherited) key named key.
 
 - All methods that return object properties (like `Object.keys` and others) – return “own” properties. If we want inherited ones, we can use `for..in`.
+
+## Classes
+
+- The basic class syntax looks like this:
+
+```js
+class MyClass {
+  prop = value; // property
+
+  constructor(...) { // constructor
+    // ...
+  }
+
+  method(...) {} // method
+
+  get something(...) {} // getter method
+  set something(...) {} // setter method
+
+  [Symbol.iterator]() {} // method with computed name (symbol here)
+  // ...
+}
+```
+
+- `MyClass` is technically a function (the one that we provide as `constructor`), while methods, getters and setters are written to `MyClass.prototype`.
+
+### Class Inheritance
+
+- To extend a class: `class Child extends Parent`. That means `Child.prototype.__proto__` will be `Parent.prototype`, so methods are inherited.
+
+- When overriding a constructor we must call parent constructor as `super()` in `Child` constructor before using `this`.
+
+- When overriding another method we can use `super.method()` in a `Child` method to call `Parent` method.
+
+- Internals:
+  
+  - Methods remember their class/object in the internal `[[HomeObject]]` property. That’s how `super` resolves parent methods.
+  - So it’s not safe to copy a method with `super` from one object to another.
+
+- Arrow functions don’t have their own `this` or `super`, so they transparently fit into the surrounding context.
 
 ## Data Types
 
