@@ -102,7 +102,11 @@
     - [Implementing The WebSocket Client](#implementing-the-websocket-client)
     - [Enabling a Channel Layer](#enabling-a-channel-layer)
       - [Setting up a channel layer with Redis](#setting-up-a-channel-layer-with-redis)
-  - [Django App Deployment](#django-app-deployment)
+  - [Django Deployment](#django-deployment)
+    - [Django by Example](#django-by-example)
+      - [uWSGI](#uwsgi)
+      - [NGINX](#nginx)
+      - [Daphne](#daphne)
     - [Heroku](#heroku)
 
 ## Sources
@@ -2433,7 +2437,124 @@ class ChatConsumer(AsyncWebsocketConsumer):
     - `message`: The actual message you are sending.
 
 
-## Django App Deployment
+## Django Deployment
+
+### Django by Example
+
+- Example of settings separation:
+
+```
+settings/
+    __init__.py
+    base.py
+    local.py
+    pro.py
+```
+
+- In the `base.py` adjust `BASE_DIR`:
+
+```py
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(
+```
+
+- To indicate location of Django settings use `DJANGO_SETTINGS_MODULE` environment variable or provide a path when running Django manager:
+
+```bash
+export DJANGO_SETTINGS_MODULE=educa.settings.pro
+# OR
+python manage.py shell --settings=educa.settings.pro
+```
+
+- Django includes the check management command for checking your project at any time. This command inspects the applications installed in your Django project and outputs any errors or warnings. If you include the --deploy option, additional checks only relevant for production use will be triggered:
+
+```bash
+python manage.py check --deploy
+```
+
+#### uWSGI
+
+```ini
+### config/uwsgi.ini
+[uwsgi]
+# variables
+projectname = educa
+base = /home/projects/educa
+# configuration
+master = true
+virtualenv = /home/env/%(projectname)
+pythonpath = %(base)
+chdir = %(base)
+env = DJANGO_SETTINGS_MODULE=%(projectname).settings.pro
+module = %(projectname).wsgi:application
+socket = /tmp/%(projectname).sock
+chmod-socket = 666
+```
+
+#### NGINX
+
+```conf
+### config/nginx.conf
+# the upstream components nginx needs to connect to
+upstream educa {
+    server unix:/tmp/educa.sock;
+}
+upstream daphne {
+    server unix:/tmp/daphne.sock;
+}
+server {
+    listen 80;
+    server_name www.educaproject.com educaproject.com;
+    return 301 https://educaproject.com$request_uri;
+}
+server {
+    listen               443 ssl;
+    ssl_certificate      /home/projects/educa/ssl/educa.crt;
+    ssl_certificate_key  /home/projects/educa/ssl/educa.key;
+    
+    server_name  www.educaproject.com educaproject.com;
+    access_log   off;
+    error_log    /home/projects/educa/logs/nginx_error.log;
+    location / {
+        include     /etc/nginx/uwsgi_params;
+        uwsgi_pass  educa;
+    }
+    location /ws/ {
+        proxy_http_version  1.1;
+        proxy_set_header    Upgrade $http_upgrade;
+        proxy_set_header    Connection "upgrade";
+        proxy_redirect      off;
+        proxy_pass          http://daphne;
+    }
+    location /static/ {
+        alias /home/projects/educa/static/;
+    }
+    location /media/ {
+        alias /home/projects/educa/media/;
+    }
+}
+```
+
+- Run uWSGI `uwsgi --ini config/uwsgi.ini` and run NGINX `sudo nginx -s reload`.
+
+#### Daphne
+
+- Changing `asgi.py` to use Django Channels for WebSocket connection:
+
+```py
+import os
+import django
+from channels.routing import get_default_application
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'educa.settings')
+django.setup()
+application = get_default_application()
+```
+
+- Run Daphne:
+
+```bash
+export DJANGO_SETTINGS_MODULE=educa.settings.pro
+daphne -u /tmp/daphne.sock educa.asgi:application
+```
 
 ### Heroku
 
