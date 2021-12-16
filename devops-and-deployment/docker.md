@@ -5,8 +5,12 @@
 - [Docker](#docker)
   - [Table of Contents](#table-of-contents)
   - [Sources](#sources)
-  - [General](#general)
+  - [Docker](#docker-1)
+  - [Container](#container)
+  - [Image](#image)
   - [Commands](#commands)
+    - [Containers](#containers)
+    - [Images](#images)
   - [Dockerfile](#dockerfile)
   - [Django Docker Set-up (vide CS50)](#django-docker-set-up-vide-cs50)
 
@@ -16,25 +20,49 @@
 - [Docker-Compose for Django and React with Nginx reverse-proxy and Let's encrypt certificate](https://saasitive.com/tutorial/docker-compose-django-react-nginx-let-s-encrypt/)
 - [Docker & Kubernetes: The Practical Guide](https://www.udemy.com/course/docker-kubernetes-the-practical-guide/)
 
-## General
-
-- **Containers** are isolated environments that have seperate processes, network and mounts, but share the same OS kernel. Applications are separated and can use different libraries and have different dependencies.
+## Docker
 
 - Docker, unlike hypervisors, is not meant to virtualize environments of the different systems. Main purpose of Docker is to package and containerize the application and to ship it and to run it anywhere, at any time, as many times as desired.
 
-- **Docker image** is just a package template that is used to create containers. Images for different technologies are available on **Docker Hub**.
+## Container
+
+- **Containers** are isolated environments that have seperate processes, network and mounts, but share the same OS kernel. Applications are separated and can use different libraries and have different dependencies.
+
+## Image
+
+- **Docker image** is just a package template that is used to create containers.
+
+- Image can be viewed as a set of layers where each command inside a Dockerfile is a separate layer. Each layer is cached and **can be re-used if no changes were made within this layer and layers before it**. It is therefore important to think through the order of each command to optimize building process.
+
+- Docker image is read-only - after code is built image is locked. To make changes in code it needs to be rebuilt and new image needs to be created.
+
+- Images for different technologies are available on **Docker Hub**.
 
 ## Commands
 
+### Containers
+
 - To run a new instance of an app use: `docker run [container]`. Use `run -d` to run a container in a detached mode. To attach a container running in a detached state use `docker attach [container_id]`.
 
-- To list all installed images `docker images` or `docker image ls`.
+  - Use `-it` flag to expose a container's terminal with which we can interact.
 
 - `docker ps` - lists currently running containers. `docker ps -a` - lists all containers (running currently or in the past).
 
 - `docker stop [container]` - stops running container.
 
 - `docker rm [container]` - removes a container permanently.
+
+- `docker start [image]` - restarts stopped container (it does not create a new container) and runs it in the detached mode. Add `-a` flag to restart a container in an attached mode.
+
+- `docker attach [container]` - attaches current terminal to the running container.
+
+- `docker logs [container]` - fetches the logs printed by a container.
+
+  - Add `-f` flag to keep on listening to the changes in the container logs (equivalent of attaching to the container).
+
+### Images
+
+- To list all installed images `docker images` or `docker image ls`.
 
 - `docker rmi [image]` - removes an image (all related containers must be stopped before deleting an image).
 
