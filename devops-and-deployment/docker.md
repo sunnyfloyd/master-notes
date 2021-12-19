@@ -44,7 +44,10 @@
 
 - To run a new instance of an app use: `docker run [container]`. Use `run -d` to run a container in a detached mode. To attach a container running in a detached state use `docker attach [container_id]`.
 
-  - Use `-it` flag to expose a container's terminal with which we can interact.
+  - `-it` exposes a container's terminal with which we can interact.
+  - `-p local_port:exposed_port` publishes an exposed port to the host port.
+  - `--rm` automatically removes the container when it exists.
+  - `--name` names a container.
 
 - `docker ps` - lists currently running containers. `docker ps -a` - lists all containers (running currently or in the past).
 
@@ -60,13 +63,25 @@
 
   - Add `-f` flag to keep on listening to the changes in the container logs (equivalent of attaching to the container).
 
+- `docker container prune` - removes all stopped containers.
+
+- `docker cp source destination` - allows to copy folders and files to and from running container.
+
 ### Images
+
+- Image names follow the *name:tag* convention. Name indicates an image group whereas tag indicates specialized version of this group.
+
+- `docker build -t name:tag` build an image with the specified name and tag.
 
 - To list all installed images `docker images` or `docker image ls`.
 
 - `docker rmi [image]` - removes an image (all related containers must be stopped before deleting an image).
 
 - `docker pull [docker-hub-user/image-name]` - pull image without running it.
+
+- `docker image prune` - removes all unused Docker images. Add `-a` flag to also remove tagged images.
+
+- `docker image inspect` - inspects an image (ID, creation date, container configuration, OS, layers, etc.).
 
 ## Dockerfile
 
