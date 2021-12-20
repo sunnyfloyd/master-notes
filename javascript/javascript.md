@@ -39,6 +39,9 @@
     - [Prototype Methods and Objects without __proto__](#prototype-methods-and-objects-without-proto)
   - [Classes](#classes)
     - [Class Inheritance](#class-inheritance)
+    - [Static Methods](#static-methods)
+    - [Private and Protected Properties and Methods](#private-and-protected-properties-and-methods)
+    - [Extending Built-in Classes](#extending-built-in-classes)
   - [Data Types](#data-types)
     - [Methods of Primitives](#methods-of-primitives)
     - [Numbers](#numbers)
@@ -1128,6 +1131,77 @@ class MyClass {
   - So it’s not safe to copy a method with `super` from one object to another.
 
 - Arrow functions don’t have their own `this` or `super`, so they transparently fit into the surrounding context.
+
+### Static Methods
+
+- Static methods are used for the functionality that belongs to the class “as a whole”. It doesn’t relate to a concrete class instance. They are labeled by the word `static` in class declaration. Static properties are used when we’d like to store class-level data, also not bound to an instance. The syntax is:
+
+```js
+class MyClass {
+  static property = ...;
+
+  static method() {
+    ...
+  }
+}
+```
+
+- Technically, static declaration is the same as assigning to the class itself:
+
+```js
+MyClass.property = ...
+MyClass.method = ...
+```
+
+- Static properties and methods are inherited.
+
+- For class `B` extends `A` the prototype of the class `B` itself points to `A`: `B.[[Prototype]] = A`. So if a field is not found in `B`, the search continues in `A`.
+
+### Private and Protected Properties and Methods
+
+- To hide an internal interface we use either protected or private properties:
+
+  - Protected fields start with `_`. That’s a well-known convention, not enforced at the language level. Programmers should only access a field starting with `_` from its class and classes inheriting from it.
+  - Private fields start with `#`. JavaScript makes sure we can only access those from inside the class.
+
+- Right now, private fields are not well-supported among browsers, but can be polyfilled.
+
+### Extending Built-in Classes
+
+- For example, `PowerArray` inherits from the native `Array`:
+
+```js
+// add one more method to it (can do more)
+class PowerArray extends Array {
+  isEmpty() {
+    return this.length === 0;
+  }
+}
+
+let arr = new PowerArray(1, 2, 5, 10, 50);
+alert(arr.isEmpty()); // false
+
+let filteredArr = arr.filter(item => item >= 10);
+alert(filteredArr); // 10, 50
+alert(filteredArr.isEmpty()); // false
+```
+
+- Built-in methods return new objects of exactly the inherited type `PowerArray`. Their internal implementation uses the object’s constructor property for that. This behaviour can be customized by adding static getter `Symbol.species` to the class:
+
+```js
+class PowerArray extends Array {
+  isEmpty() {
+    return this.length === 0;
+  }
+
+  // built-in methods will use this as the constructor
+  static get [Symbol.species]() {
+    return Array;
+  }
+}
+```
+
+- Built-in objects have their own static methods, for instance `Object.keys`, `Array.isArray` etc. As we already know, native classes extend each other. For instance, `Array` extends `Object`. Normally, when one class extends another, both static and non-static methods are inherited. **But built-in classes are an exception. They don’t inherit statics from each other.** For example, both `Array` and `Date` inherit from `Object`, so their instances have methods from `Object.prototype`. But `Array.[[Prototype]]` does not reference `Object`, so there’s no, for instance, `Array.keys()` (or `Date.keys()`) static method.
 
 ## Data Types
 
