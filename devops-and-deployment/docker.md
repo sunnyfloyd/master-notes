@@ -73,6 +73,8 @@
 
 - `docker build -t name:tag` build an image with the specified name and tag.
 
+- `docker tag current_name:new_name` - clones an image giving it a different name.
+
 - To list all installed images `docker images` or `docker image ls`.
 
 - `docker rmi [image]` - removes an image (all related containers must be stopped before deleting an image).
@@ -82,6 +84,10 @@
 - `docker image prune` - removes all unused Docker images. Add `-a` flag to also remove tagged images.
 
 - `docker image inspect` - inspects an image (ID, creation date, container configuration, OS, layers, etc.).
+
+- `docker push [image]` - pushes an image to DockerHub. Use `HOST:NAME` if you want to push an image to a private registry.
+
+- `docker pull [image]` - pulls an image from DockerHub. Use `HOST:NAME` if you want to pull an image from private registry.
 
 ## Dockerfile
 
