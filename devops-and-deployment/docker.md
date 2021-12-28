@@ -8,9 +8,11 @@
   - [Docker](#docker-1)
   - [Container](#container)
   - [Image](#image)
+  - [Volumes](#volumes)
   - [Commands](#commands)
     - [Containers](#containers)
     - [Images](#images)
+    - [Volumes](#volumes-1)
   - [Dockerfile](#dockerfile)
   - [Django Docker Set-up (vide CS50)](#django-docker-set-up-vide-cs50)
 
@@ -37,6 +39,22 @@
 - Docker image is read-only - after code is built image is locked. To make changes in code it needs to be rebuilt and new image needs to be created.
 
 - Images for different technologies are available on **Docker Hub**.
+
+## Volumes
+
+- **Volumes** are folders on your host machine hard drive which are mounted (mapped) into containers.
+
+- Volumes persist if a container shuts down. If a container re-starts/starts and mounts a volume, any data inside of that volume is available in the container.
+
+- A container can write data into a volume and read data from it.
+
+- Volumes can be either **managed by Docker** (location of volume is unknown) or **managed by you** in case of **bind volumes**.
+
+- Volumes managed by Docker divide into anonymous volumes and named volumes.
+
+- Anonymous volumes are not getting re-used. Everytime container (with defined volume) is being run a new volume is being created.
+
+- Named volumes persists and can be pointed to when running a container.
 
 ## Commands
 
@@ -88,6 +106,14 @@
 - `docker push [image]` - pushes an image to DockerHub. Use `HOST:NAME` if you want to push an image to a private registry.
 
 - `docker pull [image]` - pulls an image from DockerHub. Use `HOST:NAME` if you want to pull an image from private registry.
+
+### Volumes
+
+- `docker run -v VOL_NAME:/path/in/the/container/` - runs a container using named volume for given path.
+
+- `docker volume rm VOL_NAME` - deletes given volume.
+
+- `docker volume prune` - deletes all unused volumes (anonymous ones).
 
 ## Dockerfile
 
