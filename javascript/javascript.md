@@ -42,6 +42,8 @@
     - [Static Methods](#static-methods)
     - [Private and Protected Properties and Methods](#private-and-protected-properties-and-methods)
     - [Extending Built-in Classes](#extending-built-in-classes)
+    - [Mixins](#mixins)
+    - [Type Checking Methods](#type-checking-methods)
   - [Data Types](#data-types)
     - [Methods of Primitives](#methods-of-primitives)
     - [Numbers](#numbers)
@@ -1202,6 +1204,45 @@ class PowerArray extends Array {
 ```
 
 - Built-in objects have their own static methods, for instance `Object.keys`, `Array.isArray` etc. As we already know, native classes extend each other. For instance, `Array` extends `Object`. Normally, when one class extends another, both static and non-static methods are inherited. **But built-in classes are an exception. They don’t inherit statics from each other.** For example, both `Array` and `Date` inherit from `Object`, so their instances have methods from `Object.prototype`. But `Array.[[Prototype]]` does not reference `Object`, so there’s no, for instance, `Array.keys()` (or `Date.keys()`) static method.
+
+### Mixins
+
+- **Mixin** – is a generic object-oriented programming term: a class that contains methods for other classes. Some other languages allow multiple inheritance. JavaScript does not support multiple inheritance, but mixins can be implemented by copying methods into prototype. We can use mixins as a way to augment a class by adding multiple behaviors, like event-handling.
+
+- Mixins may become a point of conflict if they accidentally overwrite existing class methods. So generally one should think well about the naming methods of a mixin, to minimize the probability of that happening.
+
+```js
+// mixin
+let sayHiMixin = {
+  sayHi() {
+    alert(`Hello ${this.name}`);
+  },
+  sayBye() {
+    alert(`Bye ${this.name}`);
+  }
+};
+
+// usage:
+class User {
+  constructor(name) {
+    this.name = name;
+  }
+}
+
+// copy the methods
+Object.assign(User.prototype, sayHiMixin);
+
+// now User can say hi
+new User("Dude").sayHi(); // Hello Dude!
+```
+
+### Type Checking Methods
+
+|               |                            works for                            |   returns  |
+|:-------------:|:---------------------------------------------------------------:|:----------:|
+| `typeof`      | primitives                                                      | string     |
+| `{}.toString` | primitives, built-in objects, objects with `Symbol.toStringTag` | string     |
+| `instanceof`  | objects                                                         | true/false |
 
 ## Data Types
 
