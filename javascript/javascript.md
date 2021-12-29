@@ -56,6 +56,9 @@
     - [WeakMap and WeakSet](#weakmap-and-weakset)
     - [Date and Time](#date-and-time)
     - [JSON Methods](#json-methods)
+  - [Error Handling](#error-handling)
+    - ["try...catch"](#trycatch)
+    - [Custom Errors](#custom-errors)
   - [Testing](#testing)
   - [Debugging](#debugging)
   - [DOM Manipulation](#dom-manipulation)
@@ -1483,6 +1486,109 @@ let arr = new Array(item1, item2...);
 - Both methods support transformer functions for smart reading/writing.
 
 - If an object has `toJSON`, then it is called by `JSON.stringify`.
+
+## Error Handling
+
+### "try...catch"
+
+- The `try...catch` construct allows to handle runtime errors. It literally allows to “try” running the code and “catch” errors that may occur in it.
+
+```js
+try {
+  // run this code
+} catch (err) {
+  // if an error happened, then jump here
+  // err is the error object
+} finally {
+  // do in any case after try/catch
+}
+```
+
+- There may be no `catch` section or no `finally`, so shorter constructs `try...catch` and `try...finally` are also valid.
+
+- The `finally` clause works in case of any exit from `try...catch`, even via the `return` statement.
+
+- Error objects have following properties:
+
+  - `message` – the human-readable error message.
+  - `name` – the string with error name (error constructor name).
+  - `stack` (non-standard, but well-supported) – the stack at the moment of error creation.
+
+- If an error object is not needed, we can omit it by using `catch {}` instead of `catch (err) {}`.
+
+- We can also generate our own errors using the `throw` operator. Technically, the argument of `throw` can be anything, but usually it’s an error object inheriting from the built-in `Error` class.
+
+- `Rethrowing` is a very important pattern of error handling: a `catch` block usually expects and knows how to handle the particular error type, so it should rethrow errors it doesn’t know.
+
+- Even if we don’t have `try...catch`, most environments allow us to setup a “global” error handler to catch errors that “fall out”. In-browser, that’s `window.onerror`.
+
+### Custom Errors
+
+- We can inherit from `Error` and other built-in error classes normally. We just need to take care of the `name` property and don’t forget to call `super`.
+
+- We can use `instanceof` to check for particular errors. It also works with inheritance. But sometimes we have an error object coming from a 3rd-party library and there’s no easy way to get its class. Then `name` property can be used for such checks.
+
+- Wrapping exceptions is a widespread technique: a function handles low-level exceptions and creates higher-level errors instead of various low-level ones. Low-level exceptions sometimes become properties of that object like `err.cause`, but that’s not strictly required.
+
+```js
+class ReadError extends Error {
+  constructor(message, cause) {
+    super(message);
+    this.cause = cause;
+    this.name = 'ReadError';
+  }
+}
+
+class ValidationError extends Error { /*...*/ }
+class PropertyRequiredError extends ValidationError { /* ... */ }
+
+function validateUser(user) {
+  if (!user.age) {
+    throw new PropertyRequiredError("age");
+  }
+
+  if (!user.name) {
+    throw new PropertyRequiredError("name");
+  }
+}
+
+function readUser(json) {
+  let user;
+
+  try {
+    user = JSON.parse(json);
+  } catch (err) {
+    if (err instanceof SyntaxError) {
+      throw new ReadError("Syntax Error", err);
+    } else {
+      throw err;
+    }
+  }
+
+  try {
+    validateUser(user);
+  } catch (err) {
+    if (err instanceof ValidationError) {
+      throw new ReadError("Validation Error", err);
+    } else {
+      throw err;
+    }
+  }
+
+}
+
+try {
+  readUser('{bad json}');
+} catch (e) {
+  if (e instanceof ReadError) {
+    alert(e);
+    // Original error: SyntaxError: Unexpected token b in JSON at position 1
+    alert("Original error: " + e.cause);
+  } else {
+    throw e;
+  }
+}
+```
 
 ## Testing
 
