@@ -9,7 +9,7 @@
 - `apt install`
 - `one command | second command` - second command uses output from the first command
 - `which command_name` - checks whether given command is installed and if so it prints its location
-
+- `history` - shows history of commands that were run.
 
 ## Directory Navigation
 
@@ -27,6 +27,28 @@
 - `mv file_name file_name2_and_location` or `mv file_name1 file_name2 file_name3 location/' which will move all of the specified files into a given location
 - `rm file_name`, supports wildcards `rm file*`
 - `rm -r directory_name`
+
+### chmod
+
+- owner (u), group (g), others (o)
+- `chmod a+x file_name`
+- `chmod ugo=rwx filename`
+- `chmod go-wx,u=rwx file_name`
+
+### find
+
+- Allows for finding files and folders based on a wide variety of criteria.
+- `find folder_to_start_search -name 'phrase'` - searches by files/folders names. `-iname` flag performs case insensitive search.
+- `-type d` searches for directories only.
+
+### du
+
+- `du` - disk usage of the current directory.
+- `-h` - file size in human-readable format.
+
+### df
+
+- `df` - provides disk usage information on mounted volumes.
 
 ## Text Commands
 
@@ -88,9 +110,17 @@
 - `paste -s` by default tab delimiters are used
 - `paste -sd $'\t\t\n'` can also use arbitrary sequence of delimiters
 
-### chmod
+### diff
 
-- owner (u), group (g), others (o)
-- `chmod a+x file_name`
-- `chmod ugo=rwx filename`
-- `chmod go-wx,u=rwx file_name`
+- `diff first_file second_file` - compares files and outputs their difference.
+- `-y` flag shows files side by side.
+- `-u` flag shows file differences in a git-like way.
+
+## Expansions
+
+- Shell expands certain characters or syntax that can be used in other commands.
+- `~` - home folder.
+- '*' - represents entire string.
+- `?` - represents a single character.
+- `{a,b,c}.txt` - creates a carthesian product with a string outside of curly braces. In this example it would output 3 strings: `a.txt b.txt c.txt`.
+- `{1..10}` - creates a count from the first number to the last one (inclusive).
