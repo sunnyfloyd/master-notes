@@ -12,6 +12,7 @@
   - [Diff](#diff)
   - [Log](#log)
   - [Merging](#merging)
+    - [Rebase](#rebase)
   - [Tags](#tags)
   - [Remote Repos](#remote-repos)
   - [Useful Info](#useful-info)
@@ -184,6 +185,17 @@ git push --set-upstream origin main
 - To delete a branch `git branch -d <branch_name>` - this is especially useful when some bug fixing/new feature development has happened on a new branch and master branch has already been merged with such branch so it can be deleted.
 
 - When conflict occur mergin/rebasing can be reverted with: `git merge --abort` or `git rebase --abort`.
+
+### Rebase
+
+- Rebasing can be done on commits with interactive rebase: `git rebase -i @~9   # Show the last 9 commits in a text editor`
+
+- Find the commit you want, change `pick` to `e`/`edit`, and save and close the file. Git will rewind to that commit, allowing you to either:
+
+  - use `git commit --amend` to make changes, or
+  - use `git reset @~` to discard the last commit, but not the changes to the files (i.e. take you to the point you were at when you'd edited the files, but hadn't committed yet).
+  - The latter is useful for doing more complex stuff like splitting into multiple commits.
+  - Then, run `git rebase --continue`, and Git will replay the subsequent changes on top of your modified commit. You may be asked to fix some merge conflicts.
 
 ## Tags
 
