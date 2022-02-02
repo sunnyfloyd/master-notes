@@ -56,6 +56,10 @@
 
 - Named volumes persists and can be pointed to when running a container.
 
+### Bind Mounts
+
+- **Bind Mounts** are like volumes, but are managed by us.
+
 ## Commands
 
 ### Containers
@@ -73,7 +77,7 @@
 
 - `docker rm [container]` - removes a container permanently.
 
-- `docker start [image]` - restarts stopped container (it does not create a new container) and runs it in the detached mode. Add `-a` flag to restart a container in an attached mode.
+- `docker start [container]` - restarts stopped container (it does not create a new container) and runs it in the detached mode. Add `-a` flag to restart a container in an attached mode.
 
 - `docker attach [container]` - attaches current terminal to the running container.
 
@@ -96,8 +100,6 @@
 - To list all installed images `docker images` or `docker image ls`.
 
 - `docker rmi [image]` - removes an image (all related containers must be stopped before deleting an image).
-
-- `docker pull [docker-hub-user/image-name]` - pull image without running it.
 
 - `docker image prune` - removes all unused Docker images. Add `-a` flag to also remove tagged images.
 
