@@ -142,6 +142,10 @@ CMD ["node", "server.js"]
 
 - To build an image `docker build -t app-tag .` or to specify Dockerfile location `docker build -f docker_file -t app-tag`.
 
+## Arguments and Environment Variables
+- `ARG` available only inside of a Dockerfile
+- `ENV` available inside of Dockerfile and application code
+
 ## Django Docker Set-up (vide CS50)
 
 - First step is to create a Dockerfile which we’ll name Dockerfile. Inside this file, we’ll provide instructions for how to create a Docker Image which describes the libraries and binaries we wish to include in our container. Here’s an example of what our Dockerfile might look like:
