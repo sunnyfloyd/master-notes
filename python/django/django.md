@@ -260,6 +260,33 @@ class Post(models.Model):
 
 - The `get_queryset()` method of a manager returns the `QuerySet` that will be executed.
 
+- In case of code repetition in filtering/customizing QuerySets custom model manager can be used together with customized QuerySet class:
+
+```py
+class PersonQuerySet(models.QuerySet):
+    def authors(self):
+        return self.filter(role='A')
+
+    def editors(self):
+        return self.filter(role='E')
+
+class PersonManager(models.Manager):
+    def get_queryset(self):
+        return PersonQuerySet(self.model, using=self._db)
+
+    def authors(self):
+        return self.get_queryset().authors()
+
+    def editors(self):
+        return self.get_queryset().editors()
+
+class Person(models.Model):
+    first_name = models.CharField(max_length=50)
+    last_name = models.CharField(max_length=50)
+    role = models.CharField(max_length=1, choices=[('A', _('Author')), ('E', _('Editor'))])
+    people = PersonManager()
+```
+
 ### Custom Many-to-Many Relationship
 
 - When you need additional fields in a many-to-many relationship, create a custom model with a ForeignKey for each side of the relationship. Add a ManyToManyField in one of the related models and indicate to Django that your intermediary model should be used by including it in the through parameter.
@@ -519,6 +546,28 @@ python manage.py loaddata subjects.json
 
 - By default, Django looks for files in the `fixtures/` directory of each application, but you can specify the complete path to the fixture file for the `loaddata` command. You can also use the `FIXTURE_DIRS` setting to tell Django additional directories to look in for fixtures.
 
+### Migrations
+
+- When writing custom migrations do not directly import model objects. Use `apps.get_model()` instead ([reference](https://codereviewdoctor.medium.com/avoiding-flaky-migration-1fc71c7cdb66)):
+
+```py
+# 0006_populate_has_chickens.py  
+from django.db import migrations
+
+def forwards(apps, schema_editor):  
+    ChickenCoopLocations = apps.get_model("territory", "ChickenCoopLocations")  
+    for item in in ChickenCoopLocations.objects.all():  
+        item.has_chickens = does_have_chickens(item.pk)  
+        item.save()
+
+class Migration(migrations.Migration):  
+    dependencies = [("cases", "0005_auto_foo.py")]  
+    operations = [migrations.RunPython(forwards)]
+
+def does_have_chickens(pk):  
+    ...
+```
+
 ## Databases and ORMs
 
 - By running `python manage.py makemigrations polls`, you’re telling Django that you’ve made some changes to your models (in this case, you’ve made new ones) and that you’d like the changes to be stored as a migration.
@@ -679,6 +728,10 @@ post_tags_ids = post.tags.values_list('id', flat=True)
 similar_posts = Post.published.filter(tags__in=post_tags_ids)\
                                 .exclude(id=post.id)
 ```
+
+##### values
+
+- `QuerySet.values` - extracts QuerySet data in form of a dictionary
 
 ### Optimizing QuerySets that Involve Related Objects
 

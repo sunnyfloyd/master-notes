@@ -33,12 +33,10 @@
 ## Image
 
 - **Docker image** is just a package template that is used to create containers.
-
 - Image can be viewed as a set of layers where each command inside a Dockerfile is a separate layer. Each layer is cached and **can be re-used if no changes were made within this layer and layers before it**. It is therefore important to think through the order of each command to optimize building process.
-
 - Docker image is read-only - after code is built image is locked. To make changes in code it needs to be rebuilt and new image needs to be created.
-
 - Images for different technologies are available on **Docker Hub**.
+- Anything that is not required to run application should be added to `.dockerignore` so that it is not included in `COPY . .`
 
 ## Volumes
 
@@ -59,6 +57,7 @@
 ### Bind Mounts
 
 - **Bind Mounts** are like volumes, but are managed by us.
+- `COPY . .` should be included in the Dockerfile even when using bind mounts to ensure that all the files are available when deploying application to production
 
 ## Commands
 
