@@ -144,7 +144,18 @@ CMD ["node", "server.js"]
 
 ## Arguments and Environment Variables
 - `ARG` available only inside of a Dockerfile
-- `ENV` available inside of Dockerfile and application code
+- `ENV` available inside of Dockerfile and application code (can be also provided through .env file)
+
+## Containers and Networks
+
+- To access services running on host machine from Docker container use `host.docker.internal` domain.
+- To check the IP address (and bunch of other information) about the container run `docker container inspect [container_name]`.
+
+### Container Networks
+
+- `docker network create [network_name]` creates Docker internal network that allows Docker containers to communicate with each other.
+- `docker run --network [network_name]` to run a container within a specific Docker network.
+- To dynamically set-up an IP address for other containers running within the same Docker network just use Docker container's name. Pluging an IP happens after the request is being sent (when it leaves a container) in the Network layer managed by Docker.
 
 ## Django Docker Set-up (vide CS50)
 
