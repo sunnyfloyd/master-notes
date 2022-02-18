@@ -210,3 +210,13 @@ class Adapter(Target):
 - The **Flyweight** pattern has a single purpose: minimizing memory intake. If your program doesn’t struggle with a shortage of RAM, then you might just ignore this pattern for a while.
 
 - Flyweight can be recognized by a creation method that returns cached objects instead of creating new.
+
+### Behavioural Design Patterns
+
+Behavioral design patterns are concerned with algorithms and the assignment of responsibilities between objects.
+
+#### Chain of Responsibility
+- **Chain of Responsibility** is a behavioral design pattern that lets you pass requests along a chain of handlers. Upon receiving a request, each handler decides either to process the request or to pass it to the next handler in the chain.
+
+#### Command
+- **Command** is a behavioral design pattern that turns a request into a stand-alone object that contains all information about the request. This transformation lets you pass requests as a method arguments, delay or queue a request’s execution, and support undoable operations.
