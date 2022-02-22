@@ -1247,6 +1247,154 @@ new User("Dude").sayHi(); // Hello Dude!
 | `{}.toString` | primitives, built-in objects, objects with `Symbol.toStringTag` | string     |
 | `instanceof`  | objects                                                         | true/false |
 
+## Promises, async/await
+
+### Callbacks
+
+- In cases where some functions/code depend on asynchronous actions (like script loading, data fetching, etc.) callback function can be used which executes after given action is completed:
+
+```js
+function loadScript(src, callback) {
+  let script = document.createElement('script');
+  script.src = src;
+
+  script.onload = () => callback(script);
+
+  document.head.append(script);
+}
+```
+
+- Handling erros in callback functions often follows **error-first callback** style:
+
+```javascript
+function loadScript(src, callback) {
+  let script = document.createElement('script');
+  script.src = src;
+
+  script.onload = () => callback(null, script);
+  script.onerror = () => callback(new Error(`Script load error for ${src}`));
+
+  document.head.append(script);
+}
+
+loadScript('/my/script.js', function(error, script) {
+  if (error) {
+    // handle error
+  } else {
+    // script loaded successfully
+  }
+});
+```
+
+- Above approach should be used only for simple callbacks without deep multiple levels of nested callback (**callback hell**/**pyramid of doom**).
+
+### Promise
+
+- The function passed to `new Promise` is called the _executor_. When `new Promise` is created, the executor runs automatically. It contains the producing code which should eventually produce the result. Its arguments `resolve` and `reject` are callbacks provided by JavaScript itself. Our code is only inside the executor.
+
+- When the executor obtains the result, be it soon or late, doesn’t matter, it should call one of these callbacks:
+	
+	-   `resolve(value)` — if the job is finished successfully, with result `value`.
+	-   `reject(error)` — if an error has occurred, `error` is the error object.
+
+- The `promise` object returned by the `new Promise` constructor has these internal properties:
+	
+	- `state` — initially `"pending"`, then changes to either `"fulfilled"` 	when `resolve` is called or `"rejected"` when `reject` is called.
+	- `result` — initially `undefined`, then changes to `value` when `resolve(value)` called or `error` when `reject(error)` is called.
+
+```javascript
+let promise = new Promise(function(resolve, reject) {
+  // the function is executed automatically when the promise is constructed
+  if (...) {
+    setTimeout(() => resolve("done"), 1000);
+  } else {
+    setTimeout(() => reject(new Error("Whoops!")), 1000);
+  }
+  // after 1 second signal that the job is done with the result "done"
+  
+});
+```
+
+- A Promise object serves as a link between the executor (the “producing code” or “singer”) and the consuming functions (the “fans”), which will receive the result or error. Consuming functions can be registered (subscribed) using methods `.then`, `.catch` and `.finally`.
+- Handlers do not have to subscribe to promises before their execution; if the result is already there, they just execute immediately.
+- `.then(result_func, error_func)`  can also omit the second argument.
+- `.catch(error_func)` is equivalent of `.then(null, result_func)`
+- `.finally(() => "Cleaning...")` handler has no argument, but can be used for cleaning/wrapping activities. It also passes through results and errors to the next handler.
+
+```javascript
+function loadScript(src) {
+  return new Promise(function(resolve, reject) {
+    let script = document.createElement('script');
+    script.src = src;
+
+    script.onload = () => resolve(script);
+    script.onerror = () => reject(new Error(`Script load error for ${src}`));
+
+    document.head.append(script);
+  });
+}
+
+let promise = loadScript("https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.11/lodash.js");
+
+promise.then(
+  script => alert(`${script.src} is loaded!`),
+  error => alert(`Error: ${error.message}`)
+);
+
+promise.then(script => alert('Another handler...'));
+```
+
+#### Promise Chaining
+
+- If a `.then` (or `catch/finally`, doesn’t matter) handler returns a promise, the rest of the chain waits until it settles. When it does, its result (or error) is passed further.
+- Each `.then` handler returns a new promise - it allows for promise chaining:
+
+```javascript
+new Promise(function(resolve, reject) {
+
+  setTimeout(() => resolve(1), 1000); // (*)
+
+}).then(function(result) { // (**)
+
+  alert(result); // 1
+  return result * 2;
+
+}).then(function(result) { // (***)
+
+  alert(result); // 2
+  return result * 2;
+
+}).then(function(result) {
+
+  alert(result); // 4
+  return result * 2;
+
+});
+```
+
+- As a good practice, an asynchronous action should always return a promise. That makes it possible to plan actions after it; even if we don’t plan to extend the chain now, we may need it later.
+
+#### Error Handling With Promises
+
+- Promise chains are great at error handling. When a promise rejects, the control jumps to the closest rejection handler. That’s very convenient in practice.
+- For instance, in the code below the URL to `fetch` is wrong (no such site) and `.catch` handles the error:
+
+```javascript
+fetch('https://no-such-server.blabla') // rejects
+  .then(response => response.json())
+  .catch(err => alert(err)) // TypeError: failed to fetch (the text may vary)
+```
+
+- The code of a promise executor and promise handlers has an "invisible `try..catch`" around it. If an exception happens, it gets caught and treated as a rejection. This happens for all errors, not just those caused by the `throw` statement. However, this implicit `try..catch` clause applies to all synchronous errors. Asynchronous errors still require usage of `reject`.
+
+```javascript
+new Promise((resolve, reject) => {
+  throw new Error("Whoops!");
+}).catch(alert); // Error: Whoops!
+```
+
+- It’s ok not to use `.catch` at all, if there’s no way to recover from an error.
+
 ## Data Types
 
 ### Methods of Primitives
