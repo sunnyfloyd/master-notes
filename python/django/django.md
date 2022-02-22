@@ -2331,6 +2331,17 @@ class IsEnrolled(BasePermission):
         return obj.students.filter(id=request.user.id).exists()
 ```
 
+### Combining Routers
+
+- Combining routers from different apps:
+
+```py
+from app_1.urls import router as app_1_router
+
+...
+router.registry.extend(app_1_router.registry)
+```
+
 ## Django Channels
 
 - Django 3 comes with support for running asynchronous Python through ASGI, but it does not yet support asynchronous views or middleware. However, as mentioned, Channels extends Django to handle not only HTTP, but also protocols that require long-running connections, such as WebSockets and chatbots.
