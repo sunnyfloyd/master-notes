@@ -2342,6 +2342,15 @@ from app_1.urls import router as app_1_router
 router.registry.extend(app_1_router.registry)
 ```
 
+### Passing User Object to serializer
+
+- To pass current user object to serializer use following `perform_create()` method override inside `ViewSet`:
+
+```py
+def perform_create(self, serializer):
+	serializer.save(user=self.request.user)
+```
+
 ## Django Channels
 
 - Django 3 comes with support for running asynchronous Python through ASGI, but it does not yet support asynchronous views or middleware. However, as mentioned, Channels extends Django to handle not only HTTP, but also protocols that require long-running connections, such as WebSockets and chatbots.
