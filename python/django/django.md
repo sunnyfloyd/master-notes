@@ -733,6 +733,10 @@ similar_posts = Post.published.filter(tags__in=post_tags_ids)\
 
 - `QuerySet.values` - extracts QuerySet data in form of a dictionary
 
+##### OutRef
+
+- Use `OuterRef` when a queryset in a `Subquery` needs to refer to a field from the outer query or its transform. It acts like an [`F`](https://docs.djangoproject.com/en/4.0/ref/models/expressions/#django.db.models.F "django.db.models.F") expression except that the check to see if it refers to a valid field isn’t made until the outer queryset is resolved.
+
 ### Optimizing QuerySets that Involve Related Objects
 
 #### select_related
