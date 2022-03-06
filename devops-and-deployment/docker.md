@@ -157,6 +157,14 @@ CMD ["node", "server.js"]
 - `docker run --network [network_name]` to run a container within a specific Docker network.
 - To dynamically set-up an IP address for other containers running within the same Docker network just use Docker container's name. Pluging an IP happens after the request is being sent (when it leaves a container) in the Network layer managed by Docker.
 
+## Docker Compose
+
+
+## Utility Containers
+
+- command provided as part of `CMD` in Dockerfile will be overwritten if we use `docker run` whereas command in `ENTRYPOINT` will prepend any command from `docker run`
+- `docker exec` and `docker-compose exec` allow for running commands inside already running containers
+
 ## Django Docker Set-up (vide CS50)
 
 - First step is to create a Dockerfile which we’ll name Dockerfile. Inside this file, we’ll provide instructions for how to create a Docker Image which describes the libraries and binaries we wish to include in our container. Here’s an example of what our Dockerfile might look like:
