@@ -785,6 +785,41 @@ def users_like_changed(sender, instance, **kwargs):
     instance.save()
 ```
 
+### Transactions
+
+#### Controlling Transactions Explicitly
+
+- Django provides a single API to control database transactions: `atomic(using=None, savepoint=True, durable=False)`.
+
+- Atomicity is the defining property of database transactions. `atomic` allows us to create a block of code within which the atomicity on the database is guaranteed. If the block of code is successfully completed, the changes are committed to the database. If there is an exception, the changes are rolled back.
+
+- `atomic` is usable both as a [decorator]:
+
+```py
+from django.db import transaction
+
+@transaction.atomic
+def viewfunc(request):
+    # This code executes inside a transaction.
+    do_stuff()
+```
+
+- and as a context manager:
+
+```py
+from django.db import transaction
+
+def viewfunc(request):
+    # This code executes in autocommit mode (Django's default).
+    do_stuff()
+
+    with transaction.atomic():
+        # This code executes inside a transaction.
+        do_more_stuff()
+```
+
+- When exiting an `atomic` block, Django looks at whether it’s exited normally or with an exception to determine whether to commit or roll back. If you catch and handle exceptions inside an `atomic` block, you may hide from Django the fact that a problem has happened. This can result in unexpected behavior.
+
 ## Admin Panel and Customization
 
 - `python manage.py createsuperuser` creates a user who can login to the admin site.
@@ -2354,6 +2389,22 @@ router.registry.extend(app_1_router.registry)
 def perform_create(self, serializer):
 	serializer.save(user=self.request.user)
 ```
+
+### Including Extra Context in Serializers
+
+- There are some cases where you need to provide extra context to the serializer in addition to the object being serialized. One common case is if you're using a serializer that includes hyperlinked relations, which requires the serializer to have access to the current request so that it can properly generate fully qualified URLs.
+
+- You can provide arbitrary additional context by passing a `context` argument when instantiating the serializer. For example:
+
+```py
+serializer = AccountSerializer(account, context={'request': request})
+serializer.data
+# {'id': 6, 'owner': 'denvercoder9', 'created': datetime.datetime(2013, 2, 12, 09, 44, 56, 678870), 'details': 'http://example.com/accounts/6/details'}
+```
+
+- The context dictionary can be used within any serializer field logic, such as a custom `.to_representation()` method, by accessing the `self.context` attribute.
+
+- In generic views there is a `get_serializer_context` method that returns context for a serializer.
 
 ## Django Channels
 
