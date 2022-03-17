@@ -9,11 +9,18 @@
   - [Container](#container)
   - [Image](#image)
   - [Volumes](#volumes)
+    - [Bind Mounts](#bind-mounts)
   - [Commands](#commands)
     - [Containers](#containers)
     - [Images](#images)
     - [Volumes](#volumes-1)
   - [Dockerfile](#dockerfile)
+  - [Arguments and Environment Variables](#arguments-and-environment-variables)
+  - [Containers and Networks](#containers-and-networks)
+    - [Container Networks](#container-networks)
+  - [Docker Compose](#docker-compose)
+  - [Utility Containers](#utility-containers)
+  - [Deploying Docker Containers (AWS)](#deploying-docker-containers-aws)
   - [Django Docker Set-up (vide CS50)](#django-docker-set-up-vide-cs50)
 
 ## Sources
@@ -164,6 +171,10 @@ CMD ["node", "server.js"]
 
 - command provided as part of `CMD` in Dockerfile will be overwritten if we use `docker run` whereas command in `ENTRYPOINT` will prepend any command from `docker run`
 - `docker exec` and `docker-compose exec` allow for running commands inside already running containers
+
+## Deploying Docker Containers (AWS)
+
+- `amazon-linux-extras install docker` AWS specific command to install Docker in EC2
 
 ## Django Docker Set-up (vide CS50)
 
