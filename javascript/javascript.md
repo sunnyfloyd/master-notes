@@ -44,6 +44,15 @@
     - [Extending Built-in Classes](#extending-built-in-classes)
     - [Mixins](#mixins)
     - [Type Checking Methods](#type-checking-methods)
+  - [Promises, async/await](#promises-asyncawait)
+    - [Callbacks](#callbacks)
+    - [Promise](#promise)
+      - [Promise Chaining](#promise-chaining)
+      - [Error Handling With Promises](#error-handling-with-promises)
+    - [Promise API](#promise-api)
+    - [Promisification](#promisification)
+    - [Mircotasks](#mircotasks)
+    - [Async/await](#asyncawait)
   - [Data Types](#data-types)
     - [Methods of Primitives](#methods-of-primitives)
     - [Numbers](#numbers)
@@ -1394,6 +1403,49 @@ new Promise((resolve, reject) => {
 ```
 
 - It’s ok not to use `.catch` at all, if there’s no way to recover from an error.
+
+### Promise API
+
+There are 6 static methods of `Promise` class:
+
+1. `Promise.all(promises)` – waits for all promises to resolve and returns an array of their results. If any of the given promises rejects, it becomes the error of `Promise.all`, and all other results are ignored.
+2. `Promise.allSettled(promises)` (recently added method) – waits for all promises to settle and returns their results as an array of objects with:
+    - `status: "fulfilled"` or `"rejected"`
+    - `value` (if fulfilled) or `reason` (if rejected).
+3. `Promise.race(promises)` – waits for the first promise to settle, and its result/error becomes the outcome.
+4. `Promise.any(promises)` (recently added method) – waits for the first promise to fulfill, and its result becomes the outcome. If all of the given promises are rejected, `AggregateError` becomes the error of `Promise.any`.
+5. `Promise.resolve(value)` – makes a resolved promise with the given value.
+6. `Promise.reject(error)` – makes a rejected promise with the given error.
+
+### Promisification
+
+- **Promisification** is a great approach, especially when you use `async`/`await` (see the next chapter), but not a total replacement for callbacks.
+
+- Remember, a promise may have only one result, but a callback may technically be called many times. So promisification is only meant for functions that call the callback once. Further calls will be ignored.
+
+### Mircotasks
+
+- Promise handling is always asynchronous, as all promise actions pass through the internal “promise jobs” queue, also called **“microtask queue”** (V8 term).
+- So .`then/catch/finally` handlers are always called after the current code is finished.
+
+- If we need to guarantee that a piece of code is executed after `.then/catch/finally`, we can add it into a chained `.then` call.
+
+- In most Javascript engines, including browsers and Node.js, the concept of microtasks is closely tied with the “event loop” and “macrotasks”.
+
+### Async/await
+
+- The `async` keyword before a function has two effects:
+  - Makes it always return a promise.
+  - Allows await to be used in it.
+
+- The `await` keyword before a promise makes JavaScript wait until that promise settles, and then:
+
+  - If it’s an error, an exception is generated — same as if `throw error` were called at that very place.
+  - Otherwise, it returns the result.
+
+- Together they provide a great framework to write asynchronous code that is easy to both read and write.
+
+- With async/await we rarely need to write promise.then/catch, but we still shouldn’t forget that they are based on promises, because sometimes (e.g. in the outermost scope) we have to use these methods. Also Promise.all is nice when we are waiting for many tasks simultaneously.
 
 ## Data Types
 
