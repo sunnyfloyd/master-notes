@@ -149,6 +149,23 @@ CMD ["node", "server.js"]
 
 - To build an image `docker build -t app-tag .` or to specify Dockerfile location `docker build -f docker_file -t app-tag`.
 
+### Multi-Stage Builds
+
+- Inside a Dockerfile we can define a multi-stage build for images:
+
+```docker
+FROM node as build
+WORKDIR /app
+COPY package.json .
+RUN npm install
+COPY . .
+RUN npm run build
+FROM nginx
+COPY --from=build /app/build /usr/share/nginx/html
+EXPOSE 80
+CMD ["nginx", "-g", "deamon off;"]
+```
+
 ## Arguments and Environment Variables
 - `ARG` available only inside of a Dockerfile
 - `ENV` available inside of Dockerfile and application code (can be also provided through .env file)
