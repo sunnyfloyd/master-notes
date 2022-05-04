@@ -17,6 +17,8 @@
     - [Closure](#closure)
     - [Call Forwarding](#call-forwarding)
     - [Function Binding](#function-binding)
+    - [Generators](#generators)
+    - [Async Iteration and Generators](#async-iteration-and-generators)
   - [Objects](#objects)
     - ["for...in" Loop](#forin-loop)
     - [Object references and copying](#object-references-and-copying)
@@ -395,6 +397,36 @@ let user = {
 // add a partial method with fixed time
 user.sayNow = partial(user.say, new Date().getHours() + ':' + new Date().getMinutes());
 ```
+
+### Generators
+
+- **Generators** are created by generator functions `function* f(…) {…}`.
+
+- Inside generators (only) there exists a `yield` operator.
+
+- The outer code and the generator may exchange results via `next`/`yield` calls.
+
+- In modern JavaScript, generators are rarely used. But sometimes they come in handy, because the ability of a function to exchange data with the calling code during the execution is quite unique. And, surely, they are great for making iterable objects.
+
+- In web-programming we often work with streamed data, so that’s another very important use case.
+
+### Async Iteration and Generators
+
+- Syntax differences between async and regular iterators:
+
+|                            |            Iterable           |                     Async Iterable                     |
+|:--------------------------:|:-----------------------------:|:------------------------------------------------------:|
+| Method to provide iterator | `Symbol.iterator`             | `Symbol.asyncIterator`                                 |
+| `next()` return value is   | `{value:…, done: true/false}` | Promise that resolves to `{value:…, done: true/false}` |
+
+- Syntax differences between async and regular generators:
+
+|                          |           Generators          |                    Async generators                    |
+|:------------------------:|:-----------------------------:|:------------------------------------------------------:|
+| Declaration              | `function*`                   | `async function*`                                      |
+| `next()` return value is | `{value:…, done: true/false}` | Promise that resolves to `{value:…, done: true/false}` |
+
+- In web-development we often meet streams of data, when it flows chunk-by-chunk. For instance, downloading or uploading a big file. We can use async generators to process such data. It’s also noteworthy that in some environments, like in browsers, there’s also another API called `Streams`, that provides special interfaces to work with such streams, to transform the data and to pass it from one stream to another (e.g. download from one place and immediately send elsewhere).
 
 ## Objects
 
