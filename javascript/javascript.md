@@ -1479,6 +1479,97 @@ There are 6 static methods of `Promise` class:
 
 - With async/await we rarely need to write promise.then/catch, but we still shouldn’t forget that they are based on promises, because sometimes (e.g. in the outermost scope) we have to use these methods. Also Promise.all is nice when we are waiting for many tasks simultaneously.
 
+## Modules
+
+1.  A module is a file. To make `import/export` work, browsers need `<script type="module">`. Modules have several differences:
+    -   Deferred by default.
+    -   Async works on inline scripts.
+    -   To load external scripts from another origin (domain/protocol/port), CORS headers are needed.
+    -   Duplicate external scripts are ignored.
+2.  Modules have their own, local top-level scope and interchange functionality via `import/export`.
+3.  Modules always `use strict`.
+4.  Module code is executed only once. Exports are created once and shared between importers.
+
+- When we use modules, each module implements the functionality and exports it. Then we use `import` to directly import it where it’s needed. The browser loads and evaluates the scripts automatically.
+- In production, people often use bundlers such as [Webpack](https://webpack.js.org) to bundle modules together for performance and other reasons.
+
+### Export and Import
+
+Export:
+-   Before declaration of a class/function/…:
+    -   `export [default] class/function/variable ...`
+-   Standalone export:
+    -   `export {x [as y], ...}`.
+-   Re-export:
+    -   `export {x [as y], ...} from "module"`
+    -   `export * from "module"` (doesn’t re-export default).
+    -   `export {default [as y]} from "module"` (re-export default).
+
+Import:
+-   Importing named exports:
+    -   `import {x [as y], ...} from "module"`
+-   Importing the default export:
+    -   `import x from "module"`
+    -   `import {default as x} from "module"`
+-   Import all:
+    -   `import * as obj from "module"`
+-   Import the module (its code runs), but do not assign any of its exports to variables:
+    -   `import "module"`
+
+- We can put `import/export` statements at the top or at the bottom of a script, that doesn’t matter. So, technically this code is fine:
+
+```javascript
+sayHi();
+
+// ...
+
+import {sayHi} from './say.js'; // import at the end of the file
+```
+
+- In practice imports are usually at the start of the file, but that’s only for more convenience.
+
+- **Please note that import/export statements don’t work if inside `{...}`.** A conditional import, like this, won’t work:
+
+```javascript
+if (something) {
+  import {sayHi} from "./say.js"; // Error: import must be at top level
+}
+```
+
+### Dynamic Imports
+
+- We can use it dynamically in any place of the code:
+
+```javascript
+let modulePath = prompt("Which module to load?");
+
+import(modulePath)
+  .then(obj => <module object>)
+  .catch(err => <loading error, e.g. if no such module>)
+```
+
+- For instance, if we have the following module `say.js`:
+
+```javascript
+// 📁 say.js
+export function hi() {
+  alert(`Hello`);
+}
+
+export function bye() {
+  alert(`Bye`);
+}
+```
+
+- …Then dynamic import can be like this:
+
+```javascript
+let {hi, bye} = await import('./say.js');
+
+hi();
+bye();
+```
+
 ## Data Types
 
 ### Methods of Primitives
