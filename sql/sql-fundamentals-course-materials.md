@@ -214,6 +214,8 @@ SELECT * FROM station_data
 WHERE report_code LIKE 'A%';
 ```
 
+`LIKE`  can also be used in a case insensitive way: `ILIKE`.
+
 ### 4.13B: Using Regular Expressions
 
 
@@ -272,6 +274,13 @@ SELECT * FROM station_data
 WHERE snow_depth IS NULL;
 ```
 
+You can use `NULL` to indicate absence of a value, for example when you have to divide by a value that can be zero you can use `NULLIF`.
+
+`NULLIF(expression, expression)` - returns a null value if two specified expressions are equal.
+
+```sql
+SELECT TOTAL_INCOME / NULLIF(NUMBER_OF_SHARES, 0) FROM SP500_DATA;
+```
 
 ### 4.20: Handling `NULL` in conditions
 

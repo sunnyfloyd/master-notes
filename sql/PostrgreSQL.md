@@ -52,3 +52,29 @@ INSERT INTO person (
 	date_of_birth
 ) VALUES ('Anne', 'Smith', 'FEMALE', DATE '1988-01-09');
 ```
+
+## PostgreSQL Specific Commands
+- casting into a specific type is done by `::`:
+```sql
+%%Cast into a DATE type%%
+SELECT NOW()::DATE;
+
+%%Cast into a TIME type%%
+SELECT NOW()::TIME;
+```
+- time interval (both singular and plural time intervals work)
+```sql
+SELECT DATE '2001-09-28' + INTERVAL '1 hour';
+```
+- extract specifc value from a date
+```sql
+SELECT EXTRACT(YEAR FROM NOW());
+%%Day of the week - DOW%%
+SELECT EXTRACT(DOW FROM NOW());
+```
+- calculate age between two days
+```sql
+SELECT AGE(NOW(), birth_date) from people_data;
+%%We can extract only part of a date, f.i. year:%%
+SELECT DATE_PART('year', AGE(NOW(), birth_date)) from people_data;
+```
