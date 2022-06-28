@@ -758,6 +758,18 @@ actions = actions.select_related('user', 'user__profile') \
                  .prefetch_related('target')[:10]
 ```
 
+#### select_for_update
+
+- Returns a queryset that will lock rows until the end of the transaction, generating a `SELECT ... FOR UPDATE` SQL statement on supported databases. Needs to be used together with `atomic`. 
+```python
+from django.db import transaction
+
+entries = Entry.objects.select_for_update().filter(author=request.user)
+with transaction.atomic():
+    for entry in entries:
+        ...
+```
+
 ### Using Signals for Denormalizing Counts
 
 - There are some cases when you may want to denormalize your data. Denormalization is making data redundant in such a way that it optimizes read performance. For example, you might be copying related data to an object to avoid expensive read queries to the database when retrieving the related data. You have to be careful about denormalization and only start using it when you really need it. The biggest issue you will find with denormalization is that it's difficult to keep your denormalized data updated.
