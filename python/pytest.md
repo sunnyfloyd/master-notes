@@ -1,7 +1,9 @@
 ## Short Intro
 
 - files with tests and test functions need to start with `test_`.
+
 - `parametrize` in pytest:
+
 ```python
 import pytest
 
@@ -12,6 +14,7 @@ def test_simple_usecase(cards, score):
     assert card_score(cards) == score
 ```
 - testing for raised exceptions:
+
 ```python
 import pytest
 
@@ -22,7 +25,8 @@ def test_raise_error():
         card_score("")
 ```
 - coverage report can be produced with `pytest --cov blackjack --cov-report html` after installing `pytest-cov` package
-- using pytest for each commit on GItHub and GitLab automatically
+- using pytest for each commit on GitHub and GitLab automatically
+
 ```yaml
 # .github/workflows/pythonpackage.yml
 name: Python package
