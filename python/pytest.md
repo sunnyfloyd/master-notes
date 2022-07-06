@@ -124,3 +124,83 @@ def test_raise_error():
 ```
 
 - The match parameter takes a regular expression and matches it with the exception message. You can also use as `exc_info` or any other variable name to interrogate extra parameters to the exception if it’s a custom exception. The `exc_info` object will be of type `ExceptionInfo`.
+
+## Fixtures
+
+-  `--setup-show` shows the order of operations of tests and fixtures, including the setup and teardown phases of the fixtures
+
+- Fixtures are identified by their name - parameters that match names with a fixture are replaced with fixture's output. We never call fixture functions directly. pytest does that for us.
+
+```python
+@pytest.fixture()
+def some_data():
+    """Return answer to ultimate question."""
+    return 42
+
+def test_some_data(some_data):
+    """Use fixture return value in a test."""
+    assert some_data == 42
+```
+
+- Fixture functions run before the tests that use them. If there is a `yield` in the function, it stops there, passes control to the tests, and picks up on the next line after the tests are done. The code above the `yield` is “setup” and the code after `yield` is “teardown.” The code after the `yield`, the teardown, is guaranteed to run regardless of what happens during the tests. In our example, the `yield` happens within a context manager `with` block for the temporary directory. That directory stays around while the fixture is in use and the tests run. After the test is done, control passes back to the fixture, the `db.close()` can run, and then the `with` block can complete and clean up the directory.
+
+```python
+@pytest.fixture()
+def cards_db():
+    with TemporaryDirectory() as db_dir:
+        db_path = Path(db_dir)
+        db = cards.CardsDB(db_path)
+        yield db
+        db.close()
+
+def test_empty(cards_db):
+    assert cards_db.count() == 0
+```
+
+### Fixture Scope
+
+- The fixture decorator `scope` parameter allows to define a specific scope for a fixture:
+
+    - `scope='function'`
+
+    Run once per test function. The setup portion is run before each test using the fixture. The teardown portion is run after each test using the fixture. This is the default scope used when no scope parameter is specified.
+
+    - `scope='class'` - run once per test class, regardless of how many test methods are in the class.
+
+    - `scope='module'` - run once per module, regardless of how many test functions or methods or other fixtures in the module use it.
+
+    - `scope='package'` - run once per package, or test directory, regardless of how many test functions or methods or other fixtures in the package use it.
+
+    - `scope='session'` - run once per session. All test methods and functions using a fixture of session scope share one setup and teardown call.
+
+- You can put fixtures into individual test files, but to share fixtures among multiple test files, you need to use a `conftest.py` file either in the same directory as the test file that’s using it or in some parent directory. The `conftest.py` file is also optional. It is considered by pytest as a “local plugin” and can contain hook functions and fixtures.
+
+- To find available fixtures use `--fixtures` flag from given directory. You can also use `--fixtures-per-test` to see what fixtures are used by each test and where the fixtures are defined.
+
+### Dynamic Fixture Scope
+
+- Let’s say we have the fixture setup as we do now, with db at session scope and `cards_db` at function scope, but we’re worried about it. The `cards_db` fixture is empty because it calls `delete_all()`. If we don’t completely trust that `delete_all()` function yet, and want to put in place some way to completely set up the database for each test function we can do this by dynamically deciding the scope of the db fixture at runtime:
+
+```python
+def pytest_addoption(parser):
+    parser.addoption(
+        "--func-db",
+        action="store_true",
+        default=False,
+        help="new db for each test",
+    )
+
+def db_scope(fixture_name, config):
+    if config.getoption("--func-db", None):
+        return "function"
+    return "session"
+
+@pytest.fixture(scope=db_scope)
+def db():
+    """CardsDB object connected to a temporary database"""
+    with TemporaryDirectory() as db_dir:
+        db_path = Path(db_dir)
+        db_ = cards.CardsDB(db_path)
+        yield db_
+        db_.close()
+```
