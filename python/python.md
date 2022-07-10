@@ -536,6 +536,8 @@ print(most_repeating_word(WORDS))
 
 - ```filter(foo, iterable)``` generates new iterable that includes only those items from the passed iterable that return ```True``` when passed to a function.
 
+- When `None` is used as the first argument to the `filter()` function, all elements that are truthy values (those that give `True` if converted to boolean) are extracted.
+
 - ```reduce(foo, iterable)``` function passed to reduce must take 2 arguments - it starts with first 2 items from the iterable and then continues with first argument being a previously returned value and next item from the iterable:
 
 ```python

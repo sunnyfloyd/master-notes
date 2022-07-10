@@ -758,6 +758,36 @@ actions = actions.select_related('user', 'user__profile') \
                  .prefetch_related('target')[:10]
 ```
 
+- The `Prefetch(lookup, queryset=None, to_attr=None)` object can be used to control the operation of `prefetch_related()`.
+
+- The `lookup` argument describes the relations to follow and works the same as the string based lookups passed to `prefetch_related()`. For example:
+
+```python
+from django.db.models import Prefetch
+Question.objects.prefetch_related(Prefetch('choice_set')).get().choice_set.all()
+```
+
+- The `queryset` argument supplies a base `QuerySet` for the given lookup. This is useful to further filter down the prefetch operation, or to call `select_related()` from the prefetched relation, hence reducing the number of queries even further:
+
+```python
+voted_choices = Choice.objects.filter(votes__gt=0)
+voted_choices
+# <QuerySet [<Choice: The sky>]>
+prefetch = Prefetch('choice_set', queryset=voted_choices)
+Question.objects.prefetch_related(prefetch).get().choice_set.all()
+# <QuerySet [<Choice: The sky>]>
+```
+
+- The `to_attr` argument sets the result of the prefetch operation to a custom attribute:
+
+```python
+prefetch = Prefetch('choice_set', queryset=voted_choices, to_attr='voted_choices')
+Question.objects.prefetch_related(prefetch).get().voted_choices
+# [<Choice: The sky>]
+Question.objects.prefetch_related(prefetch).get().choice_set.all()
+# <QuerySet [<Choice: Not much>, <Choice: The sky>, <Choice: Just hacking again>]>
+```
+
 #### select_for_update
 
 - Returns a queryset that will lock rows until the end of the transaction, generating a `SELECT ... FOR UPDATE` SQL statement on supported databases. Needs to be used together with `atomic`. 
