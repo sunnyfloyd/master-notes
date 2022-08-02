@@ -196,6 +196,7 @@ git push --set-upstream origin main
   - use `git reset @~` to discard the last commit, but not the changes to the files (i.e. take you to the point you were at when you'd edited the files, but hadn't committed yet).
   - The latter is useful for doing more complex stuff like splitting into multiple commits.
   - Then, run `git rebase --continue`, and Git will replay the subsequent changes on top of your modified commit. You may be asked to fix some merge conflicts.
+- Use `git merge-base feature main` to find hash of the first common commit of two branches
 
 ## Tags
 
