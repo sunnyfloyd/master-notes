@@ -28,6 +28,8 @@ def test_simple_usecase(cards, score):
 
 - `pytest --tb=short` - shortens traceback for failing tests with raised exceptions
 
+- `-s` flag is a shortcut flag for `--capture=no` that **tells pytest to turn off output capture**. I used it because the new fixtures have print functions in them, and I wanted to see the output. **Without turning off output capture, pytest only prints the output of tests that fail**.
+
 - using pytest for each commit on GitHub and GitLab automatically
 
 ```yaml
@@ -75,7 +77,7 @@ build:
         __tracebackhide__ = True
         ​assert​ c1 == c2
         ​if​ c1.id != c2.id:
-        pytest.fail(f​"id's don't match. {c1.id} != {c2.id}"​)
+            pytest.fail(f​"id's don't match. {c1.id} != {c2.id}"​)
 ​
 ​
 ​ 	​def​ ​test_identical​():
@@ -157,6 +159,14 @@ def test_empty(cards_db):
     assert cards_db.count() == 0
 ```
 
+- It is possible to rename fixtures using `name` parameter:
+
+```python
+@pytest.fixture(name=​"ultimate_answer"​)
+​def​ ​ultimate_answer_fixture​():
+    ​return​ 42
+```
+
 ### Fixture Scope
 
 - The fixture decorator `scope` parameter allows to define a specific scope for a fixture:
@@ -173,13 +183,13 @@ def test_empty(cards_db):
 
     - `scope='session'` - run once per session. All test methods and functions using a fixture of session scope share one setup and teardown call.
 
-- You can put fixtures into individual test files, but to share fixtures among multiple test files, you need to use a `conftest.py` file either in the same directory as the test file that’s using it or in some parent directory. The `conftest.py` file is also optional. It is considered by pytest as a “local plugin” and can contain hook functions and fixtures.
+- You can put fixtures into individual test files, but to share fixtures among multiple test files, you need to place them in a `conftest.py` file either in the same directory as the test file that’s using it or in some parent directory. The `conftest.py` file is also optional. It is considered by pytest as a “local plugin” and can contain hook functions and fixtures.
 
 - To find available fixtures use `--fixtures` flag from given directory. You can also use `--fixtures-per-test` to see what fixtures are used by each test and where the fixtures are defined.
 
 ### Dynamic Fixture Scope
 
-- Let’s say we have the fixture setup as we do now, with db at session scope and `cards_db` at function scope, but we’re worried about it. The `cards_db` fixture is empty because it calls `delete_all()`. If we don’t completely trust that `delete_all()` function yet, and want to put in place some way to completely set up the database for each test function we can do this by dynamically deciding the scope of the db fixture at runtime:
+- Let’s say we have the fixture setup as we do now, with db at session scope and `cards_db` at function scope, but we’re worried about it. The `cards_db` fixture is empty because it calls `delete_all()`. If we don’t completely trust that `delete_all()` function yet, and want to put in place some way to completely set up the database for each test function we can do this by dynamically deciding the scope of the db fixture at runtime. Additionally, we depend on a new command-line flag,` --func-db`. In order to allow pytest to allow us to use this new flag, we need to write a hook function `pytest_adoption`:
 
 ```python
 def pytest_addoption(parser):
@@ -204,3 +214,97 @@ def db():
         yield db_
         db_.close()
 ```
+
+### autouse for Fixtures That Are Always Used
+
+- You can use `autouse=True` to get a fixture to run all of the time. This works well for code you want to run at certain times, but tests don’t really depend on any system state or data from the fixture:
+
+```python
+import​ ​pytest​
+​import​ ​time​
+
+@pytest.fixture(autouse=True)
+​def​ ​footer_function_scope​():
+    ​"""Report test durations after each function."""​
+    start = time.time()
+    ​yield​
+    stop = time.time()
+    delta = stop - start
+    ​print​(​"​​\n​​test duration : {:0.3} seconds"​.format(delta))
+```
+
+### Builtin Fixtures
+
+#### tmp_path and tmp_path_factory
+
+- The `tmp_path` and `tmp_path_factory` fixtures are used to create temporary directories. The `tmp_path` function-scope fixture returns a `pathlib.Path` instance that points to a temporary directory that sticks around during your test and a bit longer. The `tmp_path_factory` session-scope fixture returns a `TempPathFactory` object. This object has a `mktemp()` function that returns `Path` objects. You can use `mktemp()` to create multiple temporary directories. 
+
+```python
+​def​ ​test_tmp_path​(tmp_path):
+    file = tmp_path / ​"file.txt"​
+    file.write_text(​"Hello"​)
+    ​assert​ file.read_text() == ​"Hello"​
+ 	
+ 	
+​def​ ​test_tmp_path_factory​(tmp_path_factory):
+    path = tmp_path_factory.mktemp(​"sub"​)
+    file = path / ​"file.txt"​
+    file.write_text(​"Hello"​)
+    ​assert​ file.read_text() == ​"Hello"​
+```
+
+#### capsys
+
+- The `capsys` fixture enables the capturing of writes to stdout and stderr.
+
+```python
+​import​ ​cards​
+​
+​​def​ ​test_version_v2​(capsys):
+​   cards.cli.version()
+    output = capsys.readouterr().out.rstrip()
+​   ​assert​ output == cards.__version__
+```
+
+#### monkeypatch
+
+- The monkeypatch fixture provides the following functions:
+
+    - `setattr(target, name, value, raising=True)` — Sets an attribute
+    - `delattr(target, name, raising=True)` — Deletes an attribute
+    - `setitem(dic, name, value)` — Sets a dictionary entry
+    - `delitem(dic, name, raising=True)` — Deletes a dictionary entry
+    - `setenv(name, value, prepend=None)` — Sets an environment variable
+    - `delenv(name, raising=True)` — Deletes an environment variable
+    - `syspath_prepend(path)` — Prepends path to `sys.path`, which is Python’s list of import locations
+    - `chdir(path)` — Changes the current working directory
+
+- The `raising` parameter tells pytest whether or not to raise an exception if the item doesn’t already exist. The prepend parameter to `setenv()` can be a character. If it is set, the value of the environment variable will be changed to `value + prepend + <old value>`.
+
+- We can use `monkeypatch` to redirect the CLI to a temporary directory for the database in a couple of ways. Both methods involve knowledge of the application code:
+
+```python
+# original method
+​def​ ​get_path​():
+    db_path_env = os.getenv(​"CARDS_DB_DIR"​, ​""​)
+    ​if​ db_path_env:
+        db_path = pathlib.Path(db_path_env)
+    ​else​:
+        db_path = pathlib.Path.home() / ​"cards_db"​
+    ​return​ db_path
+
+# 1st method (patching the entire get_path function)
+​def​ ​test_patch_get_path​(monkeypatch, tmp_path):
+    ​def​ ​fake_get_path​():
+        ​return​ tmp_path
+​
+    monkeypatch.setattr(cards.cli, ​"get_path"​, fake_get_path)
+    ​assert​ run_cards(​"config"​) == str(tmp_path)
+
+#2nd method (pathing environment variable)
+def​ ​test_patch_env_var​(monkeypatch, tmp_path):
+    monkeypatch.setenv(​"CARDS_DB_DIR"​, str(tmp_path))
+    ​assert​ run_cards(​"config"​) == str(tmp_path)
+```
+
+#### Remaining Bultin Fixtures
