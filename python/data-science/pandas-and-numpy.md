@@ -282,7 +282,7 @@ df = pd.DataFrame({"A": [1, 2, 3], "B": [4, 5, 6]})
 df.set_axis(['I', 'II'], axis=1)
 ```
 
-- Conditional filtering on the same columns with multiple ```or``` conditions (equivalent of ```in``` operator in Python) can be coded like this: ```df['col']isin.(list_of_options)```
+- Conditional filtering on the same columns with multiple ```or``` conditions (equivalent of ```in``` operator in Python) can be coded like this: ```df['col'].isin.(list_of_options)```
 
 - In order to filter the items from given axis based on list of items/like in label/RegEx pattern ```df.filter()``` can be used:
 

@@ -129,7 +129,7 @@ def test_raise_error():
 
 ## Fixtures
 
--  `--setup-show` shows the order of operations of tests and fixtures, including the setup and teardown phases of the fixtures
+-  `--setup-show` shows the order of operations of tests and fixtures, including the setup and teardown phases of the fixtures.
 
 - Fixtures are identified by their name - parameters that match names with a fixture are replaced with fixture's output. We never call fixture functions directly. pytest does that for us.
 
@@ -307,4 +307,73 @@ def​ ​test_patch_env_var​(monkeypatch, tmp_path):
     ​assert​ run_cards(​"config"​) == str(tmp_path)
 ```
 
-#### Remaining Bultin Fixtures
+## Parametrization
+
+- Parameters (their string representation to be more specifc) can be used to select only subset of test using `-k` flag, f.i.: `​​pytest​​ ​​-v​​ ​​-k​​ ​​todo​`.
+
+### Parametrizing Functions
+
+- To parametrize a test function, add parameters to the test definition and use the `@pytest.mark.parametrize()` decorator to define the sets of arguments to pass to the test:
+
+```python
+@pytest.mark.parametrize(
+​   "start_summary, start_state"​,  # this can be either strign or a list
+    [
+        (​"write a book"​, ​"done"​),
+        (​"second edition"​, ​"in prog"​),
+        (​"create a course"​, ​"todo"​),
+    ],
+​)
+​def​ ​test_finish​(cards_db, start_summary, start_state):
+    initial_card = Card(summary=start_summary, state=start_state)
+    index = cards_db.add_card(initial_card)
+​
+    cards_db.finish(index)
+​
+    card = cards_db.get_card(index)
+    ​assert​ card.state == ​"done"​
+```
+
+### Parametrizing Fixtures
+
+- When using fixtures parametrization pytest will call the fixture once each for every set of values we provide. Then downstream, every test function that depends on the fixture will be called, once each for every fixture value:
+
+```python
+@pytest.fixture(params=["done", "in prog", "todo"])
+def start_state(request):
+    return request.param
+
+
+def test_finish(cards_db, start_state):
+    c = Card("write a book", state=start_state)
+    index = cards_db.add_card(c)
+    cards_db.finish(index)
+    card = cards_db.get_card(index)
+    assert card.state == "done"
+```
+
+- Fixture parametrization has the benefit of having a fixture run for each set of arguments. This is useful if you have setup or teardown code that needs to run for each test case
+
+### Parametrizing with pytest_generate_tests
+
+- The third way to parametrize is by using a hook function called `pytest_generate_tests`.
+
+```python
+def pytest_generate_tests(metafunc):
+    if "start_state" in metafunc.fixturenames:
+        metafunc.parametrize("start_state", ["done", "in prog", "todo"])
+
+
+def test_finish(cards_db, start_state):
+    c = Card("write a book", state=start_state)
+    index = cards_db.add_card(c)
+    cards_db.finish(index)
+    card = cards_db.get_card(index)
+    assert card.state == "done"
+```
+
+- Parametrizing with hook function can be useful when:
+
+    - We could base our parametrization list on a command-line flag, since `metafunc` gives us access to `metafunc.config.getoption`("`--someflag`"). Maybe we add a `--excessive` flag to test more values, or a `--quick` flag to test just a few.
+
+    - The parametrization list of a parameter could be based on the presence of another parameter. For example, for test functions asking for two related parameters, we can parametrize them both with a different set of values than if the test is just asking for one of the parameters.
