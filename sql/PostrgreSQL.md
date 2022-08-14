@@ -18,7 +18,7 @@ docker run -it --rm --network some-network postgres psql -h some-postgres -U pos
 
 ## SQL
 
-- `DATABASE CREATE database_name`
+- `CREATE DATABASE database_name`
 - `DROP DATABASE database_name`
 - creating a table ([postgres datatypes](https://www.postgresql.org/docs/current/datatype.html)):
 ```postgresql
