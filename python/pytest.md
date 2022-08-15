@@ -364,7 +364,7 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize("start_state", ["done", "in prog", "todo"])
 
 
-def test_finish(cards_db, start_state):
+def test_finish(cards_db, start_state):0
     c = Card("write a book", state=start_state)
     index = cards_db.add_card(c)
     cards_db.finish(index)
@@ -377,3 +377,146 @@ def test_finish(cards_db, start_state):
     - We could base our parametrization list on a command-line flag, since `metafunc` gives us access to `metafunc.config.getoption`("`--someflag`"). Maybe we add a `--excessive` flag to test more values, or a `--quick` flag to test just a few.
 
     - The parametrization list of a parameter could be based on the presence of another parameter. For example, for test functions asking for two related parameters, we can parametrize them both with a different set of values than if the test is just asking for one of the parameters.
+
+## Markers
+
+- These are the most commonly used of the markers builtins:
+
+    - `@pytest.mark.parametrize()`
+    - `@pytest.mark.skip()`
+    - `@pytest.mark.skipif()`
+    - `@pytest.mark.xfail()`
+
+- With both the `skip` and the `skipif` markers, the test is not actually run. If we want to run the test anyway, we can use `xfail`.
+
+- To list all the markers available, including descriptions and parameters, run `pytest --markers`.
+
+### pytest.mark.skip
+
+- Can be used when feature is not yet completed.
+
+- It makes sense to run such tests with `-ra` flag that includes short summary of tests with a reason of adding marker to them. `a` part of a flag means that all reasons will be listed apart from the passed ones.
+
+```python
+@pytest.mark.skip(reason="Card doesn't support < comparison yet")
+def test_less_than():
+    c1 = Card("a task")
+    c2 = Card("b task")
+    assert c1 < c2
+```
+
+### pytest.mark.skipif
+
+- The `skipif` marker allows you to pass in as many conditions as you want and if any of them are true, the test is skipped.
+
+-  We might want to use `skipif` is if we have tests that need to be written differently on different operating systems. We can write separate tests for each OS and skip on the inappropriate OS.
+
+```python
+@pytest.mark.skipif(
+    parse(cards.__version__).major < 2,
+    reason="Card < comparison not supported in 1.x",
+)
+def test_less_than():
+    c1 = Card("a task")
+    c2 = Card("b task")
+    assert c1 < c2
+
+```
+
+### pytest.mark.xfail
+
+- If we want to run all tests, even those that we know will fail, we can use the `xfail` marker.
+
+- For tests marked with `xfail`:
+
+    - Failing tests will result in `XFAIL`.
+    - Passing tests (with no strict setting) will result in `XPASSED`.
+    - Passing tests with `strict=true` will result in `FAILED`.
+
+```python
+@pytest.mark.xfail(
+    parse(cards.__version__).major < 2,
+    reason="Card < comparison not supported in 1.x",
+)
+def test_less_than():
+    c1 = Card("a task")
+    c2 = Card("b task")
+    assert c1 < c2
+
+
+@pytest.mark.xfail(reason="XPASS demo")
+def test_xpass():
+    c1 = Card("a task")
+    c2 = Card("a task")
+    assert c1 == c2
+
+
+@pytest.mark.xfail(reason="strict demo", strict=True)
+def test_xfail_strict():
+    c1 = Card("a task")
+    c2 = Card("a task")
+    assert c1 == c2
+```
+
+### Custom Markers
+
+- Custom markers are markers we make up ourselves and apply to tests. Think of them like tags or labels. Custom markers can be used to select tests to run or skip. Convention is to use `smoke` marker to indicate crucial tests.
+
+```python
+@pytest.mark.smoke
+def test_start(cards_db):
+    """
+    start changes state from "todo" to "in prog"
+    """
+    i = cards_db.add_card(Card("foo", state="todo"))
+    cards_db.start(i)
+    c = cards_db.get_card(i)
+    assert c.state == "in prog"
+```
+
+- To run a specific subset of tests marked with a marker use `pytest -m mark_name` flag. We can also use additional logic in the flag like: `​​pytest​​ ​​-v​​ ​​-m​​ ​​"finish and exception"​`.
+
+- It is recommended to use strict markers either by adding a flag to a command line `pytest​​ ​​--strict-markers​​ ​​-m​​ ​​smoke​` or just by adding it to the `pytest.ini`:
+
+```ini
+adopts =
+    ​--strict-markers​
+```
+
+- To avoid pytest warning we need to register it in the `pytest.ini`:
+
+```ini
+markers =
+    ​smoke:​ ​subset​ ​of​ ​tests​
+    exception:​ ​check​ ​for​ ​expected​ ​exceptions​
+```
+
+#### Marking Files
+
+- If pytest sees a `pytestmark` attribute in a test module, it will apply the marker(s) to all the tests in that module. If you want to apply more than one marker to the file, you can use a list form: `pytestmark = [pytest.mark.marker_one, pytest.mark.marker_two]`.
+
+### Combining Markers with Fixtures
+
+```python
+@pytest.fixture(scope="function")
+def cards_db(session_cards_db, request, faker):
+    db = session_cards_db
+    db.delete_all()
+
+    # support for `@pytest.mark.num_cards(<some number>)`
+
+    # random seed
+    faker.seed_instance(101)
+    m = request.node.get_closest_marker("num_cards")
+    if m and len(m.args) > 0:
+        num_cards = m.args[0]
+        for _ in range(num_cards):
+            db.add_card(
+                Card(summary=faker.sentence(), owner=faker.first_name())
+            )
+    return db
+
+@pytest.mark.num_cards(3)
+​def​ ​test_three_cards​(cards_db):
+    ​assert​ cards_db.count() == 3
+```
