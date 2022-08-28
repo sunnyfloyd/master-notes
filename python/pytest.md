@@ -520,3 +520,27 @@ def cards_db(session_cards_db, request, faker):
 ​def​ ​test_three_cards​(cards_db):
     ​assert​ cards_db.count() == 3
 ```
+
+## Testing Strategy
+
+- Prioritization of testing:
+
+    - **Recent** — New features, new areas of code, new functionality that has been recently repaired, refactored, or otherwise modified
+
+    - **Core** — Your product’s unique selling propositions (USPs). The essential functions that must continue to work in order for the product to be useful
+
+    -**Risk** — Areas of the application that pose more risk, such as areas important to customers but not used regularly by the development team or parts that use third-party code you don’t quite trust
+
+    - **Problematic** — Functionality that frequently breaks or often gets defect reports against it
+
+    - **Expertise** — Features or algorithms understood by a limited subset of people
+
+- When creating a test cases try to think about the following:
+
+  1. Start with a non-trivial, “happy path” test case.
+
+  2. Then look at test cases that represent
+    - interesting sets of input,
+    - interesting starting states,
+    - interesting end states, or
+    - all possible error states.
