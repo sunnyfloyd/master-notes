@@ -544,3 +544,45 @@ def cards_db(session_cards_db, request, faker):
     - interesting starting states,
     - interesting end states, or
     - all possible error states.
+
+## Configuration Files
+
+- Non-test files relevant to pytest:
+
+    - `pytest.ini`: This is the primary pytest configuration file that allows you to change pytest’s default behavior. Its location also defines the pytest root directory, or rootdir.
+
+    - `conftest.py`: This file contains fixtures and hook functions. It can exist at the rootdir or in any subdirectory.
+
+    - `__init__.py`: When put into test subdirectories, this file allows you to have identical test file names in multiple test directories.
+
+- Example of a `pytest.ini` config file:
+
+```ini
+​[pytest]​
+addopts =
+    ​--strict-markers​
+    ​--strict-config​
+    ​-ra​
+
+testpaths = ​tests​
+
+markers =
+​ 	    ​smoke:​ ​subset​ ​of​ ​tests​
+​ 	    ​exception:​ ​check​ ​for​ ​expected​ ​exceptions​
+```
+
+## Coverage
+
+```bash
+pip​​ ​​install​​ ​​coverage​
+​​pip​​ ​​install​​ ​​pytest-cov​
+```
+
+- Generating HTML coverage report: `​​pytest​​ ​​--cov=cards​​ ​​--cov-report=html​​ ​​ch7​`.
+
+- To exclude code from coverage use `pragma`:
+
+```python
+​if​ __name__ == ​'__main__'​:  ​# pragma: no cover​
+    main()
+```
