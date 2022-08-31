@@ -567,8 +567,8 @@ addopts =
 testpaths = ​tests​
 
 markers =
-​ 	    ​smoke:​ ​subset​ ​of​ ​tests​
-​ 	    ​exception:​ ​check​ ​for​ ​expected​ ​exceptions​
+    ​smoke:​ ​subset​ ​of​ ​tests​
+    ​exception:​ ​check​ ​for​ ​expected​ ​exceptions​
 ```
 
 ## Coverage
@@ -586,3 +586,89 @@ pip​​ ​​install​​ ​​coverage​
 ​if​ __name__ == ​'__main__'​:  ​# pragma: no cover​
     main()
 ```
+
+## Mock
+
+- Remember that with mocking you are testing implementation and not behaviour.
+
+- To avoid mocking we can test at multiple layers which is more like writing an integration test. Adding functionality that makes testing easier is part of **design for testability** and can be used to allow testing at multiple levels or testing at a higher level.
+
+### mock.patch
+
+- Replaces given object's value with the one that has been provided to the function call:
+
+```python
+​from​ ​unittest​ ​import​ mock
+​import​ ​cards​
+​ 	
+​def​ ​test_mock_version​():
+    ​with​ mock.patch.object(cards, ​"__version__"​, ​"1.2.3"​):
+        result = runner.invoke(app, [​"version"​])
+        ​assert​ result.stdout.rstrip() == ​"1.2.3"​
+```
+
+- Mock objects return new mock objects when called as a function, unless you’ve set their return_value. The mock object returned is also accessible as the `return_value` attribute of the original object:
+
+```python
+​def​ ​test_mock_path​():
+​with​ mock.patch.object(cards, ​"CardsDB"​) ​as​ MockCardsDB:
+    MockCardsDB.return_value.path.return_value = ​"/foo/"​
+    ​with​ cards.cli.cards_db() ​as​ db:
+        ​print​()
+        ​print​(f​"{db.path=}"​)
+        ​print​(f​"{db.path()=}"​)
+
+# Above as a fixture
+
+@pytest.fixture()
+​def​ ​mock_cardsdb​():
+    ​with​ mock.patch.object(cards, ​"CardsDB"​, autospec=True) ​as​ CardsDB:
+        ​yield​ CardsDB.return_value
+
+​def​ ​test_config​(mock_cardsdb):
+    # we don’t want to change the path attribute, but we want to change the behavior
+    # when someone calls path(), so we modify the return_value
+    mock_cardsdb.path.return_value = ​"/foo/"​
+    result = runner.invoke(app, [​"config"​])
+    ​assert​ result.stdout.rstrip() == ​"/foo/"​
+```
+
+- By default mock objects will accept any attribute and method. To make sure that mocked objects represent the current version of a mocked object we can use `autospec=True`. Without it, a mock will allow you to call any function with any parameters, even if it doesn’t make sense for the real thing being mocked.
+
+### assert_called_with
+
+- In many cases we cannot mock the return value or value of an attribute to properly test given functionality. Instead we might need to check whether given function has been called correctly:
+
+```python
+​def​ ​test_add_with_owner​(mock_cardsdb):
+    cards_cli(​"add some task -o brian"​)
+    expected = cards.Card(​"some task"​, owner=​"brian"​, state=​"todo"​)
+    mock_cardsdb.add_card.assert_called_with(expected)
+```
+
+### side_effect
+
+- To mock exception being raised by a mock objects we can use `side_effect`:
+
+```python
+​def​ ​test_delete_invalid​(mock_cardsdb):
+    mock_cardsdb.delete_card.side_effect = cards.api.InvalidCardId
+    out = cards_cli(​"delete 25"​)
+    ​assert​ ​"Error: Invalid card id 25"​ ​in​ out
+```
+
+### Plugins for Mocking
+
+- For mocking database access, try `pytest-postgresql`, `pytest-mongo`, `pytest-mysql`, and `pytest-dynamodb`.
+
+- For mocking HTTP servers, try `pytest-httpserver`.
+
+- For mocking requests, try responses and `betamax`.
+
+- And there are even more tools, such as `pytest-rabbitmq`, `pytest-solr`, `pytest-elasticsearch`, and `pytest-redis`.
+
+## Utilities
+
+### Typer
+
+- Helps with testing CLI apps
