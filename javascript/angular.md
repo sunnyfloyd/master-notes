@@ -55,6 +55,73 @@ export class ServerComponent {
 
 - `<input [(ngModel)]="serverName">`
 
+### Custom Property Binding in Components
+
+- First we need to expose component's property using `Input` decorator:
+
+```typescript
+import { Component, Input, OnInit } from '@angular/core';
+
+@Component({
+  selector: 'app-server-element',
+  templateUrl: './server-element.component.html',
+  styleUrls: ['./server-element.component.css']
+})
+export class ServerElementComponent implements OnInit {
+  @Input() element: {
+    type: string,
+    name: string,
+    content: string
+  };
+
+  constructor() { }
+
+  ngOnInit(): void {
+  }
+
+}
+```
+
+- We can also use an alias for property's name using `Input('propertyAlias')`.
+
+- Then, when calling given component we assign its property a proper value:
+
+```typescript
+<app-server-element
+    *ngFor="let serverElement of serverElements"
+    [element]="serverElement"
+></app-server-element>
+```
+
+### Custom Events
+
+- We can create custom events to invoke functions from the parent components.
+
+```html
+<!-- This will invoke "onServerAdded" function when "serverCreated" event is emitted -->
+<app-cockpit
+    (serverCreated)="onServerAdded($event)"
+    (blueprintCreated)="onBlueprintAdded($event)"
+></app-cockpit>
+```
+
+- Events are registered using `Output` decorator:
+
+```typescript
+export class CockpitComponent implements OnInit {
+  @Output() serverCreated = new EventEmitter<{serverName: string, serverContent: string}>();
+  newServerName = '';
+  newServerContent = '';
+  // ...
+  onAddServer() {
+    this.serverCreated.emit({
+      serverName: this.newServerName,
+      serverContent: this.newServerContent,
+    });
+  }
+}
+```
+
 ## Directives
 
 - `*` indicates a structural directive that changes the DOM.
@@ -101,4 +168,26 @@ export class ServerComponent {
 
 ```html
 <li *ngFor="let item of items; index as i; trackBy: trackByFn">...</li>
+```
+
+## Model
+
+- Declaring data model can be done in two ways:
+
+```typescript
+// Standard
+export class Ingredient {
+    public name: string;
+    public amount: number;
+
+    constructor(name: string, amount: number) {
+        this.name = name;
+        this.amount = amount;
+    }
+}
+
+// Using Angular shortcut
+export class Ingredient {
+    constructor(public name: string, public amount: number) {}
+}
 ```
