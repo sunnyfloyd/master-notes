@@ -667,6 +667,20 @@ pip​​ ​​install​​ ​​coverage​
 
 - And there are even more tools, such as `pytest-rabbitmq`, `pytest-solr`, `pytest-elasticsearch`, and `pytest-redis`.
 
+## Continous Integration
+
+### tox
+
+- Check resources from pytest Book (chapter 11) for example of configuration and integration with GitHub Actions.
+
+- **tox** is a command-line tool that allows you to run your complete suite of tests in multiple environments. tox uses project information in either setup.py or pyproject.toml for the package under test to create an installable distribution of your package. It looks in tox.ini for a list of environments, and then for each environment, tox:
+
+    1. creates a virtual environment in a .tox directory,
+    2. pip installs some dependencies,
+    3. builds your package,
+    4. pip installs your package, and
+    5. runs your tests.
+
 ## Utilities
 
 ### Typer
