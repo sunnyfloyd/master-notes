@@ -35,6 +35,21 @@ export class ServerComponent {
 
 - Component additionally needs to be added to the `declarations` in `app.module.ts` and to the desired HTML file using defined selector.
 
+### View Encapsulation
+
+- By default Angular encapsulates component styles so that defined style applies only to the given component. This is achieved via targeting styles using specific, automatically generated attributes assigned to each component.
+
+- This behaviour can be overriden:
+
+```typescript
+import { Component, ViewEncapsulation } from '@angular/core';
+
+@Component({
+  // ...
+  encapsulation: ViewEncapsulation.None // can also be Native (uses shadow DOM that is not supported in all of the browsers) and Emulated (default)
+})
+```
+
 ## Databinding
 
 ### String Interpolation
@@ -51,7 +66,7 @@ export class ServerComponent {
 
 - To get access to data passed with event binding we have to use `$event` varialbe: `<input (input)="onUpdateServer($event)">`.
 
-#### Two-Way Binding
+### Two-Way Binding
 
 - `<input [(ngModel)]="serverName">`
 
@@ -120,6 +135,103 @@ export class CockpitComponent implements OnInit {
     });
   }
 }
+```
+
+### Local References
+
+- Instead of using two-way binding that provides real-time updates on properties we can also use local references that work only in the given HTML template. It can pass HTML element with its value to methods:
+
+```html
+<input
+  type="text"
+  class="form-control"
+  #serverName
+>
+<input
+  type="text"
+  class="form-control"
+  #serverContent
+>
+
+<button
+  class="btn btn-primary"
+  (click)="onAddServer(serverName, serverContent)">Add Server</button>
+```
+
+```typescript
+onAddServer(serverName: HTMLInputElement, serverContent: HTMLInputElement) {
+  this.serverCreated.emit({
+    serverName: serverName.value,
+    serverContent: serverContent.value,
+  });
+}
+```
+
+### Accessing Template and DOM element via @ViewChild
+
+- This should not be used to change given element!
+
+```html
+<input
+  type="text"
+  class="form-control"
+  #serverContent
+>
+<button
+  class="btn btn-primary"
+  (click)="onAddServer()">Add Server</button>
+```
+
+```typescript
+@ViewChild('serverContent', { static: true }) serverName: ElementRef;
+// ...
+onAddServer() {
+  this.serverCreated.emit({
+    serverName: this.serverName.nativeElement.value,
+    serverContent: this.serverContent.nativeElement.value,
+  });
+}
+```
+
+### Accessing ng-content element via @ContentChild
+
+- This should not be used to change given element!
+
+```html
+<!-- part that gets projected to ng-content -->
+<app-server-element
+  *ngFor="let serverElement of serverElements"
+  [element]="serverElement"
+>
+  <p #mainParagraph>
+    <strong *ngIf="serverElement.type === 'server'" style="color: red">{{ serverElement.content }}</strong>
+    <em *ngIf="serverElement.type === 'blueprint'">{{ serverElement.content }}</em>
+  </p>
+</app-server-element>
+```
+
+```typescript
+@ContentChild('mainParagraph', { static: true }) serverName: ElementRef;
+```
+
+### ng-content
+
+- By default all code between components tags is ignored. This can be changed if we add `<ng-content></ng-content>` hook in the component. Then, all the code between the tags will be projected there.
+
+```html
+<!-- inside parent component -->
+<app-server-element
+    *ngFor="let serverElement of serverElements"
+    [element]="serverElement"
+>
+  <p>
+    <strong *ngIf="serverElement.type === 'server'" style="color: red">{{ serverElement.content }}</strong>
+    <em *ngIf="serverElement.type === 'blueprint'">{{ serverElement.content }}</em>
+  </p>
+</app-server-element>
+
+<!-- inside server-element component -->
+<ng-content></ng-content>
 ```
 
 ## Directives
@@ -191,3 +303,14 @@ export class Ingredient {
     constructor(public name: string, public amount: number) {}
 }
 ```
+
+## Lifecycle Hooks
+
+- `ngOnChanges` - called after a bound input (decorated with `@Input()`) property changes
+- `ngOnInit` - called once the component is initialized 
+- `ngDoCheck` - called during every change detection run
+- `ngAfterContentInit` - called after content (`ng-content`) has been projected into view
+- `ngAfterContentChecked` - called every time the projected content has been checked
+- `ngAfterViewInit` - called after the component's view (and child views) has been initialized
+- `ngAfterViewChecked` - called every time the view (and child views) has been checked
+- `ngOnDestroy` - called once the component is about to be destroyed
