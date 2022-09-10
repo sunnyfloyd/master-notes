@@ -236,9 +236,13 @@ onAddServer() {
 
 ## Directives
 
+- `ng g d directiveName` to create custom directive.
+
 - `*` indicates a structural directive that changes the DOM.
-- 
-### Built-in Directives
+
+### Structural Directives
+
+- In structural directives you affect the actual area in the DOM of the web page.
 
 #### ngIf
 
@@ -258,6 +262,69 @@ onAddServer() {
 </ng-template>
 ```
 
+#### ngFor
+
+- A structural directive that renders a template for each item in a collection. The directive is placed on an element, which becomes the parent of the cloned templates.
+
+```html
+<li *ngFor="let item of items; index as i; trackBy: trackByFn">...</li>
+```
+
+#### ngSwitch
+
+- The `ngSwitch` directive on a container specifies an expression to match against. The expressions to match are provided by ngSwitchCase directives on views within the container.
+
+    - Every view that matches is rendered.
+    - If there are no matches, a view with the ngSwitchDefault directive is rendered.
+    - Elements within the `NgSwitch` statement but outside of any `NgSwitchCase` or `ngSwitchDefault` directive are preserved at the location.
+
+```html
+<container-element [ngSwitch]="switch_expression">
+  <some-element *ngSwitchCase="match_expression_1">...</some-element>
+    ...
+  <some-element *ngSwitchDefault>...</some-element>
+</container-element>
+```
+
+### Custom Structural Directive
+
+- Below `set appUnless` is still a property but it just uses a property setter whenever property changes so that it can be called on each change:
+
+```typescript
+import { Directive, Input, TemplateRef, ViewContainerRef } from '@angular/core';
+
+@Directive({
+  selector: '[appUnless]'
+})
+export class UnlessDirective {
+  @Input() set appUnless(condition: boolean) {
+    if (!condition) {
+      this.vcRef.createEmbeddedView(this.templateRef);
+    } else {
+      this.vcRef.clear();
+    }
+  }
+
+  constructor(private templateRef: TemplateRef<any>, private vcRef: ViewContainerRef) { }
+}
+```
+
+```html
+<div *appUnless="onlyOdd">
+  <li
+    class="list-group-item"
+    [ngClass]="{odd: even % 2 !== 0}"
+    [ngStyle]="{backgroundColor: even % 2 !== 0 ? 'yellow' : 'transparent'}"
+    *ngFor="let even of evenNumbers">
+    {{ even }}
+  </li>
+</div>
+```
+
+### Attribute Directives
+
+- In attribute directives you only change properties of the element.
+
 #### ngStyle
 
 - An attribute directive that updates styles for the containing HTML element. Sets one or more style properties, specified as colon-separated key-value pairs. The key is a style name, with an optional .`<unit>` suffix (such as 'top.px', 'font-style.em'). The value is an expression to be evaluated. The resulting non-null value, expressed in the given unit, is assigned to the given style property. If the result of evaluation is `null`, the corresponding style is removed.
@@ -274,12 +341,104 @@ onAddServer() {
 <some-element [ngClass]="{'first': true, 'second': true, 'third': false}">...</some-element>
 ```
 
-#### ngFor
+### Custom Attribute Directive
 
-- A structural directive that renders a template for each item in a collection. The directive is placed on an element, which becomes the parent of the cloned templates.
+- Creating basic custom attribute directive
+
+```typescript
+@Directive({
+  selector: '[appBasicHighlight]'
+})
+export class BasicHighlightDirective implements OnInit {
+  constructor(private elementRef: ElementRef) {  // ElementRef stores an actual element on which directive has been used
+  }
+
+  ngOnInit() {
+    this.elementRef.nativeElement.style.backgroundColor = 'green';
+  }
+}
+```
 
 ```html
-<li *ngFor="let item of items; index as i; trackBy: trackByFn">...</li>
+<p appBasicHighlight>Style me with basic directive!</p>
+```
+
+- It is more idiomatic not to access element directly since Angular can render templates without actual DOM. Therefore following directive should be used to do the previous one:
+
+```typescript
+@Directive({
+  selector: '[appBetterHighlight]'
+})
+export class BetterHighlightDirective implements OnInit {
+  constructor(private elRef: ElementRef, private renderer: Renderer2) { }
+
+  ngOnInit() {
+    this.renderer.setStyle(this.elRef.nativeElement, 'background-color', 'blue');
+  }
+```
+
+```html
+<p>Style me with a better directive!</p>
+```
+
+#### HostListener
+
+- To react to specific events on the given element with a defined directive use `HostListener`:
+
+```typescript
+@HostListener('mouseenter') mouseover(eventData: Event) {
+  this.renderer.setStyle(this.elRef.nativeElement, 'background-color', 'blue');
+}
+
+@HostListener('mouseleave') mouseleave(eventData: Event) {
+  this.renderer.setStyle(this.elRef.nativeElement, 'background-color', 'transparent');
+}
+```
+
+#### HostBinding
+
+- `HostBinding` allows to bind specific property of an element with a directive:
+
+```typescript
+@Directive({
+  selector: '[appBetterHighlight]'
+})
+export class BetterHighlightDirective implements OnInit {
+  @Input() defaultColor: string = 'transparent';
+  @Input('appBetterHighlight') highlightColor: string = 'blue';
+  @HostBinding('style.backgroundColor') backgroundColor: string;
+
+  constructor(private elRef: ElementRef, private renderer: Renderer2) { }
+
+  ngOnInit() {
+    this.backgroundColor = this.defaultColor;
+  }
+
+  @HostListener('mouseenter') mouseover(eventData: Event) {
+    this.backgroundColor = this.highlightColor;
+  }
+
+  @HostListener('mouseleave') mouseleave(eventData: Event) {
+    this.backgroundColor = this.defaultColor;
+  }
+```
+
+```html
+<p [appBetterHighlight]="'red'" defaultColor="yellow">Style me with a better directive!</p>
+```
+
+- We can provide an alias to a binded property inside a directive to be the same as directive's selector. This way we can use following syntax to provide a value to a binded property and to instantiate a directive at the same time:
+
+```typescript
+@Directive({
+  selector: '[appBetterHighlight]'
+})
+export class BetterHighlightDirective implements OnInit {
+  @Input('appBetterHighlight') highlightColor: string = 'blue';
+```
+
+```html
+<p [appBetterHighlight]="'red'">Style me with a better directive!</p>
 ```
 
 ## Model
