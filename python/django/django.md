@@ -20,15 +20,22 @@
     - [Relationship fields](#relationship-fields)
       - [on_delete](#on_delete)
     - [Fixtures](#fixtures)
+    - [Migrations](#migrations)
   - [Databases and ORMs](#databases-and-orms)
     - [ORM Methods](#orm-methods)
       - [QuerySet API](#queryset-api)
         - [annotate](#annotate)
         - [values_list](#values_list)
+        - [values](#values)
+        - [OutRef](#outref)
     - [Optimizing QuerySets that Involve Related Objects](#optimizing-querysets-that-involve-related-objects)
       - [select_related](#select_related)
       - [prefetch_related](#prefetch_related)
+      - [select_for_update](#select_for_update)
     - [Using Signals for Denormalizing Counts](#using-signals-for-denormalizing-counts)
+    - [Transactions](#transactions)
+      - [Controlling Transactions Explicitly](#controlling-transactions-explicitly)
+    - [Faster Queries Using Materialized View](#faster-queries-using-materialized-view)
   - [Admin Panel and Customization](#admin-panel-and-customization)
     - [Adding Custom Actions to the Administration Site](#adding-custom-actions-to-the-administration-site)
     - [Extending the Administration Site with Custom Views](#extending-the-administration-site-with-custom-views)
@@ -96,6 +103,9 @@
   - [Django Rest Framework (DRF)](#django-rest-framework-drf)
     - [Adding Additional Actions to ViewSets](#adding-additional-actions-to-viewsets)
     - [Creating Custom Permissions](#creating-custom-permissions)
+    - [Combining Routers](#combining-routers)
+    - [Passing User Object to serializer](#passing-user-object-to-serializer)
+    - [Including Extra Context in Serializers](#including-extra-context-in-serializers)
   - [Django Channels](#django-channels)
     - [Writing a Consumer](#writing-a-consumer)
     - [Routing](#routing)
@@ -861,6 +871,18 @@ def viewfunc(request):
 ```
 
 - When exiting an `atomic` block, Django looks at whether it’s exited normally or with an exception to determine whether to commit or roll back. If you catch and handle exceptions inside an `atomic` block, you may hide from Django the fact that a problem has happened. This can result in unexpected behavior.
+
+### Faster Queries Using Materialized View
+
+- Materialized views can be used in ORMs such as Django ORM, by defining model and pointing it to the right table in DB via metaclass attribute (more on this [here](https://www.youtube.com/watch?v=qcTGppyu1nw)):
+
+```py
+class MaterializedDatabase(models.Model):
+  ...
+  class Meta:
+    managed = False  # ensures that migration skips this model
+    db_table = "table_name"
+```
 
 ## Admin Panel and Customization
 

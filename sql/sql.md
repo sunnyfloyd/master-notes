@@ -1,5 +1,43 @@
 # SQL
 
+## TOC
+
+- [SQL](#sql)
+  - [TOC](#toc)
+  - [Sources](#sources)
+  - [Fundamentals](#fundamentals)
+    - [Databases](#databases)
+      - [Relational vs Non-Relational Databases](#relational-vs-non-relational-databases)
+        - [SQL and NoSQL](#sql-and-nosql)
+        - [Speed of SQL Queries](#speed-of-sql-queries)
+      - [Other Databases](#other-databases)
+      - [Cache Databases](#cache-databases)
+    - [Design Patterns and ETL Concepts](#design-patterns-and-etl-concepts)
+      - [ETL Challenges](#etl-challenges)
+      - [Design Patterns in Big Data](#design-patterns-in-big-data)
+      - [Common Aspects of the ETL Process and Big Data Workflows](#common-aspects-of-the-etl-process-and-big-data-workflows)
+  - [Debugging](#debugging)
+  - [Retrieving Data with SQL](#retrieving-data-with-sql)
+    - [Filtering Data](#filtering-data)
+      - [WHERE on Numbers](#where-on-numbers)
+      - [WHERE on Text](#where-on-text)
+      - [WHERE on Booleans](#where-on-booleans)
+      - [Handling NULL](#handling-null)
+      - [Date and Time Functions](#date-and-time-functions)
+  - [GROUP BY and ORDER BY](#group-by-and-order-by)
+    - [GROUP BY](#group-by)
+    - [ORDER BY](#order-by)
+    - [Aggregate Functions](#aggregate-functions)
+  - [CASE Expressions](#case-expressions)
+  - [IF Expression](#if-expression)
+  - [JOIN](#join)
+    - [Union](#union)
+  - [Views](#views)
+    - [Materialized View](#materialized-view)
+  - [Database Design](#database-design)
+    - [Creating and dropping tables](#creating-and-dropping-tables)
+  - [Additional SQL](#additional-sql)
+
 ## Sources
 
 - [SQL for Data Analysis and Database Design](https://learning.oreilly.com/learning-paths/learning-path-sql/9781492058076/)
@@ -491,6 +529,22 @@ SELECT column_name(s) FROM table2;
   - Every ```SELECT``` statement within ```UNION``` must have the same number of columns;
   - The columns must also have similar data types;
   - The columns in every ```SELECT``` statement must also be in the same order.
+
+## Views
+
+### Materialized View
+
+- A **materialized view** is a table on disk that contains the result set of a query. Materialized views are primarily used to increase application performance when it isn't feasible or desirable to use a standard view with indexes applied to it. Such views can be concurrently updated to keep them up-to-date.
+
+- Materialized views can be used in ORMs such as Django ORM, by defining model and pointing it to the right table in DB via metaclass attribute (more on this [here](https://www.youtube.com/watch?v=qcTGppyu1nw)):
+
+```py
+class MaterializedDatabase(models.Model):
+  ...
+  class Meta:
+    managed = False  # ensures that migration skips this model
+    db_table = "table_name"
+```
 
 ## Database Design
 
