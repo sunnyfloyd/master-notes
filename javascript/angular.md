@@ -1,5 +1,41 @@
 # Angular
 
+## TOC
+
+- [Angular](#angular)
+  - [TOC](#toc)
+  - [CLI](#cli)
+  - [Components](#components)
+    - [Creating New Component](#creating-new-component)
+    - [View Encapsulation](#view-encapsulation)
+  - [Lifecycle Hooks](#lifecycle-hooks)
+  - [Model](#model)
+  - [Databinding](#databinding)
+    - [String Interpolation](#string-interpolation)
+    - [Property Binding](#property-binding)
+    - [Event Binding](#event-binding)
+    - [Two-Way Binding](#two-way-binding)
+    - [Custom Property Binding in Components](#custom-property-binding-in-components)
+    - [Custom Events](#custom-events)
+    - [Local References](#local-references)
+    - [Accessing Template and DOM element via @ViewChild](#accessing-template-and-dom-element-via-viewchild)
+    - [Accessing ng-content element via @ContentChild](#accessing-ng-content-element-via-contentchild)
+    - [ng-content](#ng-content)
+  - [Directives](#directives)
+    - [Structural Directives](#structural-directives)
+      - [ngIf](#ngif)
+      - [ngFor](#ngfor)
+      - [ngSwitch](#ngswitch)
+    - [Custom Structural Directive](#custom-structural-directive)
+    - [Attribute Directives](#attribute-directives)
+      - [ngStyle](#ngstyle)
+      - [ngClass](#ngclass)
+    - [Custom Attribute Directive](#custom-attribute-directive)
+      - [HostListener](#hostlistener)
+      - [HostBinding](#hostbinding)
+  - [Services](#services)
+    - [Example of a Service](#example-of-a-service)
+
 ## CLI
 
 - To create new Angular app using Angular CLI use `ng new app-name`.
@@ -7,7 +43,7 @@
 - To start application use `ng serve` from the directory where Angular app is located.
 
 
-## Component
+## Components
 
 - Component can be selected by tags, attributes, classes:
 
@@ -48,6 +84,39 @@ import { Component, ViewEncapsulation } from '@angular/core';
   // ...
   encapsulation: ViewEncapsulation.None // can also be Native (uses shadow DOM that is not supported in all of the browsers) and Emulated (default)
 })
+```
+
+## Lifecycle Hooks
+
+- `ngOnChanges` - called after a bound input (decorated with `@Input()`) property changes
+- `ngOnInit` - called once the component is initialized 
+- `ngDoCheck` - called during every change detection run
+- `ngAfterContentInit` - called after content (`ng-content`) has been projected into view
+- `ngAfterContentChecked` - called every time the projected content has been checked
+- `ngAfterViewInit` - called after the component's view (and child views) has been initialized
+- `ngAfterViewChecked` - called every time the view (and child views) has been checked
+- `ngOnDestroy` - called once the component is about to be destroyed
+
+## Model
+
+- Declaring data model can be done in two ways:
+
+```typescript
+// Standard
+export class Ingredient {
+    public name: string;
+    public amount: number;
+
+    constructor(name: string, amount: number) {
+        this.name = name;
+        this.amount = amount;
+    }
+}
+
+// Using Angular shortcut
+export class Ingredient {
+    constructor(public name: string, public amount: number) {}
+}
 ```
 
 ## Databinding
@@ -441,35 +510,117 @@ export class BetterHighlightDirective implements OnInit {
 <p [appBetterHighlight]="'red'">Style me with a better directive!</p>
 ```
 
-## Model
+## Services
 
-- Declaring data model can be done in two ways:
+- In order to easily share part of codes between components without getting into complicated hierarchical structures **services** can be used.
+
+- Service is just a normal TypeScript class.
+
+- Angular's dependency injector is a hierarchical injector. **Remember that even though dependency is shared with all of the children it can still be overwritten by re-instantion within the child**. There are 3 possible cases of dependency injections:
+
+  - `AppModule` - injecting dependency on this level ensures that the same instance of service is available **application-wide**.
+  - `AppComponent` - same instance of service is available for all components but not for other services
+  - any other component - same instance of service is available for the component and all its child components.
+
+- Services can be injected into other services using `@Injectable()` decorator on the service class to which we want to inject some other service. Service must then be added to the constructor to be accessible within the injectable service.
+
+- There is a new way of injecting services on the `AppModule` level that allows for lazy loading:
 
 ```typescript
-// Standard
-export class Ingredient {
-    public name: string;
-    public amount: number;
+@Injectable({providedIn: 'root'})
+export class MyService { ... }
+```
 
-    constructor(name: string, amount: number) {
-        this.name = name;
-        this.amount = amount;
-    }
+### Example of a Service
+
+- Service definition:
+
+```typescript
+// First Service
+export class LoggingService {
+  logStatusChange(status: string) {
+    console.log('A server status changed, new status: ' + status);
+  }
 }
 
-// Using Angular shortcut
-export class Ingredient {
-    constructor(public name: string, public amount: number) {}
+import { EventEmitter, Injectable } from '@angular/core';
+
+import { LoggingService } from './logging.service';
+
+// First Service
+@Injectable()  // This is recommended to be added in all of the services (even those that
+// do not have other services being injected)
+export class AccountsService {
+  accounts = [
+    {
+      name: 'Master Account',
+      status: 'active'
+    },
+    {
+      name: 'Testaccount',
+      status: 'inactive'
+    },
+    {
+      name: 'Hidden Account',
+      status: 'unknown'
+    }
+  ];
+  statusUpdated = new EventEmitter<string>();  // We do not need to make this emitted outside
+  // since we might only plan to use it internally in the components that use this service
+
+  constructor(private loggingService: LoggingService) {}
+
+  addAccount(name: string, status: string) {
+    this.accounts.push({name: name, status: status});
+    this.loggingService.logStatusChange(status);
+  }
+
+  updateStatus(id: number, status: string) {
+    this.accounts[id].status = status;
+    this.loggingService.logStatusChange(status);
+  }
 }
 ```
 
-## Lifecycle Hooks
+- It needs to be injected into the component:
 
-- `ngOnChanges` - called after a bound input (decorated with `@Input()`) property changes
-- `ngOnInit` - called once the component is initialized 
-- `ngDoCheck` - called during every change detection run
-- `ngAfterContentInit` - called after content (`ng-content`) has been projected into view
-- `ngAfterContentChecked` - called every time the projected content has been checked
-- `ngAfterViewInit` - called after the component's view (and child views) has been initialized
-- `ngAfterViewChecked` - called every time the view (and child views) has been checked
-- `ngOnDestroy` - called once the component is about to be destroyed
+```typescript
+import { Component, Input } from '@angular/core';
+
+import { LoggingService } from '../logging.service';
+import { AccountsService } from '../accounts.service';
+
+@Component({
+  selector: 'app-account',
+  templateUrl: './account.component.html',
+  styleUrls: ['./account.component.css'],
+  providers: [LoggingService]  // this REINSTANTIATES service in this component
+})
+export class AccountComponent {
+  @Input() account: {name: string, status: string};
+  @Input() id: number;
+
+  constructor(private loggingService: LoggingService,
+              private accountsService: AccountsService) {}
+
+  onSetTo(status: string) {
+    this.accountsService.updateStatus(this.id, status);
+    // this.loggingService.logStatusChange(status);  // no longer needed since we injected
+    // this service into the accountsService
+    this.accountsService.statusUpdated.emit(status);
+  }
+}
+```
+
+- We can also subscribe to events emitted from a service inside a code that shares this service:
+
+```typescript
+export class NewAccountComponent {
+
+  constructor(private accountsService: AccountsService) {
+    this.accountsService.statusUpdated.subscribe(
+      (status: string) => alert('New Status: ' + status)
+    );
+  }
+}
+```
