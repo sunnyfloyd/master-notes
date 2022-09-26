@@ -35,6 +35,7 @@
       - [HostBinding](#hostbinding)
   - [Services](#services)
     - [Example of a Service](#example-of-a-service)
+  - [Tips For Working With Services](#tips-for-working-with-services)
 
 ## CLI
 
@@ -277,6 +278,9 @@ onAddServer() {
     <em *ngIf="serverElement.type === 'blueprint'">{{ serverElement.content }}</em>
   </p>
 </app-server-element>
+
+<!-- inside server-element component -->
+<ng-content></ng-content>
 ```
 
 ```typescript
@@ -512,7 +516,7 @@ export class BetterHighlightDirective implements OnInit {
 
 ## Services
 
-- In order to easily share part of codes between components without getting into complicated hierarchical structures **services** can be used.
+- In order to easily share part of code between components without getting into complicated hierarchical structures **services** can be used.
 
 - Service is just a normal TypeScript class.
 
@@ -547,7 +551,7 @@ import { EventEmitter, Injectable } from '@angular/core';
 
 import { LoggingService } from './logging.service';
 
-// First Service
+// Second Service
 @Injectable()  // This is recommended to be added in all of the services (even those that
 // do not have other services being injected)
 export class AccountsService {
@@ -620,6 +624,47 @@ export class NewAccountComponent {
   constructor(private accountsService: AccountsService) {
     this.accountsService.statusUpdated.subscribe(
       (status: string) => alert('New Status: ' + status)
+    );
+  }
+}
+```
+
+## Tips For Working With Services
+
+- If given service stores some data it is a good idea to make property storing this data **private**. When this property needs to be accessed we should provide specific **get method** for it. And if real-time updates are needed we can just emit event from the service that provides current copy of the property whenever some change happends:
+
+```typescript
+export class ShoppingListService {
+    ingredientsChanged = new EventEmitter<Ingredient[]>();
+
+    private ingredients: Ingredient[] = [
+        new Ingredient('Apples', 5),
+        new Ingredient('Tomatoes', 10),
+    ];
+
+    addIngredient(ingredient: Ingredient) {
+        this.ingredients.push(ingredient);
+        this.ingredientsChanged.emit(this.ingredients.slice());
+    }
+}
+
+// subscribed inside a component
+@Component({
+  selector: 'app-shopping-list',
+  templateUrl: './shopping-list.component.html',
+  styleUrls: ['./shopping-list.component.css']
+})
+export class ShoppingListComponent implements OnInit {
+  ingredients: Ingredient[];
+
+  constructor(private shoppingListService: ShoppingListService) { }
+
+  ngOnInit() {
+    this.ingredients = this.shoppingListService.getIngredients();
+    this.shoppingListService.ingredientsChanged.subscribe(
+      (ingredients) => {
+        this.ingredients = ingredients;
+      }
     );
   }
 }
