@@ -35,7 +35,11 @@
       - [HostBinding](#hostbinding)
   - [Services](#services)
     - [Example of a Service](#example-of-a-service)
-  - [Tips For Working With Services](#tips-for-working-with-services)
+    - [Tips For Working With Services](#tips-for-working-with-services)
+  - [Routing](#routing)
+    - [routerLink](#routerlink)
+    - [Programmatical Navigation](#programmatical-navigation)
+    - [Fetching Route Parameters](#fetching-route-parameters)
 
 ## CLI
 
@@ -629,7 +633,7 @@ export class NewAccountComponent {
 }
 ```
 
-## Tips For Working With Services
+### Tips For Working With Services
 
 - If given service stores some data it is a good idea to make property storing this data **private**. When this property needs to be accessed we should provide specific **get method** for it. And if real-time updates are needed we can just emit event from the service that provides current copy of the property whenever some change happends:
 
@@ -669,3 +673,90 @@ export class ShoppingListComponent implements OnInit {
   }
 }
 ```
+
+## Routing
+
+- Routing is done by defining URL paths to desired components inside AppModule with router module included in the imports:
+
+```ts
+const appRoutes: Routes = [
+  {path: '', component: HomeComponent},
+  {path: 'users', component: UsersComponent},
+  {path: 'servers', component: ServersComponent}
+];
+
+@NgModule({
+  // ...
+  imports: [
+    // ...
+    RouterModule.forRoot(appRoutes)
+  ],
+  // ...
+})
+```
+
+- To define dynamic route parameters add colon before its name: `{path: 'users/:id', component: UserComponent},`.
+
+- Inside the template we must then define place where component should be loaded using `<router-outlet></router-outlet>` directive.
+
+### routerLink
+
+- To navigate to different modules using defined application routes we use property binding on `<a>` tag:
+
+```html
+<a routerLink="/servers">
+<a [routerLink]="'/servers'">
+<a [routerLink]="['/servers']">
+```
+
+- Tracks whether the linked route of an element is currently active, and allows you to specify one or more CSS classes to add to the element when the linked route is active. You can apply the `RouterLinkActive` directive to an ancestor of linked elements.
+
+```html
+<ul class="nav nav-tabs">
+  <li role="presentation" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}"><a routerLink="/">Home</a></li>
+  <li role="presentation" routerLinkActive="active"><a routerLink="/servers">Servers</a></li>
+  <li role="presentation" routerLinkActive="active"><a routerLink="/users">Users</a></li>
+</ul>
+```
+
+### Programmatical Navigation
+
+- To navigate to a different page programmatically use `navigate()` method from router:
+
+```ts
+import { Router } from '@angular/router';
+
+export class HomeComponent implements OnInit {
+
+  constructor(private router: Router) { }
+
+  ngOnInit() {
+  }
+
+  onLoadServers() {
+    this.router.navigate(['/servers']);
+  }
+}
+```
+
+- To navigate to the relative path we need to add extras to `navigate()` method and use `ActivatedRoute` class:
+
+```ts
+import { Router, ActivatedRoute } from '@angular/router';
+
+export class HomeComponent implements OnInit {
+
+  constructor(private router: Router, private route: ActivatedRoute) { }
+
+  ngOnInit() {
+  }
+
+  onLoadServers() {
+    this.router.navigate(['/servers'], {relativeTo: this.route});
+  }
+}
+```
+
+### Fetching Route Parameters
+
+
