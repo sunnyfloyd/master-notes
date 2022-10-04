@@ -7,6 +7,7 @@
   - [Sources](#sources)
   - [Django Related Resources](#django-related-resources)
   - [Basics](#basics)
+  - [Useful Commands](#useful-commands)
   - [Models](#models)
     - [Creating Model Managers](#creating-model-managers)
     - [Custom Many-to-Many Relationship](#custom-many-to-many-relationship)
@@ -112,6 +113,7 @@
     - [Implementing The WebSocket Client](#implementing-the-websocket-client)
     - [Enabling a Channel Layer](#enabling-a-channel-layer)
       - [Setting up a channel layer with Redis](#setting-up-a-channel-layer-with-redis)
+  - [hey](#hey)
   - [Django Deployment](#django-deployment)
     - [Django by Example](#django-by-example)
       - [uWSGI](#uwsgi)
@@ -197,6 +199,22 @@ urlpatterns = [
 ```
 
 - The ```include()``` function allows referencing other URLconfs. Whenever Django encounters ```include()```, it chops off whatever part of the URL matched up to that point and sends the remaining string to the included URLconf for further processing.
+
+## Useful Commands
+
+- `check` - checks that your project is in good shape.
+
+- `dbshell` - starts DB shell (when PostgreSQL is used it starts psql).
+
+- `showmigrations` - shows all of the migrations for the project with the indication whether given migration has been applied or not.
+
+- `sqlmigrate` - shows you what SQL statements Django would run for an individual migration file.
+
+- `squashmigrations` - allows to squash multiple migrations into a single migration file.
+
+- `shell_plus` - like the regular shell, but the command will import all your models automatically.
+
+- `graph_models` (requires additional setup) - provides graphical information about the structure of DB with models and their relations.
 
 ## Models
 
@@ -2628,6 +2646,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
     - `type`: The event type. This is a special key that corresponds to the name of the method that should be invoked on consumers that receive the event. You can implement a method in the consumer named the same as the message type so that it gets executed every time a message with that specific type is received.
     - `message`: The actual message you are sending.
 
+## hey
+
+- Tool that can be used to test performance of the site:
+
+```bash
+hey https://www.example.com
+```
 
 ## Django Deployment
 
