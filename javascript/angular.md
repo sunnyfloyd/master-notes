@@ -40,6 +40,7 @@
     - [routerLink](#routerlink)
     - [Programmatical Navigation](#programmatical-navigation)
     - [Fetching Route Parameters](#fetching-route-parameters)
+    - [Fetching Query Parameters and Fragment](#fetching-query-parameters-and-fragment)
 
 ## CLI
 
@@ -757,6 +758,14 @@ export class HomeComponent implements OnInit {
 }
 ```
 
+- To navigate to a specific route with query params or specific reference pass `queryParams` object or `fragment` to `navigate` method:
+
+```ts
+onLoadServer(id: number) {
+  this.router.navigate(['/servers', id, 'edit'], {queryParams: {allowEdit: '1'}, fragment: 'loading'})
+}
+```
+
 ### Fetching Route Parameters
 
 - To access route parameters:
@@ -773,6 +782,53 @@ export class UserComponent implements OnInit {
       name: this.route.snapshot.params['name']
     };
   }
-
 }
 ```
+
+- If one needs to dynamically change component when parameters change instead of using snapshot one can subscribe to the params observable. When component is destoyed Angular automatically handles removal of subscription. Below approach uses new syntax where object with callables is provided (next, err, complete):
+
+```ts
+export class UserComponent implements OnInit {
+  user: {id: number, name: string};
+
+  constructor(private route: ActivatedRoute) { }
+
+  ngOnInit() {
+    this.route.params.subscribe(
+      {next: (params: Params) => {
+        this.user = {
+          id: params['id'],
+          name: params['name']
+        };
+      }}
+    );
+  }
+}
+```
+
+### Fetching Query Parameters and Fragment
+
+- To add query params to the link we add `[queryParams]` directive with the object defining params and their values:
+
+```ts
+<a
+  [routerLink]="['/servers', server.id, 'edit']"
+  [queryParams]="{allowsEdit: '1'}"
+>
+  {{ server.name }}
+</a>
+```
+
+- To pass reference (#reference) we use `[fragment]` directive:
+
+```ts
+<a
+  [routerLink]="['/servers', server.id, 'edit']"
+  [queryParams]="{allowsEdit: '1'}"
+  fragment="loading"
+>
+  {{ server.name }}
+</a>
+```
+
+- Both `queryParams` and `fragment` from `ActivateRoute` can be subscribed to.
