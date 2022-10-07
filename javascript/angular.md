@@ -41,6 +41,11 @@
     - [Programmatical Navigation](#programmatical-navigation)
     - [Fetching Route Parameters](#fetching-route-parameters)
     - [Fetching Query Parameters and Fragment](#fetching-query-parameters-and-fragment)
+    - [Nested Routes](#nested-routes)
+    - [Redirecting](#redirecting)
+    - [Wildcard Routes](#wildcard-routes)
+    - [Outsourcing Route Configuration](#outsourcing-route-configuration)
+    - [Route Guards](#route-guards)
 
 ## CLI
 
@@ -766,6 +771,14 @@ onLoadServer(id: number) {
 }
 ```
 
+- Query params can be preserved during router navigation by `queryParamsHandling` (`preserve` or `merge` string values):
+
+```ts
+onEdit() {
+  this.router.navigate(['edit'], {relativeTo: this.route, queryParamsHandling: 'preserve'});
+}
+```
+
 ### Fetching Route Parameters
 
 - To access route parameters:
@@ -832,3 +845,199 @@ export class UserComponent implements OnInit {
 ```
 
 - Both `queryParams` and `fragment` from `ActivateRoute` can be subscribed to.
+
+### Nested Routes
+
+- To setup routes within the routes loaded using `router-outlet` hook we need to add `children` array to route object:
+
+```ts
+const appRoutes: Routes = [
+  {path: 'users', component: UsersComponent, children: [
+    {path: ':id/:name', component: UserComponent}
+  ]}
+]
+```
+
+```html
+<!-- In users.component.html -->
+<router-outlet></router-outlet>
+```
+
+### Redirecting
+
+- Redirecting is done via `redirectTo` attribute in routes:
+
+```ts
+const appRoutes: Routes = [
+  {path: '**', component: PageNotFound}
+]
+```
+
+- Remember that default matching strategy is `prefix` , Angular checks if the path you entered in the URL does start with the path specified in the route. This may lead to some issues when trying to redirect on the root path. To fix this behaviour you need to change the matching strategy to `full`:
+
+```ts
+const appRoutes: Routes = [
+  { path: '', redirectTo: '/somewhere-else', pathMatch: 'full' } 
+]
+```
+
+### Wildcard Routes
+
+- `**` wildcard can be used to catch all other routes:
+
+```ts
+const appRoutes: Routes = [
+  {path: 'not-found', component: PageNotFound},
+  {path: '**', redirectTo: '/not-found'},
+]
+```
+
+### Outsourcing Route Configuration
+
+- It is a good practice to move routes to a separate module:
+
+```ts
+// In app-routing.module.ts
+const appRoutes: Routes = [
+  // ...
+];
+
+@NgModule({
+  imports: [
+    // RouterModule.forRoot(appRoutes, {useHash: true})
+    RouterModule.forRoot(appRoutes)
+  ],
+  exports: [RouterModule]
+})
+export class AppRoutingModule {
+}
+
+// In app.module.ts
+import { AppRoutingModule } from './app-routing.module';
+
+@NgModule({
+  imports: [
+    // ...
+    AppRoutingModule
+  ],
+})
+```
+
+### Route Guards
+
+- Protecting route with `canActivate`:
+
+```ts
+// Service implementing canActivate method
+import {
+  CanActivate,
+  ActivatedRouteSnapshot,
+  RouterStateSnapshot,
+  Router,
+  CanActivateChild
+} from '@angular/router';
+import { Observable } from 'rxjs/Observable';
+import { Injectable } from '@angular/core';
+import { AuthService } from './auth.service';
+
+@Injectable()
+export class AuthGuard implements CanActivate, CanActivateChild {
+  constructor(private authService: AuthService, private router: Router) {}
+
+  canActivate(route: ActivatedRouteSnapshot,
+              state: RouterStateSnapshot): Observable<boolean> | Promise<boolean> | boolean {
+    return this.authService.isAuthenticated()
+      .then(
+        (authenticated: boolean) => {
+          if (authenticated) {
+            return true;
+          } else {
+            this.router.navigate(['/']);
+          }
+        }
+      );
+  }
+}
+
+// In app.module.ts
+import { AuthGuard } from './auth-guard.service';
+
+const appRoutes: Routes = [
+  {
+    path: 'servers',
+    canActivate: [AuthGuard],
+    component: ServersComponent,
+  },
+];
+```
+
+- To add protection to children path as well we need to implement `canActivateChild` interface:
+
+```ts
+// In app.module.ts
+const appRoutes: Routes = [
+  {
+    path: 'servers',
+    canActivateChild: [AuthGuard],
+    component: ServersComponent,
+    children: [
+    { path: ':id', component: ServerComponent, resolve: {server: ServerResolver} },
+    { path: ':id/edit', component: EditServerComponent, canDeactivate: [CanDeactivateGuard] }
+  ] },
+];
+
+// In auth service
+canActivateChild(route: ActivatedRouteSnapshot,
+  state: RouterStateSnapshot): Observable<boolean> | Promise<boolean> | boolean {
+  return this.canActivate(route, state);
+}
+```
+
+- Protecting route with `canDeactivate`:
+
+```ts
+// In app.module.ts
+const appRoutes: Routes = [
+  {
+    path: 'servers',
+    // canActivate: [AuthGuard],
+    canActivateChild: [AuthGuard],
+    component: ServersComponent,
+    children: [
+    { path: ':id', component: ServerComponent, resolve: {server: ServerResolver} },
+    { path: ':id/edit', component: EditServerComponent, canDeactivate: [CanDeactivateGuard] }
+  ]},
+];
+
+// In can-deactivate-guard.service.ts
+import { Observable } from 'rxjs/Observable';
+import { CanDeactivate, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
+
+export interface CanComponentDeactivate {
+  canDeactivate: () => Observable<boolean> | Promise<boolean> | boolean;
+}
+
+export class CanDeactivateGuard implements CanDeactivate<CanComponentDeactivate> {
+
+  canDeactivate(component: CanComponentDeactivate,
+                currentRoute: ActivatedRouteSnapshot,
+                currentState: RouterStateSnapshot,
+                nextState?: RouterStateSnapshot): Observable<boolean> | Promise<boolean> | boolean {
+    return component.canDeactivate();
+  }
+}
+
+// In guarded component
+export class EditServerComponent implements OnInit, CanComponentDeactivate {
+  canDeactivate(): Observable<boolean> | Promise<boolean> | boolean {
+    if (!this.allowEdit) {
+      return true;
+    }
+    if ((this.serverName !== this.server.name || this.serverStatus !== this.server.status) && !this.changesSaved) {
+      return confirm('Do you want to discard the changes?');
+    } else {
+      return true;
+    }
+  }
+}
+```
