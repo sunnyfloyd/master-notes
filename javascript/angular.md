@@ -684,6 +684,8 @@ export class ShoppingListComponent implements OnInit {
 
 ## Routing
 
+- Remember that Angular will be served by the actual server hosting an Angular application. Because of this it needs to be configured in a way that when non-existing resource is requested it will load `index.html` so that Angular will handle route itself.
+
 - Routing is done by defining URL paths to desired components inside AppModule with router module included in the imports:
 
 ```ts
