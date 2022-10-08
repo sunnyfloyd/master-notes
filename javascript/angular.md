@@ -46,6 +46,8 @@
     - [Wildcard Routes](#wildcard-routes)
     - [Outsourcing Route Configuration](#outsourcing-route-configuration)
     - [Route Guards](#route-guards)
+    - [Passing Static Data to Route](#passing-static-data-to-route)
+    - [Resolving Dynamic Data with Resolve Guard](#resolving-dynamic-data-with-resolve-guard)
 
 ## CLI
 
@@ -1038,6 +1040,84 @@ export class EditServerComponent implements OnInit, CanComponentDeactivate {
     } else {
       return true;
     }
+  }
+}
+```
+
+### Passing Static Data to Route
+
+- Static data can be passed to a route by using `data` attribute and passing desired object within it:
+
+```ts
+// In app-routing module
+const appRoutes: Routes = [
+  { path: 'not-found', component: ErrorPageComponent, data: {message: 'Page not found!'} },
+];
+
+// In error-page component
+export class ErrorPageComponent implements OnInit {
+  errorMessage: string;
+
+  constructor(private route: ActivatedRoute) { }
+
+  ngOnInit() {
+    // this.errorMessage = this.route.snapshot.data['message'];
+    this.route.data.subscribe(
+      (data: Data) => {
+        this.errorMessage = data['message'];
+      }
+    );
+  }
+}
+```
+
+### Resolving Dynamic Data with Resolve Guard
+
+- Resolver allows for fetching dynamic resource before route is loaded using route state:
+
+```ts
+// In app-routing module
+const appRoutes: Routes = [
+  {
+    path: 'servers',
+    canActivateChild: [AuthGuard],
+    component: ServersComponent,
+    children: [
+    { path: ':id', component: ServerComponent, resolve: {server: ServerResolver} },
+    { path: ':id/edit', component: EditServerComponent, canDeactivate: [CanDeactivateGuard] }
+  ] },
+];
+
+// In server-resolver service
+interface Server {
+  id: number;
+  name: string;
+  status: string;
+}
+
+@Injectable()
+export class ServerResolver implements Resolve<Server> {
+  constructor(private serversService: ServersService) {}
+
+  resolve(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<Server> | Promise<Server> | Server {
+    return this.serversService.getServer(+route.params['id']);
+  }
+}
+
+// Server data accessed in server component
+export class ServerComponent implements OnInit {
+  server: {id: number, name: string, status: string};
+
+  constructor(private serversService: ServersService,
+              private route: ActivatedRoute) {}
+
+  ngOnInit() {
+    this.route.data
+      .subscribe(
+        (data: Data) => {
+          this.server = data['server'];
+        }
+      );
   }
 }
 ```
