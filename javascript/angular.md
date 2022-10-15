@@ -37,17 +37,20 @@
     - [Example of a Service](#example-of-a-service)
     - [Tips For Working With Services](#tips-for-working-with-services)
   - [Routing](#routing)
-    - [routerLink](#routerlink)
-    - [Programmatical Navigation](#programmatical-navigation)
-    - [Fetching Route Parameters](#fetching-route-parameters)
-    - [Fetching Query Parameters and Fragment](#fetching-query-parameters-and-fragment)
     - [Nested Routes](#nested-routes)
     - [Redirecting](#redirecting)
     - [Wildcard Routes](#wildcard-routes)
     - [Outsourcing Route Configuration](#outsourcing-route-configuration)
+    - [routerLink](#routerlink)
+    - [Programmatical Navigation](#programmatical-navigation)
+    - [Fetching Route Parameters](#fetching-route-parameters)
+    - [Fetching Query Parameters and Fragment](#fetching-query-parameters-and-fragment)
     - [Route Guards](#route-guards)
     - [Passing Static Data to Route](#passing-static-data-to-route)
     - [Resolving Dynamic Data with Resolve Guard](#resolving-dynamic-data-with-resolve-guard)
+  - [Observables](#observables)
+    - [How to Create Custom Observable](#how-to-create-custom-observable)
+    - [Subjects](#subjects)
 
 ## CLI
 
@@ -709,6 +712,83 @@ const appRoutes: Routes = [
 
 - Inside the template we must then define place where component should be loaded using `<router-outlet></router-outlet>` directive.
 
+### Nested Routes
+
+- To setup routes within the routes loaded using `router-outlet` hook we need to add `children` array to route object:
+
+```ts
+const appRoutes: Routes = [
+  {path: 'users', component: UsersComponent, children: [
+    {path: ':id/:name', component: UserComponent}
+  ]}
+]
+```
+
+```html
+<!-- In users.component.html -->
+<router-outlet></router-outlet>
+```
+
+### Redirecting
+
+- Redirecting is done via `redirectTo` attribute in routes:
+
+```ts
+const appRoutes: Routes = [
+  {path: '**', component: PageNotFound}
+]
+```
+
+- Remember that default matching strategy is `prefix` , Angular checks if the path you entered in the URL does start with the path specified in the route. This may lead to some issues when trying to redirect on the root path. To fix this behaviour you need to change the matching strategy to `full`:
+
+```ts
+const appRoutes: Routes = [
+  { path: '', redirectTo: '/somewhere-else', pathMatch: 'full' } 
+]
+```
+
+### Wildcard Routes
+
+- `**` wildcard can be used to catch all other routes:
+
+```ts
+const appRoutes: Routes = [
+  {path: 'not-found', component: PageNotFound},
+  {path: '**', redirectTo: '/not-found'},
+]
+```
+
+### Outsourcing Route Configuration
+
+- It is a good practice to move routes to a separate module:
+
+```ts
+// In app-routing.module.ts
+const appRoutes: Routes = [
+  // ...
+];
+
+@NgModule({
+  imports: [
+    // RouterModule.forRoot(appRoutes, {useHash: true})
+    RouterModule.forRoot(appRoutes)
+  ],
+  exports: [RouterModule]
+})
+export class AppRoutingModule {
+}
+
+// In app.module.ts
+import { AppRoutingModule } from './app-routing.module';
+
+@NgModule({
+  imports: [
+    // ...
+    AppRoutingModule
+  ],
+})
+```
+
 ### routerLink
 
 - To navigate to different modules using defined application routes we use property binding on `<a>` tag:
@@ -849,83 +929,6 @@ export class UserComponent implements OnInit {
 ```
 
 - Both `queryParams` and `fragment` from `ActivateRoute` can be subscribed to.
-
-### Nested Routes
-
-- To setup routes within the routes loaded using `router-outlet` hook we need to add `children` array to route object:
-
-```ts
-const appRoutes: Routes = [
-  {path: 'users', component: UsersComponent, children: [
-    {path: ':id/:name', component: UserComponent}
-  ]}
-]
-```
-
-```html
-<!-- In users.component.html -->
-<router-outlet></router-outlet>
-```
-
-### Redirecting
-
-- Redirecting is done via `redirectTo` attribute in routes:
-
-```ts
-const appRoutes: Routes = [
-  {path: '**', component: PageNotFound}
-]
-```
-
-- Remember that default matching strategy is `prefix` , Angular checks if the path you entered in the URL does start with the path specified in the route. This may lead to some issues when trying to redirect on the root path. To fix this behaviour you need to change the matching strategy to `full`:
-
-```ts
-const appRoutes: Routes = [
-  { path: '', redirectTo: '/somewhere-else', pathMatch: 'full' } 
-]
-```
-
-### Wildcard Routes
-
-- `**` wildcard can be used to catch all other routes:
-
-```ts
-const appRoutes: Routes = [
-  {path: 'not-found', component: PageNotFound},
-  {path: '**', redirectTo: '/not-found'},
-]
-```
-
-### Outsourcing Route Configuration
-
-- It is a good practice to move routes to a separate module:
-
-```ts
-// In app-routing.module.ts
-const appRoutes: Routes = [
-  // ...
-];
-
-@NgModule({
-  imports: [
-    // RouterModule.forRoot(appRoutes, {useHash: true})
-    RouterModule.forRoot(appRoutes)
-  ],
-  exports: [RouterModule]
-})
-export class AppRoutingModule {
-}
-
-// In app.module.ts
-import { AppRoutingModule } from './app-routing.module';
-
-@NgModule({
-  imports: [
-    // ...
-    AppRoutingModule
-  ],
-})
-```
 
 ### Route Guards
 
@@ -1120,6 +1123,105 @@ export class ServerComponent implements OnInit {
           this.server = data['server'];
         }
       );
+  }
+}
+```
+
+## Observables
+
+- **Observables** are lazy Push collections of multiple values.
+
+### How to Create Custom Observable
+
+- Observables have 3 states that can be handled by observer (subscriber): `next`, `error`, and `complete`.
+
+```ts
+import { Observable } from 'rxjs';
+
+const customIntervalObservable = Observable.create(observer => {
+  let count = 0;
+  setInterval(() => {
+    observer.next(count);
+    if (count === 5) {
+      observer.complete();
+    }
+    if (count > 3) {
+      observer.error(new Error('Count is greater 3!'));
+    }
+    count++;
+  }, 1000);
+});
+```
+
+- Observables can be filtered with the use of `pipe` and **operators**:
+
+```ts
+import { Observable } from 'rxjs';
+import { map, filter } from 'rxjs/operators';
+
+this.firstObsSubscription = customIntervalObservable.pipe(
+  filter(data => {
+    return data > 0;
+  }),
+  map((data: number) => {
+    return 'Round: ' + (data + 1);
+  })
+).subscribe(data => {
+    console.log(data);
+  }, error => {
+    console.log(error);
+    alert(error.message);
+  }, () => {
+    console.log('Completed!');
+  });
+}
+```
+
+### Subjects
+
+- More modern way (i.e. more efficient) to handle `EventEmitters` that emit events across different components (not using `Output()`) is to use `Subject`. Remember that subjects will not get automatically unsubscribed by Angular so this needs to be done explicitly inside `ngOnDestroy`:
+
+```ts
+// Inside the service class
+import { Injectable } from '@angular/core';
+import { Subject } from 'rxjs';
+
+@Injectable({providedIn: 'root'})
+export class UserService {
+  activatedEmitter = new Subject<boolean>();
+}
+
+// In the component that emits an event
+onActivate() {
+  this.userService.activatedEmitter.next(true);
+}
+
+// In the component that subscribes to the Subject
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Subscription } from 'rxjs';
+
+import { UserService } from './user.service';
+
+@Component({
+  selector: 'app-root',
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.css']
+})
+export class AppComponent implements OnInit, OnDestroy {
+  userActivated = false;
+  private activatedSub: Subscription;
+
+  constructor(private userService: UserService) {
+  }
+
+  ngOnInit() {
+    this.activatedSub = this.userService.activatedEmitter.subscribe(didActivate => {
+      this.userActivated = didActivate;
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.activatedSub.unsubscribe();
   }
 }
 ```
