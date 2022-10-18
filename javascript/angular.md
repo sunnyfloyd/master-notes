@@ -51,6 +51,10 @@
   - [Observables](#observables)
     - [How to Create Custom Observable](#how-to-create-custom-observable)
     - [Subjects](#subjects)
+  - [Forms](#forms)
+    - [Template-Driven Forms](#template-driven-forms)
+      - [Accessing Form Object](#accessing-form-object)
+      - [Form Validation](#form-validation)
 
 ## CLI
 
@@ -1225,3 +1229,67 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 }
 ```
+
+## Forms
+
+- Angular provides 2 approaches to forms creations:
+
+  - **template-driven** - Angular infers thee Form Object from the DOM
+  - **reactive** - Form is created programmatically and then synchronized with the DOM
+
+### Template-Driven Forms
+
+- Remember to include `FormsModule` in the `import` inside `AppModule` to start using template-driven forms.
+
+- To enable TD forms add `ngModel` directive and `name` attribute to HTML tag defining an input.
+
+- To capture form submission add `(ngSubmit)` event to the `form` tag.
+
+#### Accessing Form Object
+
+- To get `NgForm` object created by Angular out of the form we pass local reference and assign `ngForm` value to it.
+
+```HTML
+<form (submit)="onSubmit(f)" #f="ngForm">
+  <div id="user-data">
+    <div class="form-group">
+      <label for="username">Username</label>
+      <input type="text" id="username" class="form-control" name="username" ngModel>
+    </div>
+    <button class="btn btn-default" type="button">Suggest an Username</button>
+    <div class="form-group">
+      <label for="email">Mail</label>
+      <input type="email" id="email" class="form-control" name="email" ngModel>
+    </div>
+  </div>
+  <div class="form-group">
+    <label for="secret">Secret Questions</label>
+    <select id="secret" class="form-control" name="secret" ngModel>
+      <option value="pet">Your first Pet?</option>
+      <option value="teacher">Your first teacher?</option>
+    </select>
+  </div>
+  <button class="btn btn-primary" type="submit">Submit</button>
+</form>
+```
+
+```ts
+// in function that triggers after `submit` event fired
+onSubmit(form: NgForm) {
+  console.log(form);
+}
+```
+
+- `NgForm` can be also accessed by `ViewChild` which can be useful if we need to access form before it is being submitted:
+
+```ts
+@ViewChild('f') signupForm: NgForm;
+
+onSubmit(form: NgForm) {
+  console.log(this.signupForm);
+}
+```
+
+#### Form Validation
+
+- Validation can be added to form fields by using specifc keywords e.g. `required` or `email` to the input HTML tags.
