@@ -1292,4 +1292,4 @@ onSubmit(form: NgForm) {
 
 #### Form Validation
 
-- Validation can be added to form fields by using specifc keywords e.g. `required` or `email` to the input HTML tags.
+- Validation can be added to form fields by using specifc directives e.g. `required` or `email` to the input HTML tags.

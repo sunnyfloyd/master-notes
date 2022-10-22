@@ -173,9 +173,7 @@ def test_empty(cards_db):
 
 - The fixture decorator `scope` parameter allows to define a specific scope for a fixture:
 
-    - `scope='function'`
-
-    Run once per test function. The setup portion is run before each test using the fixture. The teardown portion is run after each test using the fixture. This is the default scope used when no scope parameter is specified.
+    - `scope='function'` - run once per test function. The setup portion is run before each test using the fixture. The teardown portion is run after each test using the fixture. This is the default scope used when no scope parameter is specified.
 
     - `scope='class'` - run once per test class, regardless of how many test methods are in the class.
 
