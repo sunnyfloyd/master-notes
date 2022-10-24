@@ -55,6 +55,12 @@
     - [Template-Driven Forms](#template-driven-forms)
       - [Accessing Form Object](#accessing-form-object)
       - [Form Validation](#form-validation)
+      - [Form Default Values (Property Binding in Forms)](#form-default-values-property-binding-in-forms)
+      - [Grouping Form Controls](#grouping-form-controls)
+      - [Handling Radio Buttons](#handling-radio-buttons)
+      - [Setting and Patching Form Values](#setting-and-patching-form-values)
+      - [Accessing Form Values](#accessing-form-values)
+      - [Resetting Form](#resetting-form)
 
 ## CLI
 
@@ -1293,3 +1299,165 @@ onSubmit(form: NgForm) {
 #### Form Validation
 
 - Validation can be added to form fields by using specifc directives e.g. `required` or `email` to the input HTML tags.
+
+- Based on form's validation status different attributes mayb be applied to the element. We can for example disable submit button if form is invalid:
+
+```HTML
+<button class="btn btn-primary" type="submit" [disabled]="!f.valid">Submit</button>
+```
+
+- Angular automatically applies specific classes to the form fields based on their validity. Those classes can be styled as desired. For example below gives red border to the invalid input field (`ng-invalid`) but only if it has not been yet touched (`ng-touched`):
+
+```CSS
+input.ng-invalid.ng-touched {
+  border: 1px solid red;
+}
+```
+
+- By assigning `ngModel` to local reference on the input field we can further define other page elements based on the input's state, e.g. to display additional information block only when given input is invalid and has not been touched:
+
+```HTML
+<input type="email" id="email" class="form-control" name="email" email required ngModel #email="ngModel">
+<span class="help-block" *ngIf="!email.valid && email.touched">Please enter a valid email!</span>
+```
+
+#### Form Default Values (Property Binding in Forms)
+
+- You can use one-way property binding to define a default value for the form's field:
+
+```HTML
+<select id="secret" class="form-control" name="secret" required [ngModel]="defaultQuestion">
+```
+
+```ts
+export class AppComponent {
+  defaultQuestion = 'pet';
+}
+```
+
+- Two-way binding can also be used if needed:
+
+```HTML
+<div class="form-group">
+  <textarea name="questionAnswer" rows="3" [(ngModel)]="questionAnswer"></textarea>
+  <p>Your reply: {{ questionAnswer }}</p>
+</div>
+```
+
+```ts
+export class AppComponent {
+  questionAnswer = '';
+}
+```
+
+#### Grouping Form Controls
+
+- Form controls can be grouped together using `ngModelGroup` to define common validation, styling, etc. for multiple elements, e.g.:
+
+```HTML
+<div id="user-data" ngModelGroup="userData" #userData="ngModelGroup">
+  <!-- ... -->
+  <p *ngIf="!userData.valid && userData.touched">User data is invalid!</p>
+</div>
+```
+
+#### Handling Radio Buttons
+
+- Handle them like the rest:
+
+```HTML
+<div class="radio" *ngFor="let gender of genders">
+  <label>
+    <input
+      type="radio"
+      name="gender"
+      ngModel
+      [value]="gender"
+    >
+  {{ gender }}
+  </label>
+</div>
+```
+
+```ts
+export class AppComponent {
+  genders = ['male', 'female'];
+}
+```
+
+#### Setting and Patching Form Values
+
+- This can be done without any property binding using `NgForm` accessed by local reference using `ViewChild`.
+
+- To override entire form use `setValue` from `NgForm`:
+
+```ts
+export class AppComponent {
+  @ViewChild('f') signupForm: NgForm;
+
+  suggestUserName() {
+    const suggestedName = 'Superuser';
+    this.signupForm.setValue(
+      {
+        userData: {
+          username: suggestedName,
+          email: 'test@gmail.com'
+        },
+        secret: 'pet',
+        questionAnswer: '',
+        gender: 'male'
+      }
+    );
+  }
+}
+```
+
+- To patch only specific value use `patchValue` from `NgForm.form`:
+
+```ts
+export class AppComponent {
+  @ViewChild('f') signupForm: NgForm;
+
+  suggestUserName() {
+    const suggestedName = 'Superuser';
+    this.signupForm.form.patchValue(
+      {
+        userData: {
+          username: suggestedName
+        }
+      }
+    );
+  }
+```
+
+#### Accessing Form Values
+
+- To access form values we just access `value` property of `NgForm`:
+
+```ts
+export class AppComponent {
+  @ViewChild('f') signupForm: NgForm;
+  user = {
+    username: '',
+    gender: ''
+  };
+
+  onSubmit() {
+    // grouped form control
+    this.user.username = this.signupForm.value.userDatausername;
+    this.user.gender = this.signupForm.value.gender;
+  }
+```
+
+#### Resetting Form
+
+- To reset a form do below. You can also pass the same object as you would pass inside `setValue()` to `reset()` to reset the form to specific values:
+
+```ts
+export class AppComponent {
+  @ViewChild('f') signupForm: NgForm;
+
+  onSubmit() {
+    this.signupForm.reset();
+  }
+```
