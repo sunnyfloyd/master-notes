@@ -1257,6 +1257,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
 ```HTML
 <form (submit)="onSubmit(f)" #f="ngForm">
+<!-- Alternative: <form (ngSubmit)="onSubmit(f)" #f="ngForm"> -->
   <div id="user-data">
     <div class="form-group">
       <label for="username">Username</label>
@@ -1460,4 +1461,97 @@ export class AppComponent {
   onSubmit() {
     this.signupForm.reset();
   }
+```
+
+### Reactive Forms
+
+#### Setup
+
+- In `app.module.ts` `ReactiveFormsModule` needs to be imported:
+
+```ts
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+
+@NgModule({
+  // ...
+  imports: [
+    ReactiveFormsModule,
+  ],
+})
+```
+
+- In the component itself use `FormGroup`:
+
+```ts
+import { FormGroup } from '@angular/forms';
+
+// ...
+export class AppComponent {
+  signupForm: FormGroup;
+}
+```
+
+#### Creating Form in Code
+
+- Use `FormGroup` together with `FormControl` to define form fields. `FormControl` accepts default value and sync and async validators. It is safer to wrap field names in the quotation marks in this case:
+
+```ts
+import { FormControl, FormGroup } from '@angular/forms';
+
+ngOnInit() {
+  this.signupForm = new FormGroup({
+    'username': new FormControl(null),
+    'email': new FormControl(null),
+    'gender': new FormControl('male'),
+  });
+}
+```
+
+#### Syncing HTML and Form
+
+- To sync HTML form with `FormGroup` defined in TS pass created `FormGroup` object via `[formGroup]` attribute binding and bind each input via `formControlName` by its respective name in the `FormGroup` object:
+
+```HTML
+<form [formGroup]="signupForm">
+  <div class="form-group">
+    <label for="username">Username</label>
+    <input
+      type="text"
+      id="username"
+      formControlName="username"
+      class="form-control">
+  </div>
+  <div class="form-group">
+    <label for="email">email</label>
+    <input
+      type="text"
+      id="email"
+      formControlName="email"
+      class="form-control">
+  </div>
+  <div class="radio" *ngFor="let gender of genders">
+    <label>
+      <input
+        type="radio"
+        formControlName="gender"
+        [value]="gender">{{ gender }}
+    </label>
+  </div>
+  <button class="btn btn-primary" type="submit">Submit</button>
+</form>
+```
+
+#### Submitting Form
+
+- We still use `(ngSubmit)` event to listen to form submission. The only difference is that we no longer use local reference to access form values, but we use defined `FormGroup` object instead.
+
+#### Validations
+
+- Validations are added via arguments in `FormControl` object:
+
+```ts
+this.signupForm = new FormGroup({
+  'username': new FormControl(null, Validators.required),  // single validator
+  'email': new FormControl(null, [Validators.required, Validators.email]),  // list of validators
+});
 ```

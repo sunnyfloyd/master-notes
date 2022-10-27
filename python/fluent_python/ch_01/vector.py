@@ -19,6 +19,10 @@ class Vector:
     def __repr__(self) -> str:
         return f"Vector({self.x}, {self.y})"
 
+    def __bool__(self) -> bool:
+        return bool(abs(self))
+
+
 v1 = Vector(2, 4)
 v2 = Vector(2, 1)
 
