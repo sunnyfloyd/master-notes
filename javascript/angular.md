@@ -1555,3 +1555,91 @@ this.signupForm = new FormGroup({
   'email': new FormControl(null, [Validators.required, Validators.email]),  // list of validators
 });
 ```
+
+#### Accessing Form Controls
+
+- In HTML it is still possible to access attributes of a given form control when using reactive approach. This is done by referencing form control by its name or path (in case of nested form controls):
+
+```HTML
+<form [formGroup]="signupForm" (ngSubmit)="onSubmit()">
+  <div class="form-group">
+    <label for="username">Username</label>
+    <input
+      type="text"
+      id="username"
+      formControlName="username"
+      class="form-control">
+    <span class="help-block" *ngIf="!signupForm.get('username').valid && signupForm.get('username').touched">
+      Please enter a valid username!
+    </span>
+  </div>
+  <button class="btn btn-primary" type="submit" [disabled]="!signupForm.valid && signupForm.touched">Submit</button>
+</form>
+```
+
+- For nested form controls:
+
+```ts
+ngOnInit() {
+  this.signupForm = new FormGroup({
+    'userData': new FormGroup({
+      'username': new FormControl(null, Validators.required),
+    }),
+  });
+}
+```
+
+```HTML
+<form [formGroup]="signupForm" (ngSubmit)="onSubmit()">
+  <div formGroupName="userData">
+    <div class="form-group">
+      <label for="username">Username</label>
+      <input
+        type="text"
+        id="username"
+        formControlName="username"
+        class="form-control">
+      <span class="help-block" *ngIf="!signupForm.get('userData.username').valid && signupForm.get('userData.username').touched">
+        Please enter a valid username!
+      </span>
+    </div>
+  </div>
+  <button class="btn btn-primary" type="submit" [disabled]="!signupForm.valid && signupForm.touched">Submit</button>
+</form>
+```
+
+#### Arrays of Form Controls
+
+- In cases when we want to enable dynamically added form controls (e.g. based on the user's input) we can use `FormArray`:
+
+```ts
+ngOnInit() {
+  this.signupForm = new FormGroup({
+    // ...
+    'hobbies': new FormArray([]),
+  });
+}
+
+onAddHobby() {
+  const control = new FormControl(null, Validators.required);
+  (<FormArray>this.signupForm.get('hobbies')).push(control);
+}
+
+getHobbyControls() {
+  return (<FormArray>this.signupForm.get('hobbies')).controls
+}
+
+// Alternatively for getHobbyControls we can use getter with type casting
+get hobbyControls() {
+  return (this.signupForm.get('hobbies') as FormArray).controls
+}
+```
+
+```HTML
+<div formArrayName="hobbies">
+  <button class="btn btn-primary" (click)="onAddHobby()">Add Hobby</button>
+  <div class="form-group" *ngFor="let hobbyControl of getHobbyControls(); index as i">
+    <input type="text" class="form-control" [formControlName]="i">
+  </div>
+</div>
+```
