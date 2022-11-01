@@ -1643,3 +1643,69 @@ get hobbyControls() {
   </div>
 </div>
 ```
+
+#### Custom Validators
+
+##### Sync Validators
+
+- Custom validator is just a function checking whether provided `FormControl` instance is valid. Custom validator needs to return an object with an error code and its value (`true` or `null`):
+
+```ts
+ngOnInit() {
+    this.signupForm = new FormGroup({
+      'username': new FormControl(null, [this.forbiddenNames.bind(this)]),
+    });
+  }
+
+forbiddenNames(control: FormControl): {[s: string]: boolean} {
+  if (this.forbiddenUsernames.indexOf(control.value) !== -1) {
+    return {'nameIsForbidden': true};
+  }
+  return {'nameIsForbidden': null}
+  // return null;  // alternatively null can be returned
+}
+```
+
+##### Async Validators
+
+- Works like synchronous validators but returns promise or observable instead:
+
+```ts
+forbiddenNameAsync(control: FormControl): Promise<any> | Observable<any> {
+  const promise = new Promise<any>(
+    (resolve, reject) => {
+      setTimeout(() => {
+        if (control.value === 'Test') {
+          resolve({'forbiddenName': true});
+        } else {
+          resolve(null);
+        }
+      }, 1500);
+    }
+  );
+  return promise;
+}
+```
+
+#### Error Codes
+
+- Error codes can be verified on the level where validation is implemented:
+
+```HTML
+<span *ngIf="signupForm.get('userData.username').errors['nameIsForbidden']">
+  Provided username is not allowed!
+</span>
+```
+
+#### Value and Status Changes Observables
+
+- One can subscribe to observables that indicate value or status change:
+
+```ts
+this.signupForm.valueChanges.subscribe(value => {
+  console.log(value);
+});
+this.signupForm.statusChanges.subscribe(status => {
+  console.log(status);
+});
+```
