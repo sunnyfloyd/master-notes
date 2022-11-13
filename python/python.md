@@ -740,6 +740,23 @@ def parse_connection(p):
             print(f'This Connection object talks to {host}')
 ```
 
+- Literal with variable patterns:
+
+```py
+def evaluate(exp, env):
+    match exp:
+        case ['quote', x]:
+            return x
+        case ['if', test, consequence, alternative]:
+            return foo(consequence, env)
+        case ['lambda', [*params], *body] if body:
+            ...
+        case ['lambda', [Symbol() as name, *params], *body] if body:
+            ...
+        case _:
+            raise SyntaxError()
+```
+
 ### IO and Data Objects
 
 #### Files
