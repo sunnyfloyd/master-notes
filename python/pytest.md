@@ -611,12 +611,12 @@ pip​​ ​​install​​ ​​coverage​
 
 ```python
 ​def​ ​test_mock_path​():
-​with​ mock.patch.object(cards, ​"CardsDB"​) ​as​ MockCardsDB:
-    MockCardsDB.return_value.path.return_value = ​"/foo/"​
-    ​with​ cards.cli.cards_db() ​as​ db:
-        ​print​()
-        ​print​(f​"{db.path=}"​)
-        ​print​(f​"{db.path()=}"​)
+    ​with​ mock.patch.object(cards, ​"CardsDB"​) ​as​ MockCardsDB:
+        MockCardsDB.return_value.path.return_value = ​"/foo/"​
+        ​with​ cards.cli.cards_db() ​as​ db:
+            ​print​()
+            ​print​(f​"{db.path=}"​)
+            ​print​(f​"{db.path()=}"​)
 
 # Above as a fixture
 

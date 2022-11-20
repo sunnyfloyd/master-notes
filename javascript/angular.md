@@ -1644,6 +1644,8 @@ get hobbyControls() {
 </div>
 ```
 
+- To remove an element from `FormArray` use `removeAt(index)` method. To clear `FormArray` and remove all controls use `clear()` method.
+
 #### Custom Validators
 
 ##### Sync Validators
