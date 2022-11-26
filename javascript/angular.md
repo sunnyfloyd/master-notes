@@ -1711,3 +1711,122 @@ this.signupForm.statusChanges.subscribe(status => {
   console.log(status);
 });
 ```
+
+## Pipes
+
+- Pipes are responsible for transforming the output without changing the original data source.
+
+```HTML
+<p>{{ someDate | date: 'fullDate' | uppercase }}</p>
+```
+
+- Pipes are parsed from left to right.
+
+- [Available default Angular pipes](https://angular.io/api?type=pipe).
+
+
+### Custom Pipe
+
+- To create new custom pipe use `ng generate pipe` or `ng g p`.
+
+- Example of custom pipe. Pipe needs to be added to declarations in `app.module.ts`:
+
+```ts
+// shorten.pipe.ts
+import { Pipe, PipeTransform } from '@angular/core';
+
+@Pipe({
+  name: 'shorten'
+})
+export class ShortenPipe implements PipeTransform {
+  transform(value: any) {
+    if (value.lenth > 10) {
+      return value.substr(0, 10) + '...';
+    }
+    return value;
+  }
+}
+```
+
+```HTML
+<!-- page.html -->
+<p>{{ someLongText | shorten }}</p>
+```
+
+### Parametrizing Custom Pipe
+
+- Example of a custom parametrized pipe:
+
+```ts
+// shorten.pipe.ts
+import { Pipe, PipeTransform } from '@angular/core';
+
+@Pipe({
+  name: 'shorten'
+})
+export class ShortenPipe implements PipeTransform {
+  transform(value: any, limit: number) {
+    if (value.lenth > limit) {
+      return value.substr(0, 10) + '...';
+    }
+    return value;
+  }
+}
+```
+
+```HTML
+<!-- page.html -->
+<p>{{ someLongText | shorten:10 }}</p>
+```
+
+### Filter Pipe
+
+- Note that filtering pipes can also be applied to `ngFor` items:
+
+```ts
+// filter.pipe.ts
+import { Pipe, PipeTransform } from '@angular/core';
+
+@Pipe({
+  name: 'filter'
+})
+export class ShortenPipe implements PipeTransform {
+  transform(value: any, filterString: string, propName: string): any {
+    if (value.lenth === 0) {
+      return value
+    }
+    const resultArray = [];
+    for (const item of value) {
+      if (item.status[propName] === filterString) {
+        resultArray.push(item);
+      }
+    }
+    return resultArray;
+  }
+}
+```
+
+```HTML
+<!-- page.html -->
+<input type="text" [(ngModel)]="filteredStatus">
+<li *ngFor="let server of servers | filter:filteredStatus:'status'></li>
+```
+
+### Impure Pipe
+
+- Filtering pipes are not run every time the data changes. This means that in some cases data might not appear correctly (applicable objects might not be included by filtering pipe). To enforce re-application of filtering pipes we need to pass `pure: false` attribute in object passed as an argument to `Pipe` decorator:
+
+```ts
+@Pipe({
+  name: 'filter'
+  pure: false
+})
+```
+
+### Async Pipe
+
+- Pipe can be used to properly show given data whenever promise or observable are resolved:
+
+```HTML
+<p>{{ promiseOrObservable | async }}</p>
+```
