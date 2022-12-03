@@ -553,7 +553,7 @@ export class BetterHighlightDirective implements OnInit {
 
 - Services can be injected into other services using `@Injectable()` decorator on the service class to which we want to inject some other service. Service must then be added to the constructor to be accessible within the injectable service.
 
-- There is a new way of injecting services on the `AppModule` level that allows for lazy loading:
+- There is a new way of injecting services on the `AppModule` level that allows lazy loading:
 
 ```typescript
 @Injectable({providedIn: 'root'})
@@ -1835,9 +1835,12 @@ export class ShortenPipe implements PipeTransform {
 
 - Angular makes requests using `HttpClientModule`. This needs to be added to `app.module.ts` as an import.
 
+- It is a good practice to outsource API communication to a separate service.
+
 - Example of POST and GET requests with typing and transforming response with `pipe`:
 
 ```ts
+// Service
 // ...
 import { Post } from './post.model';
 
@@ -1867,6 +1870,82 @@ export class PostsService {
       );
   }
 
+  fetchPosts() { // One can subscribe to the results of this method and apply logic 
+    let searchParams = new HttpParams();
+    searchParams = searchParams.append('print', 'pretty');
+    searchParams = searchParams.append('custom', 'key');
+    return this.http
+      .get<{ [key: string]: Post }>(
+        'https://ng-complete-guide-c56d3.firebaseio.com/posts.json',
+        {
+          headers: new HttpHeaders({ 'Custom-Header': 'Hello' }),
+          params: searchParams,
+          responseType: 'json'
+        }
+      )
+      .pipe(
+        map(responseData => { // this is the map function from rxjs
+          const postsArray: Post[] = [];
+          for (const key in responseData) {
+            if (responseData.hasOwnProperty(key)) {
+              postsArray.push({ ...responseData[key], id: key });
+            }
+          }
+          return postsArray;
+        }),
+        catchError(errorRes => {
+          // Send to analytics server
+          return throwError(errorRes);
+        })
+      );
+  }
+}
+```
+
+### Error Handling
+
+- Errors can emit next subject and therefore can be subscribed to in other components:
+
+```typescript
+import { Injectable } from '@angular/core';
+import { catchError } from 'rxjs/operators';
+import { Subject } from 'rxjs';
+
+import { Post } from './post.model';
+
+@Injectable({ providedIn: 'root' })
+export class PostsService {
+  error = new Subject<string>();
+
+  constructor(private http: HttpClient) {}
+
+  createAndStorePost(title: string, content: string) {
+    const postData: Post = { title: title, content: content };
+    this.http
+      .post<{ name: string }>(
+        'https://ng-complete-guide-c56d3.firebaseio.com/posts.json',
+        postData,
+        {
+          observe: 'response'
+        }
+      )
+      .subscribe(
+        responseData => {
+          console.log(responseData);
+        },
+        error => {
+          this.error.next(error.message);
+        }
+      );
+  }
+```
+
+- Additional logic for error handling can be implemented by using `catchError`:
+
+```typescript
+import { map, catchError } from 'rxjs/operators';
+// ...
+
   fetchPosts() {
     let searchParams = new HttpParams();
     searchParams = searchParams.append('print', 'pretty');
@@ -1895,6 +1974,120 @@ export class PostsService {
           return throwError(errorRes);
         })
       );
+  }
+```
+
+### Headers and Query Params
+
+- Setting-up a header is done via `HttpHeaders` that takes an object of key-value pairs as an argument. Query params can be added using `HttpParams` object that also takes key-value pairs that translate into `key=value` string in the URL:
+
+```typescript
+fetchPosts() {
+  let searchParams = new HttpParams();
+  searchParams = searchParams.append('print', 'pretty');
+  searchParams = searchParams.append('custom', 'key');
+  return this.http
+    .get<{ [key: string]: Post }>(
+      'https://ng-complete-guide-c56d3.firebaseio.com/posts.json',
+      {
+        headers: new HttpHeaders({ 'Custom-Header': 'Hello' }),
+        params: searchParams,
+        responseType: 'json'
+      }
+    )
+```
+
+### Observing Different Types of Responses
+
+- By default a body of a response is returned from the HTTP request. This can be changed by passing additional object to the HTTP request call:
+
+```typescript
+createAndStorePost(title: string, content: string) {
+  const postData: Post = { title: title, content: content };
+  this.http
+    .post<{ name: string }>(
+      'https://ng-complete-guide-c56d3.firebaseio.com/posts.json',
+      postData,
+      {
+        observe: 'response' // full response object will be returned
+      }
+    )
+```
+
+- For very granular management of requests one can use `{observe: 'event'}`. This can be for example combined with `tap` that allows for executing an arbitrary code without changing the observable output:
+
+```ts
+deletePosts() {
+    return this.http
+      .delete('https://ng-complete-guide-c56d3.firebaseio.com/posts.json', {
+        observe: 'events',
+        responseType: 'text'
+      })
+      .pipe(
+        // note that both ifs will get executed if request succeeds
+        // but it will happen at two separate events being fired
+        // and therefore tap will also get fired twice
+        tap(event => {
+          console.log(event);
+          if (event.type === HttpEventType.Sent) { // request being sent
+          }
+          if (event.type === HttpEventType.Response) {
+            console.log(event.body); // response received
+          }
+        })
+      );
+  }
+```
+
+### Interceptors
+
+- **Interceptors** intercepts and handles an `HttpRequest` or `HttpResponse`. This can be for example used for attaching authorization token to each request that is made to the BE:
+
+```ts
+import {
+  HttpInterceptor,
+  HttpRequest,
+  HttpHandler
+} from '@angular/common/http';
+
+export class AuthInterceptorService implements HttpInterceptor {
+  intercept(req: HttpRequest<any>, next: HttpHandler) {
+    const modifiedRequest = req.clone({ // needs to be cloned because HttpRequest is immutable
+      headers: req.headers.append('Auth', 'xyz')
+    });
+    return next.handle(modifiedRequest);
+  }
+}
+```
+
+- In `app.module` interceptors need to be added as an array of providers":
+
+```ts
+providers: [
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: AuthInterceptorService,
+      multi: true
+    }
+  ],
+```
+
+- One can also intercept into the response. Note that inside the interceptor you will always get an event as a response:
+
+```ts
+export class LoggingInterceptorService implements HttpInterceptor {
+  intercept(req: HttpRequest<any>, next: HttpHandler) {
+    console.log('Outgoing request');
+    console.log(req.url);
+    console.log(req.headers);
+    return next.handle(req).pipe( // tapping into the events (response)
+      tap(event => {
+        if (event.type === HttpEventType.Response) {
+          console.log('Incoming response');
+          console.log(event.body);
+        }
+      })
+    );
   }
 }
 ```
