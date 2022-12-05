@@ -231,6 +231,13 @@ print(b)
 print(c)
 ```
 
+- Slices can be named (by assigning them to the variable) with `slice`:
+
+```python
+SKU = slice(0, 6)
+DESCRIPTION = slice(6, 40)
+```
+
 #### Lists
 
 - List slicing does not produce out of bound error because slicing is used to create a new list. If the indices don't fall within the range of the number of elements in the list, we can return an empty list. So, we don't have to throw an error. But, if we try to access the elements in the list which is greater than the number of elements, we cannot return any default value (not even None because it could be a valid value in the list).
@@ -250,6 +257,8 @@ args = (mn**2, mx**2+1) if smallest else (mx**2, mn**2-1, -1)
     for r in range(*args):
         pass
 ```
+
+- Tuple can be checked if it contains any mutable items by calling `hash(t)`. It will raise `TypeError` when mutable object is found.
 
 ##### namedtuple
 
@@ -581,6 +590,17 @@ def greet_person(p):
         case _:
             print("I didn't quite understand that!")
 ```
+
+- Note that mapping patterns (like a dict above), unlike sequence patterns, succeed on partial matches which means that case does not have to include all of the potential objects. To catch remaining objects `**extra` can be used (do not use `**_` as it would be redundant):
+
+```python
+food = dict(category='ice cream', flavor='vanilla', cost=199)
+match food:
+    case {'category': 'ice cream', **details}:
+    print(f'Ice cream details: {details}')
+# Ice cream details: {'flavor': 'vanilla', 'cost': 199}
+```
+
 
 - Capture patterns use **bound names** that are not variables, but can be accessed in the code after pattern is successfully matched:
 
