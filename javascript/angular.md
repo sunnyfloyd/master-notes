@@ -2041,7 +2041,7 @@ deletePosts() {
 
 ### Interceptors
 
-- **Interceptors** intercepts and handles an `HttpRequest` or `HttpResponse`. This can be for example used for attaching authorization token to each request that is made to the BE:
+- **Interceptor** intercepts and handles an `HttpRequest` or `HttpResponse`. This can be for example used for attaching authorization token to each request that is made to the BE:
 
 ```ts
 import {
