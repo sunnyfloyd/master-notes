@@ -51,6 +51,7 @@
   - [Observables](#observables)
     - [How to Create Custom Observable](#how-to-create-custom-observable)
     - [Subjects](#subjects)
+    - [BehaviorSubject](#behaviorsubject)
   - [Forms](#forms)
     - [Template-Driven Forms](#template-driven-forms)
       - [Accessing Form Object](#accessing-form-object)
@@ -61,6 +62,30 @@
       - [Setting and Patching Form Values](#setting-and-patching-form-values)
       - [Accessing Form Values](#accessing-form-values)
       - [Resetting Form](#resetting-form)
+    - [Reactive Forms](#reactive-forms)
+      - [Setup](#setup)
+      - [Creating Form in Code](#creating-form-in-code)
+      - [Syncing HTML and Form](#syncing-html-and-form)
+      - [Submitting Form](#submitting-form)
+      - [Validations](#validations)
+      - [Accessing Form Controls](#accessing-form-controls)
+      - [Arrays of Form Controls](#arrays-of-form-controls)
+      - [Custom Validators](#custom-validators)
+        - [Sync Validators](#sync-validators)
+        - [Async Validators](#async-validators)
+      - [Error Codes](#error-codes)
+      - [Value and Status Changes Observables](#value-and-status-changes-observables)
+  - [Pipes](#pipes)
+    - [Custom Pipe](#custom-pipe)
+    - [Parametrizing Custom Pipe](#parametrizing-custom-pipe)
+    - [Filter Pipe](#filter-pipe)
+    - [Impure Pipe](#impure-pipe)
+    - [Async Pipe](#async-pipe)
+  - [HTTP Requests](#http-requests)
+    - [Error Handling](#error-handling)
+    - [Headers and Query Params](#headers-and-query-params)
+    - [Observing Different Types of Responses](#observing-different-types-of-responses)
+    - [Interceptors](#interceptors)
 
 ## CLI
 
@@ -1235,6 +1260,40 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 }
 ```
+
+- If one wants to unsubscribe automatically after a certain amount of received events it can be done with the combination of `pipe` and take`:
+
+```ts
+this.authService.user.pipe(take(1)).subscribe(user => {
+  // ...
+});
+```
+
+- We can pipe observables and merge them together using `exhaustMap`:
+
+```ts
+fetchRecipes() {
+  return this.authService.user.pipe(
+    take(1),
+    exhaustMap(user => {  // If previous observable has completed it will be merged into the output observable
+      return this.http.get<Recipe[]>(
+        'http://example.com'
+      );
+    }),
+    map(recipes => {
+      return recipes.map(recipe => {
+        return {
+          ...recipe
+        };
+      });
+    })
+  )
+}
+```
+
+### BehaviorSubject
+
+- This type of subject allows for the same methods to be called as for the 'standard' subject, but emits the current value to new subscribers.
 
 ## Forms
 
