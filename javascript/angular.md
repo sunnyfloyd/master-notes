@@ -1001,6 +1001,37 @@ export class AuthGuard implements CanActivate, CanActivateChild {
   }
 }
 
+// Example with implemented user observable
+@Injectable({ providedIn: 'root' })
+export class AuthGuard implements CanActivate {
+  constructor(private authService: AuthService, private router: Router) {}
+
+  canActivate(
+    route: ActivatedRouteSnapshot,
+    router: RouterStateSnapshot
+  ):
+    | boolean
+    | UrlTree
+    | Promise<boolean | UrlTree>
+    | Observable<boolean | UrlTree> {
+    return this.authService.user.pipe(
+      take(1),
+      map(user => {
+        const isAuth = !!user;
+        if (isAuth) {
+          return true;
+        }
+        return this.router.createUrlTree(['/auth']);
+      })
+      // tap(isAuth => {
+      //   if (!isAuth) {
+      //     this.router.navigate(['/auth']);
+      //   }
+      // })
+    );
+  }
+}
+
 // In app.module.ts
 import { AuthGuard } from './auth-guard.service';
 
@@ -1504,8 +1535,8 @@ export class AppComponent {
 
   onSubmit() {
     // grouped form control
-    this.user.username = this.signupForm.value.userDatausername;
-    this.user.gender = this.signupForm.value.gender;
+    this.user.username = this.signupForm.value.userData.username;
+    this.user.gender = this.signupForm.value.userData.gender;
   }
 ```
 
@@ -1999,7 +2030,7 @@ export class PostsService {
   }
 ```
 
-- Additional logic for error handling can be implemented by using `catchError`:
+- Additional logic for error handling can be implemented by using `catchError` and `throwError`:
 
 ```typescript
 import { map, catchError } from 'rxjs/operators';
