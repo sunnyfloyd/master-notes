@@ -793,6 +793,17 @@ with open(infilename) as infile, open(outfilename, 'w') as outfile:
         outfile.write(f'{one_line.rstrip()[::-1]}\n')
 ```
 
+- If code might be reading and writing files on different machines (Windows, Unix, etc.), explicit encoding should be used. If encoding argument is omitted default encoding is given by `locale.getpreferredencoding()`.
+
+```py
+open("cafe.txt", "w", encoding="utf_8")
+open("cafe.txt", encoding="utf_8").read()
+fp = open("cafe.txt")  # without explicit encoding cp1252 encoding is assumed on Windows
+# <_io.TextIOWrapper name='cafe.txt' mode='r' encoding='cp1252'> 
+```
+
+- To discover file encoding use [chardet](https://pypi.org/project/chardet/).
+
 #### JSON
 
 - JSON files can be read and construct with the ```json``` module:
