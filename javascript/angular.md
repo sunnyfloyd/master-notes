@@ -8,6 +8,7 @@
   - [Components](#components)
     - [Creating New Component](#creating-new-component)
     - [View Encapsulation](#view-encapsulation)
+  - [Dynamic Components](#dynamic-components)
   - [Lifecycle Hooks](#lifecycle-hooks)
   - [Model](#model)
   - [Databinding](#databinding)
@@ -135,6 +136,67 @@ import { Component, ViewEncapsulation } from '@angular/core';
   // ...
   encapsulation: ViewEncapsulation.None // can also be Native (uses shadow DOM that is not supported in all of the browsers) and Emulated (default)
 })
+```
+
+## Dynamic Components
+
+- **Dynamic components** are components that are created during runtime.
+
+- Easiest way of utilizing dynamic components is via `*ngIf` and it should be favoured unless it gets inconvinient.
+
+- Creating dynamic component:
+
+```ts
+// dynamic component
+import { Component, Input, Output, EventEmitter } from '@angular/core';
+
+@Component({
+  selector: 'app-alert',
+  templateUrl: './alert.component.html',
+  styleUrls: ['./alert.component.css']
+})
+export class AlertComponent {
+  @Input() message: string;
+  @Output() close = new EventEmitter<void>();
+
+  onClose() {
+    this.close.emit();
+  }
+}
+
+// supporting directive used to locate dynamic component inside the DOM
+@Directive({
+  selector: '[appPlaceholder]'
+})
+export class PlaceholderDirective {
+  constructor(public viewContainerRef: ViewContainerRef) {}
+}
+
+// component creation
+@Component({
+  selector: 'app-auth',
+  templateUrl: './auth.component.html'
+})
+export class AuthComponent implements OnDestroy {
+  error: string = null;
+  @ViewChild(PlaceholderDirective, { static: false }) alertHost: PlaceholderDirective;
+
+private showErrorAlert(message: string) {
+  // const alertCmp = new AlertComponent();
+  const alertCmpFactory = this.componentFactoryResolver.resolveComponentFactory(
+    AlertComponent
+  );
+  const hostViewContainerRef = this.alertHost.viewContainerRef;
+  hostViewContainerRef.clear();
+
+  const componentRef = hostViewContainerRef.createComponent(alertCmpFactory);
+
+  componentRef.instance.message = message;
+  this.closeSub = componentRef.instance.close.subscribe(() => {
+    this.closeSub.unsubscribe();
+    hostViewContainerRef.clear();
+  });
+}
 ```
 
 ## Lifecycle Hooks
