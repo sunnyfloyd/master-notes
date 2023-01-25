@@ -5,6 +5,7 @@
 - [Angular](#angular)
   - [TOC](#toc)
   - [CLI](#cli)
+  - [Modules](#modules)
   - [Components](#components)
     - [Creating New Component](#creating-new-component)
     - [View Encapsulation](#view-encapsulation)
@@ -94,6 +95,60 @@
 
 - To start application use `ng serve` from the directory where Angular app is located.
 
+## Modules
+
+- Module in Angular is a way to bundle multiple components, services, directives together.
+
+- When splitting application into multiple modules it is important to remember that each module has access only to the code that it is importing (configured via `@NgModule`). The only exception are the services need to be imported only once in the app module and then can be accessed in any other module.
+
+- In non-main modules `BrowserModule` import changes into `CommonModule`.
+
+### Shared Modules
+
+- Shared modules allow for keeping parts of code used in multiple components in one place.
+
+- When breaking the code into the structure with shared modules it is important to remember that modules can be declared only once but can be imported multiple times.
+
+- When declaring a shared module we can import `CommonModule` inside of it and then export it and remove `CommonModule` from modules that import such shared module.
+
+### Lazy Loading
+
+- **Lazy loading** is a great way to optimize Angular application by limiting the web bundle computed and downloaded once certain route is accessed. Lazy loaded code is loaded once it is needed and requested by the client not before that.
+
+- Note that lazy loading has the biggest effect when there are no commong library imports in lazy loaded modules.
+
+- Lazy loading is done via `loadChildren` that should be added to the routing module. Remember to remove such module from the root imports:
+
+```ts
+const appRoutes: Routes = [
+  { path: "", redirectTo: "/recipes", pathMatch: "full" },
+  {
+    path: "recipes",
+    loadChildren: () =>
+      import("./recipes/recipes.module").then(m => m.RecipesModule)
+  }
+]
+```
+
+- Lazy loaded modules can be pre-loaded which means that initial web bundle will be kept small, but subsequent modules (lazy loaded) will get fetched as soon as initial bundle gets downloaded:
+
+```ts
+// app-routing.module.ts
+
+import { Routes, RouterModule, PreloadAllModules } from '@angular/router';
+// ...
+@NgModule({
+  imports: [RouterModule.forRoot(appRoutes, { preloadingStrategy: PreloadAllModules })],
+  exports: [RouterModule]
+})
+export class AppRoutingModule { }
+```
+
+- Remember to never provide services in the eagerly loaded modules (in such cases service should be provided in the `AppModule`).
+
+- Note that services provided in lazily loaded modules will get their own instance and will not use application wide instance.
+
+- Be careful when providing services from eagerly loaded modules imported into the lazily loaded modules - such services will also get their own instance for lazily loaded module. This is because eagerly loaded module imported into the lazily loaded module will turn into lazily loaded module as well (in lazy loaded part of the code).
 
 ## Components
 
