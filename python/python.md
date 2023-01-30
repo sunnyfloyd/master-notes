@@ -103,6 +103,46 @@ value = "AUGUUUUAA"
 print(wrap(value, 3)) # ['AUG', 'UUU', 'UAA']
 ```
 
+- Unicode might encode the same-looking characters in a different way. To compare strings that contain such characters we should normalize such strings with `unicodedata.normalize`. There are 4 methods of string normalization: NFC, NFD, NFKC, NFKD. NFC (canonical decomposition and composition) or NFD (canonical decomposition) are recommended in most cases since other methods may distort output due to formatting differences. To include case-insensitive comparisons use `str.casefold()`.
+
+- Diacritic characters can be removed with the combination of NFD and NFC normalization:
+
+```py
+def shave_marks(txt):
+    """Remove all diacritic marks"""
+    norm_txt = unicodedata.normalize('NFD', txt)
+    shaved = ''.join(c for c in norm_txt if not unicodedata.combining(c))
+    return unicodedata.normalize('NFC', shaved)
+
+# or to remove combining marks only from Latin characters
+
+def shave_marks_latin(txt):
+    """Remove all diacritic marks from Latin base characters"""
+    norm_txt = unicodedata.normalize("NFD", txt)
+    latin_base = False
+    preserve = []
+    for c in norm_txt:
+        if unicodedata.combining(c) and latin_base:
+            continue  # ignore diacritic on Latin base char
+        preserve.append(c)
+        # if it isn't a combining char, it's a new base char
+        if not unicodedata.combining(c):
+            latin_base = c in string.ascii_letters
+    shaved = "".join(preserve)
+    return unicodedata.normalize("NFC", shaved)
+```
+
+- To properly sort strings with non-English characters use `pyuca` library. If you need to be super precise you can use `PyICU` library that can work like locale without changing locale:
+
+```py
+import pyuca
+coll = pyuca.Collator()
+fruits = ['caju', 'atemoia', 'cajá', 'açaí', 'acerola']
+sorted_fruits = sorted(fruits, key=coll.sort_key)
+sorted_fruits
+# ['açaí', 'acerola', 'atemoia', 'cajá', 'caju']
+```
+
 #### Translation Tables
 
 - Translation tables created with ```maketrans()``` can be useful when given string/sequence requires some straightforward 1 to 1 character conversion. It is pretty slow though:
@@ -1576,6 +1616,8 @@ for item in re.finditer("(?P<title>[\w ]*)(?P<edit_link>\[edit\])",wiki):
 - There is a general RegEx skip with syntax: ```(?:regex_pattern_here)``` - this group will not be returned but will me matched.
 
 - When we want to match against the character(s) already captured by the previous pattern group we can refer to such group using ```\1``` where ```1``` is a number of a given group. It is importan to remember that optional groups will not be matched if not captured: ```(b)?c\1``` will not match a string if first *b* has not been found. This should be written like this: ```(b?)c\1```.
+
+- Regular expressions can be used both on `str` and `bytes`, but in `bytes` bytes outside the ASCII range are treated as nondigits and nonword characters.
 
 ### Other
 
