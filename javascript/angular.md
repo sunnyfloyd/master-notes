@@ -6,10 +6,13 @@
   - [TOC](#toc)
   - [CLI](#cli)
   - [Modules](#modules)
+    - [Shared Modules](#shared-modules)
+    - [Lazy Loading](#lazy-loading)
   - [Components](#components)
     - [Creating New Component](#creating-new-component)
     - [View Encapsulation](#view-encapsulation)
   - [Dynamic Components](#dynamic-components)
+  - [Standalone Components](#standalone-components)
   - [Lifecycle Hooks](#lifecycle-hooks)
   - [Model](#model)
   - [Databinding](#databinding)
@@ -88,6 +91,7 @@
     - [Headers and Query Params](#headers-and-query-params)
     - [Observing Different Types of Responses](#observing-different-types-of-responses)
     - [Interceptors](#interceptors)
+  - [Deployment](#deployment)
 
 ## CLI
 
@@ -253,6 +257,10 @@ private showErrorAlert(message: string) {
   });
 }
 ```
+
+## Standalone Components
+
+- 
 
 ## Lifecycle Hooks
 
@@ -2298,3 +2306,9 @@ export class LoggingInterceptorService implements HttpInterceptor {
   }
 }
 ```
+
+## Deployment
+
+- `ng build` to build production files.
+
+- Serve compiled static files via CDN or S3. Remember to configure server so that it always serves `index.html` so that routing can be handled by Angular itself.
