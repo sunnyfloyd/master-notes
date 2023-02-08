@@ -302,7 +302,37 @@ args = (mn**2, mx**2+1) if smallest else (mx**2, mn**2-1, -1)
 
 ##### namedtuple
 
-- ```_asdict()``` is a method of a *namedtuple* class that returns a dict which maps field names to their corresponding values:
+- **Named tuples** provide useful `__repr__` and meaningful `__eq__`. Named tuples can be created with either `collections.namedtuple` or `typing.NamedTuple` the latter allowing for additional typing.
+
+```py
+# collections.namedtuple
+from collections import namedtuple
+Coordinate = namedtuple('Coordinate', 'lat lon')
+moscow = Coordinate(55.756, 37.617)
+
+# typing.NamedTuple
+import typing
+Coordinate = typing.NamedTuple('Coordinate', [('lat', float), ('lon', float)])
+# alternatively fields can be given as keyword arguments:
+Coordinate = typing.NamedTuple('Coordinate', lat=float, lon=float)
+moscow = Coordinate(55.756, 37.617)
+```
+
+- Since Python 3.6, `typing.NamedTuple` can also be used in a class statement, with type annotations. Although `NamedTuple` appears in the class statement as a superclass, it’s actually not. `typing.NamedTuple` uses the advanced functionality of a metaclass to customize the creation of the user’s class:
+
+```py
+from typing import NamedTuple 
+ 
+class Coordinate(NamedTuple): 
+    lat: float 
+    lon: float  
+    def __str__(self): 
+        ns = 'N' if self.lat >= 0 else 'S' 
+        we = 'E' if self.lon >= 0 else 'W' 
+        return f'{abs(self.lat):.1f}°{ns}, {abs(self.lon):.1f}°{we}'
+```
+
+- ```_asdict()``` is a method of available in both *namedtuple* and `NamedTuple` that returns a dict which maps field names to their corresponding values:
 
 ```python
 p = Point(x=11, y=22)
@@ -1047,6 +1077,8 @@ class Bowl:
     def __init__(self) -> None:
         self.scoops = []
 ```
+
+-  The `@dataclass` decorator does not depend on inheritance or a metaclass, so it should not interfere with your own use of these mechanisms.
 
 #### Exception Classes
 
