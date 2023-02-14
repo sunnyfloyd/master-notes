@@ -260,7 +260,36 @@ private showErrorAlert(message: string) {
 
 ## Standalone Components
 
-- 
+- Both components and directives can be turned into standalone counterparts.
+
+- If root module is turned into the standalone component bootstrapping needs to be implemented. Additionally, since there might be no modules in purely standalone application, global services can be defined in this bootstrap as well:
+
+```ts
+import { boostrapApplication }  from '@angular/platform-browser';
+
+bootstrapApplication(AppComponent, {providers: [AnalyticsService]});
+```
+
+- To make standalone component aware of `router-outlet` and `routerLink` it needs to import `RouterModule`. To make it additionally aware of routes it needs to be bootstrapped with service routing service:
+
+```ts
+import { importProvidersFrom } from '@angular/core';
+import { boostrapApplication }  from '@angular/platform-browser';
+import { AppRoutingModule } from './app/app-routing.module';
+
+bootstrapApplication(AppComponent, {providers: [importProvidersFrom(AppRoutingModule)]});
+```
+
+- To lazy load standalone component you need to use `loadComponent` syntax. `loadChildren` can still be used though:
+
+```ts
+const routes: Route[] = [
+  {
+    path: 'about',
+    loadComponent: () => import('./about/about.component').then((mod) => mod.AboutComponent),
+  },
+]
+```
 
 ## Lifecycle Hooks
 
