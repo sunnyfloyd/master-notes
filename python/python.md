@@ -1080,6 +1080,12 @@ class Bowl:
 
 -  The `@dataclass` decorator does not depend on inheritance or a metaclass, so it should not interfere with your own use of these mechanisms.
 
+- If more robust `__init__` method is required in `dataclass` `__post_init__` can be used:
+
+```py
+
+```
+
 #### Exception Classes
 
 - **Exception classes** can be inherited by other classes - this is useful when exception functionalities can stay the same, but name of the exception can be made for meaningful. Additional functionality can also be built-upon existing one within the exception class:
