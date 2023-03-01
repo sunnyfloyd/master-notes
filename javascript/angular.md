@@ -91,6 +91,7 @@
     - [Headers and Query Params](#headers-and-query-params)
     - [Observing Different Types of Responses](#observing-different-types-of-responses)
     - [Interceptors](#interceptors)
+  - [NgRx](#ngrx)
   - [Deployment](#deployment)
 
 ## CLI
@@ -2334,6 +2335,87 @@ export class LoggingInterceptorService implements HttpInterceptor {
     );
   }
 }
+```
+
+## NgRx
+
+- **NgRx** is an Angular's wrapper over **Redux** that provides reactive state for Angular.
+
+- NgRx relies on 3 main components: stores, reducers and actions.
+
+- Advantage of NgRx is that store-related subscriptions are removed automatically.
+
+- Basic usage of NgRx to update and persist date:
+
+```ts
+// reducer
+import { Ingredient } from '../../shared/ingredient.model';
+import * as ShoppingListActions from './shopping-list.actions';
+
+const initialState = {
+  ingredients: [new Ingredient('Apples', 5), new Ingredient('Tomatoes', 10)]
+};
+
+export function shoppingListReducer(
+  state = initialState,
+  action: ShoppingListActions.ShoppingListActions
+) {
+  switch (action.type) {
+    case ShoppingListActions.ADD_INGREDIENT:
+      return {
+        ...state,
+        ingredients: [...state.ingredients, action.payload]
+      };
+    case ShoppingListActions.ADD_INGREDIENTS:
+      return {
+        ...state,
+        ingredients: [...state.ingredients, ...action.payload]
+      };
+    default:
+      return state;
+  }
+}
+
+// actions
+import { Action } from '@ngrx/store';
+
+import { Ingredient } from '../../shared/ingredient.model';
+
+export const ADD_INGREDIENT = 'ADD_INGREDIENT';
+export const ADD_INGREDIENTS = 'ADD_INGREDIENTS';
+
+export class AddIngredient implements Action {
+  readonly type = ADD_INGREDIENT;
+
+  constructor(public payload: Ingredient) {}
+}
+
+export class AddIngredients implements Action {
+  readonly type = ADD_INGREDIENTS;
+
+  constructor(public payload: Ingredient[]) {}
+}
+
+export type ShoppingListActions = AddIngredient | AddIngredients;
+
+// service pushing data to the store
+import * as ShoppingListActions from '../shopping-list/store/shopping-list.actions';
+
+addIngredientsToShoppingList(ingredients: Ingredient[]) {
+  this.store.dispatch(new ShoppingListActions.AddIngredients(ingredients));
+}
+
+// component fetching data from the store
+ingredients: Observable<{ ingredients: Ingredient[] }>;
+// ...
+ngOnInit() {
+  this.ingredients = this.store.select('shoppingList');
+}
+```
+
+```html
+<!-- HTML where ingredients are iterated over -->
+<a>*ngFor="let ingredient of (ingredients | async).ingredients; let i = index"</a>
 ```
 
 ## Deployment
