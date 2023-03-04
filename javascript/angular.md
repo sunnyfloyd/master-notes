@@ -92,6 +92,7 @@
     - [Observing Different Types of Responses](#observing-different-types-of-responses)
     - [Interceptors](#interceptors)
   - [NgRx](#ngrx)
+    - [Basic NgRx Usage Example](#basic-ngrx-usage-example)
   - [Deployment](#deployment)
 
 ## CLI
@@ -2345,7 +2346,15 @@ export class LoggingInterceptorService implements HttpInterceptor {
 
 - Advantage of NgRx is that store-related subscriptions are removed automatically.
 
-- Basic usage of NgRx to update and persist date:
+- Remember that dispatched actions reach **all** reducers (that's why it is important to always include `default` action).
+
+- Action identifiers need to be **unique** across the entire application. It is therefore recommended to use a prefix for actions:
+ 
+```ts
+export const = ADD_INGREDIENT = '[Shopping List] Add Ingredient';
+```
+
+### Basic NgRx Usage Example
 
 ```ts
 // reducer
