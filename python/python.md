@@ -29,6 +29,7 @@
       - [JSON](#json)
     - [OOP](#oop)
       - [Classes](#classes)
+        - [Typing](#typing)
       - [Inheritance](#inheritance)
       - [Multiple Inheritance](#multiple-inheritance)
       - [Abstract Classes](#abstract-classes)
@@ -956,6 +957,8 @@ class SpaceAge(object):
         return lambda ratio=ratio: round(self.seconds / ratio, 2)
 ```
 
+##### Typing
+
 - ```typing``` module provides runtime support for type hints:
 
 ```python
@@ -963,6 +966,8 @@ from typing import List
 
 Vector = List[float]
 ```
+
+- When using Mypy, type errors for imported packages that lack typing can be silenced using `# type: ignore` comment.
 
 #### Inheritance
 
