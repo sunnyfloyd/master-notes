@@ -967,7 +967,11 @@ from typing import List
 Vector = List[float]
 ```
 
-- When using Mypy, type errors for imported packages that lack typing can be silenced using `# type: ignore` comment.
+- When using Mypy, type errors for imported packages that lack typing can be silenced using `# type: ignore` comment:
+
+```python
+from geolib import geohash as gh  # type: ignore
+```
 
 #### Inheritance
 
