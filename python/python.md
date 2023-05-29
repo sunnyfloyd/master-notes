@@ -1,6 +1,7 @@
 # Python
 
 ## Table of Contents
+
 - [Python](#python)
   - [Table of Contents](#table-of-contents)
   - [Python Features](#python-features)
@@ -96,7 +97,8 @@ def format_sort_records(people):
 ```
 
 - ```textwrap.wrap(string, width=70)``` wraps the single paragraph (*string*) so that every line is at most *width* characters long. Returns a list of output lines:
-- 
+-
+
 ```python
 from textwrap import wrap
 
@@ -672,7 +674,6 @@ match food:
 # Ice cream details: {'flavor': 'vanilla', 'cost': 199}
 ```
 
-
 - Capture patterns use **bound names** that are not variables, but can be accessed in the code after pattern is successfully matched:
 
 ```py
@@ -1087,7 +1088,7 @@ class Bowl:
         self.scoops = []
 ```
 
--  The `@dataclass` decorator does not depend on inheritance or a metaclass, so it should not interfere with your own use of these mechanisms.
+- The `@dataclass` decorator does not depend on inheritance or a metaclass, so it should not interfere with your own use of these mechanisms.
 
 - If more robust `__init__` method is required in `dataclass` `__post_init__` can be used:
 
