@@ -8,6 +8,7 @@
   - [Modules](#modules)
     - [Shared Modules](#shared-modules)
     - [Lazy Loading](#lazy-loading)
+    - [Change Detection](#change-detection)
   - [Components](#components)
     - [Creating New Component](#creating-new-component)
     - [View Encapsulation](#view-encapsulation)
@@ -156,13 +157,24 @@ export class AppRoutingModule { }
 
 - Be careful when providing services from eagerly loaded modules imported into the lazily loaded modules - such services will also get their own instance for lazily loaded module. This is because eagerly loaded module imported into the lazily loaded module will turn into lazily loaded module as well (in lazy loaded part of the code).
 
+### Change Detection
+
+- By default, change detection in Angular makes entire component tree to rerender at any event being fired without actual changes happening. This may lead to slow performance of the overall application. This can be changed though using different change detection strategy.
+
+- **On push** change detection strategy marks components as dirty and then rerender entire tree in following scenarios:
+
+  - `@Input` value reference changes,
+  - observable changes (via async reference like async pipe in HTML: `observable$ | async`),
+  - marking component as dirty via `ChangeDetectorRef.markForCheck()`,
+  - event, to which component is listening to has emitted a new value.
+
 ## Components
 
 - Component can be selected by tags, attributes, classes:
 
-    - `'app-server'`
-    - `[app-server]`
-    - `.app-server`
+  - `'app-server'`
+  - `[app-server]`
+  - `.app-server`
 
 ### Creating New Component
 
@@ -296,7 +308,7 @@ const routes: Route[] = [
 ## Lifecycle Hooks
 
 - `ngOnChanges` - called after a bound input (decorated with `@Input()`) property changes
-- `ngOnInit` - called once the component is initialized 
+- `ngOnInit` - called once the component is initialized
 - `ngDoCheck` - called during every change detection run
 - `ngAfterContentInit` - called after content (`ng-content`) has been projected into view
 - `ngAfterContentChecked` - called every time the projected content has been checked
@@ -553,9 +565,9 @@ onAddServer() {
 
 - The `ngSwitch` directive on a container specifies an expression to match against. The expressions to match are provided by ngSwitchCase directives on views within the container.
 
-    - Every view that matches is rendered.
-    - If there are no matches, a view with the ngSwitchDefault directive is rendered.
-    - Elements within the `NgSwitch` statement but outside of any `NgSwitchCase` or `ngSwitchDefault` directive are preserved at the location.
+  - Every view that matches is rendered.
+  - If there are no matches, a view with the ngSwitchDefault directive is rendered.
+  - Elements within the `NgSwitch` statement but outside of any `NgSwitchCase` or `ngSwitchDefault` directive are preserved at the location.
 
 ```html
 <container-element [ngSwitch]="switch_expression">
@@ -1970,7 +1982,6 @@ this.signupForm.statusChanges.subscribe(status => {
 
 - [Available default Angular pipes](https://angular.io/api?type=pipe).
 
-
 ### Custom Pipe
 
 - To create new custom pipe use `ng generate pipe` or `ng g p`.
@@ -2349,7 +2360,7 @@ export class LoggingInterceptorService implements HttpInterceptor {
 - Remember that dispatched actions reach **all** reducers (that's why it is important to always include `default` action).
 
 - Action identifiers need to be **unique** across the entire application. It is therefore recommended to use a prefix for actions:
- 
+
 ```ts
 export const = ADD_INGREDIENT = '[Shopping List] Add Ingredient';
 ```
