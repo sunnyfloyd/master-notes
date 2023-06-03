@@ -38,6 +38,7 @@
       - [dataclass](#dataclass)
       - [Exception Classes](#exception-classes)
     - [Decorators](#decorators)
+    - [Closures](#closures)
     - [Underscores](#underscores)
     - [Asynchronous Programming](#asynchronous-programming)
       - [Multithreading](#multithreading)
@@ -1345,6 +1346,24 @@ class House:
 house = House(100)
 house.price = 500
 del house.price
+```
+
+### Closures
+
+- **Closure** is a function that retains the bindings of the free variables that exist when the function is defined, so that they can be used
+later when the function is invoked and the defining scope is no longer available. Note that the only situation in which a function may need to deal with
+external variables that are nonglobal is when it is nested in another function and those variables are part of the local scope of the outer function.
+
+```python
+def make_averager():
+    series = []
+
+    def averager(new_value):
+        series.append(new_value)  # series becomes a free variable here
+        total = sum(series)
+        return total / len(series)
+
+    return averager
 ```
 
 ### Underscores
