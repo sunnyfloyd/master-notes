@@ -755,7 +755,7 @@ importances = model.feature_importances_
   
 - In general, forward and backward selection do not yield equivalent results. Also, one may be much faster than the other depending on the requested number of selected features: if we have 10 features and ask for 7 selected features, forward selection would need to perform 7 iterations while backward selection would only need to perform 3.
 
-- SFS differs from ```RFE``` and ```SelectFromModel``` in that it does not require the underlying model to expose a ```coef_``` or ```feature_importances_``` attribute. It may however be slower considering that more models need to be evaluated, compared to the other approaches. For example in backward selection, the iteration going from m features to *m - 1* features using k-fold cross-validation requires fitting *m * k* models, while ```RFE``` would require only a single fit, and ```SelectFromModel``` always just does a single fit and requires no iterations.
+- SFS differs from ```RFE``` and ```SelectFromModel``` in that it does not require the underlying model to expose a ```coef_``` or ```feature_importances_``` attribute. It may however be slower considering that more models need to be evaluated, compared to the other approaches. For example in backward selection, the iteration going from m features to *m - 1* features using k-fold cross-validation requires fitting *m* k* models, while ```RFE``` would require only a single fit, and ```SelectFromModel``` always just does a single fit and requires no iterations.
 
 #### Feature selection as part of a pipeline
 
@@ -766,7 +766,7 @@ clf = Pipeline([
   ('feature_selection', SelectFromModel(LinearSVC(penalty="l1"))),
   ('classification', RandomForestClassifier())
 ])
-clf.fit(X, y
+clf.fit(X, y)
 ```
 
 - In this snippet we make use of a ```LinearSVC``` coupled with ```SelectFromModel``` to evaluate feature importances and select the most relevant features. Then, a ```RandomForestClassifier``` is trained on the transformed output, i.e. using only relevant features. You can perform similar operations with the other feature selection methods and also classifiers that provide a way to evaluate feature importances of course. See the Pipeline examples for more details.
