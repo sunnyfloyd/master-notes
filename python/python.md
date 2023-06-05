@@ -23,6 +23,7 @@
     - [operator](#operator)
     - [Functions](#functions)
       - [Caching](#caching)
+      - [singledispatch](#singledispatch)
       - [map, filter, reduce, lambda](#map-filter-reduce-lambda)
       - [Structural Pattern Matching](#structural-pattern-matching)
     - [IO and Data Objects](#io-and-data-objects)
@@ -38,6 +39,7 @@
       - [dataclass](#dataclass)
       - [Exception Classes](#exception-classes)
     - [Decorators](#decorators)
+      - [Class-based Decorators](#class-based-decorators)
     - [Closures](#closures)
     - [Underscores](#underscores)
     - [Asynchronous Programming](#asynchronous-programming)
@@ -595,9 +597,39 @@ def transfer(self, S: ArrayStack) -> None:
 ```python
 from cachetools import cached, TTLCache
 
-@cached(cahce=TTLCache(maxsize=2, ttl=900))  # function output lives for 1.5 h
+@cached(cache=TTLCache(maxsize=2, ttl=900))  # function output lives for 1.5 h
 def foo():
     pass
+```
+
+#### singledispatch
+
+- The `functools.singledispatch` decorator allows different modules to contribute to the overall solution, and lets you easily provide specialized functions even for types that belong to third-party packages that you can’t edit. If you decorate a plain function with `@singledispatch`, it becomes the entry point for a generic function: a group of functions to perform the same operation in different ways, depending on the type of the first argument.
+
+```py
+from functools import singledispatch
+from collections import abc
+import html
+import numbers
+
+@singledispatch
+def htmlize(obj: object) -> str:
+    content = html.escape(repr(obj))
+    return f"<pre>{content}</pre>"
+
+@htmlize.register
+def _(text: str) -> str:
+    content = html.escape(text).replace("\n", "<br/>\n")
+    return f"<p>{content}</p>"
+
+@htmlize.register
+def _(seq: abc.Sequence) -> str:
+    inner = "</li>\n<li>".join(htmlize(item) for item in seq)
+    return "<ul>\n<li>" + inner + "</li>\n</ul>"
+
+@htmlize.register
+def _(n: numbers.Integral) -> str:
+    return f"<pre>{n} (0x{n:x})</pre>"
 ```
 
 #### map, filter, reduce, lambda
@@ -975,6 +1007,42 @@ Vector = List[float]
 from geolib import geohash as gh  # type: ignore
 ```
 
+- In Python, protocols are a way to define and enforce structural typing. They allow you to specify the expected interface or behavior of an object without explicitly defining a class or using inheritance. Protocols provide a flexible and dynamic approach to type checking and enable you to write more generic and reusable code.
+
+- Protocols are implemented using the typing.Protocol class from the typing module, which was introduced in Python 3.8. You can define a protocol by subclassing typing.Protocol and specifying the required methods or attributes that an object should have.
+
+```py
+from typing import Protocol
+
+class HasArea(Protocol):
+    def area(self) -> float:
+        pass
+
+def print_area(obj: HasArea) -> None:
+    print(f"The area is: {obj.area()}")
+
+class Rectangle:
+    def __init__(self, width: float, height: float):
+        self.width = width
+        self.height = height
+
+    def area(self) -> float:
+        return self.width * self.height
+
+class Circle:
+    def __init__(self, radius: float):
+        self.radius = radius
+
+    def area(self) -> float:
+        return 3.14 * self.radius ** 2
+
+rectangle = Rectangle(4, 5)
+circle = Circle(3)
+
+print_area(rectangle)  # Output: The area is: 20.0
+print_area(circle)  # Output: The area is: 28.26
+```
+
 #### Inheritance
 
 - **Inheritance** is the process by which one class takes on the attributes and methods of another. Newly formed classes are called **child classes**, and the classes that child classes are derived from are called **parent classes**.
@@ -1346,6 +1414,33 @@ class House:
 house = House(100)
 house.price = 500
 del house.price
+```
+
+#### Class-based Decorators
+
+- Lennart Regebro argues that decorators are best coded as classes implementing `__call__`, and not as functions. This especially makes sense for complex implementations.
+
+```py
+import time
+
+DEFAULT_FMT = "[{elapsed:0.8f}s] {name}({args}) -> {result}"
+
+class clock:
+    def __init__(self, fmt=DEFAULT_FMT):
+        self.fmt = fmt
+
+    def __call__(self, func):
+        def clocked(*_args):
+            t0 = time.perf_counter()
+            _result = func(*_args)
+            elapsed = time.perf_counter() - t0
+            name = func.__name__
+            args = ", ".join(repr(arg) for arg in _args)
+            result = repr(_result)
+            print(self.fmt.format(**locals()))
+            return _result
+
+        return clocked
 ```
 
 ### Closures
