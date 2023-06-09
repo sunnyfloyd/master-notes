@@ -94,6 +94,7 @@
     - [Interceptors](#interceptors)
   - [NgRx](#ngrx)
     - [Basic NgRx Usage Example](#basic-ngrx-usage-example)
+  - [Testing](#testing)
   - [Deployment](#deployment)
 
 ## CLI
@@ -2436,6 +2437,129 @@ ngOnInit() {
 ```html
 <!-- HTML where ingredients are iterated over -->
 <a>*ngFor="let ingredient of (ingredients | async).ingredients; let i = index"</a>
+```
+
+## Testing
+
+- Basic testing:
+
+```ts
+import { TestBed, async } from '@angular/core/testing';
+import { AppComponent } from './app.component';
+
+describe('App: CompleteGuideFinalWebpack', () => {
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      declarations: [
+        AppComponent
+      ],
+    });
+  });
+
+  it('should create the app', async(() => {
+    let fixture = TestBed.createComponent(AppComponent);
+    let app = fixture.debugElement.componentInstance;
+    expect(app).toBeTruthy();
+  }));
+
+  it(`should have as title 'app works!'`, async(() => {
+    let fixture = TestBed.createComponent(AppComponent);
+    let app = fixture.debugElement.componentInstance;
+    expect(app.title).toEqual('app works!');
+  }));
+
+  it('should render title in a h1 tag', async(() => {
+    let fixture = TestBed.createComponent(AppComponent);
+    fixture.detectChanges();
+    let compiled = fixture.debugElement.nativeElement;
+    expect(compiled.querySelector('h1').textContent).toContain('app works!');
+  }));
+});
+```
+
+- Testing component with service-dependent logic:
+
+```ts
+// ...
+import { UserService } from "../shared/data.service";
+
+describe('Component: User', () => {
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      declarations: [UserComponent]
+    });
+  });
+
+  it('should use the user name from the service', () => {
+    let fixture = TestBed.createComponent(UserComponent);
+    let app = fixture.debugElement.componentInstance;
+    let userService = fixture.debugElement.injector.get(UserService);
+    fixture.detectChanges();
+    expect(userService.user.name).toEqual(app.user.name);
+  });
+}
+```
+
+- Testing asynchronous operations with `async` and `fakeAsync`:
+
+```ts
+import { TestBed, async, fakeAsync, tick } from '@angular/core/testing';
+import { UserComponent } from './user.component';
+import { UserService } from "./user.service";
+import { DataService } from "../shared/data.service";
+
+describe('Component: User', () => {
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      declarations: [UserComponent]
+    });
+  });
+
+  it('shouldn\'t fetch data successfully if not called asynchronously', () => {
+    let fixture = TestBed.createComponent(UserComponent);
+    let app = fixture.debugElement.componentInstance;
+    let dataService = fixture.debugElement.injector.get(DataService);
+    let spy = spyOn(dataService, 'getDetails')
+      .and.returnValue(Promise.resolve('Data'));
+    fixture.detectChanges();
+    expect(app.data).toBe(undefined);
+  });
+
+  it('should fetch data successfully if called asynchronously', async(() => {
+    let fixture = TestBed.createComponent(UserComponent);
+    let app = fixture.debugElement.componentInstance;
+    let dataService = fixture.debugElement.injector.get(DataService);
+    let spy = spyOn(dataService, 'getDetails')
+      .and.returnValue(Promise.resolve('Data'));
+    fixture.detectChanges();
+    fixture.whenStable().then(() => {
+      expect(app.data).toBe('Data');
+    });
+  }));
+
+  it('should fetch data successfully if called asynchronously', fakeAsync(() => {
+    let fixture = TestBed.createComponent(UserComponent);
+    let app = fixture.debugElement.componentInstance;
+    let dataService = fixture.debugElement.injector.get(DataService);
+    let spy = spyOn(dataService, 'getDetails')
+      .and.returnValue(Promise.resolve('Data'));
+    fixture.detectChanges();
+    tick();
+    expect(app.data).toBe('Data');
+  }));
+});
+```
+
+- Unit tests:
+
+```ts
+import { ReversePipe } from "./reverse.pipe";
+describe('Pipe: ReversePipe', () => {
+  it('should reverse the inputs', () => {
+    let reversePipe = new ReversePipe();
+    expect(reversePipe.transform('hello')).toEqual('olleh');
+  });
+});
 ```
 
 ## Deployment
