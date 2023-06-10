@@ -18,6 +18,9 @@
     - [Facade](#facade)
     - [Composite](#composite)
     - [Flyweight](#flyweight)
+  - [Behavioural Design Patterns](#behavioural-design-patterns)
+    - [Chain of Responsibility](#chain-of-responsibility)
+    - [Command](#command)
 
 ## Sources
 
@@ -204,7 +207,6 @@ class Adapter(Target):
 
 - Use the pattern when you want the client code to treat both simple and complex elements uniformly. All elements defined by the Composite pattern share a common interface. Using this interface, the client doesn’t have to worry about the concrete class of the objects it works with.
 
-
 #### Flyweight
 
 - The **Flyweight** pattern has a single purpose: minimizing memory intake. If your program doesn’t struggle with a shortage of RAM, then you might just ignore this pattern for a while.
@@ -216,7 +218,9 @@ class Adapter(Target):
 Behavioral design patterns are concerned with algorithms and the assignment of responsibilities between objects.
 
 #### Chain of Responsibility
+
 - **Chain of Responsibility** is a behavioral design pattern that lets you pass requests along a chain of handlers. Upon receiving a request, each handler decides either to process the request or to pass it to the next handler in the chain.
 
 #### Command
+
 - **Command** is a behavioral design pattern that turns a request into a stand-alone object that contains all information about the request. This transformation lets you pass requests as a method arguments, delay or queue a request’s execution, and support undoable operations.
