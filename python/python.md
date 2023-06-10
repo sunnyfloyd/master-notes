@@ -1443,6 +1443,41 @@ class clock:
         return clocked
 ```
 
+- Decorators can be used to objects registration since they are called at the import time:
+
+```py
+Promotion = Callable[[Order], Decimal]
+promos: list[Promotion] = []  # will get populated with decorated functions
+
+def promotion(promo: Promotion) -> Promotion:
+    promos.append(promo)
+    return promo
+
+
+def best_promo(order: Order) -> Decimal:
+    """Compute the best discount available"""
+    return max(promo(order) for promo in promos)
+
+
+@promotion
+def fidelity(order: Order) -> Decimal:
+    """5% discount for customers with 1000 or more fidelity
+    points"""
+    if order.customer.fidelity >= 1000:
+        return order.total() * Decimal("0.05")
+    return Decimal(0) @ promotion
+
+
+def bulk_item(order: Order) -> Decimal:
+    """10% discount for each LineItem with 20 or more units"""
+    discount = Decimal(0)
+    for item in order.cart:
+        if item.quantity >= 20:
+            discount += item.total() * Decimal("0.1")
+    return discount
+
+```
+
 ### Closures
 
 - **Closure** is a function that retains the bindings of the free variables that exist when the function is defined, so that they can be used
