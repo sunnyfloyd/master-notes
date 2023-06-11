@@ -1125,6 +1125,18 @@ class Animal(metaclass=ABCMeta):
 
 - ```@staticmethod``` can be used when given method does not need any data from the class or instantiated object. It can be used when given method is logically related to the class and does not need any internally defined properties. In most cases it should be avoided and replaced with the ```@classmethod``` since class method acts the same, but adds possibility to access class object which might be crucial when other classes inherit from this class.
 
+- The most common use of `classmethod` is for alternative constructors:
+
+```py
+class Vector2d:
+    # ...
+    @classmethod
+    def frombytes(cls, octets):
+        typecode = chr(octets[0])
+        memv = memoryview(octets[1:]).cast(typecode)
+        return cls(*memv)
+```
+
 - ```@classmethod``` can be used similar to ```@staticmethod``` but additionally takes ```cls``` as a first argument which helps using class methods in classes that inherit from this class.
 
 #### dataclass
