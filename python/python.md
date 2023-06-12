@@ -882,6 +882,22 @@ def evaluate(exp, env):
             raise SyntaxError()
 ```
 
+- Destructuring object can be customized by `__match_args__` that defines which attributes in what order can be used to match object instance. This is useful for custom classes for which we want to save some keystrokes:
+
+```py
+class Vector2d
+    # ...
+    __match_args__ == ["x", "y"]
+
+# before defining __match_args__
+match vector:
+    case Vector2d(x=0, y=0)
+
+# after defining __match_args__
+match vector:
+    case Vector2d(0, 0)
+```
+
 ### IO and Data Objects
 
 #### Files
