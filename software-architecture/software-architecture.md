@@ -11,6 +11,7 @@
     - [DB Scaling](#db-scaling)
     - [Load Balancing](#load-balancing)
     - [Caching](#caching)
+  - [Software Architecture Patterns](#software-architecture-patterns)
 
 ## Scalability (CS75 Harvard)
 
@@ -44,7 +45,7 @@
 
 ### DB Scaling
 
-- - **Master - Slave replication** is a replication model where there is only one primary database called the Master and several secondary databases called slaves. Write and update operations can only be performed on the master database but read operations can be performed on the slave databases as well. This model is best when you have to do a lot of read operations but only a few write operations.
+- **Master - Slave replication** is a replication model where there is only one primary database called the Master and several secondary databases called slaves. Write and update operations can only be performed on the master database but read operations can be performed on the slave databases as well. This model is best when you have to do a lot of read operations but only a few write operations.
 
 - **Master - Master replication** is a replication model in which all DB nodes are primary. That is all the databases can be read from and written to. Each database propagates its changes to every other database replica so that the system stays consistent.
 
@@ -59,3 +60,8 @@
 ### Caching
 
 - Basically, an in-memory map of key-value pairs that enable fast data retrieval. Cached data usually have some expiry date after which it will be removed or will be removed once new data will require additional memory.
+
+## Software Architecture Patterns
+
+- Resources:
+  - Software Architecture Patterns (Mark Richards, O'Reilly)
