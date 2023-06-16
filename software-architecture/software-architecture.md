@@ -12,6 +12,7 @@
     - [Load Balancing](#load-balancing)
     - [Caching](#caching)
   - [Software Architecture Patterns](#software-architecture-patterns)
+    - [Layered Pattern](#layered-pattern)
 
 ## Scalability (CS75 Harvard)
 
@@ -65,3 +66,17 @@
 
 - Resources:
   - Software Architecture Patterns (Mark Richards, O'Reilly)
+
+### Layered Pattern
+
+- In the **layered architecture**, the application is divided into horizontal layers, with each layer having a specific responsibility and interacting with adjacent layers in a predefined manner. The common layers typically found in a layered architecture are:
+
+  - **Presentation Layer**: This layer is responsible for handling user interactions and displaying the user interface. It encapsulates the logic related to user input, presentation logic, and data formatting. It communicates with the underlying layers to fetch or update data.
+
+  - **Business Logic Layer**: Also known as the domain layer or the service layer, this layer contains the core business logic and rules of the application. It handles data validation, business workflows, and complex operations. It acts as an intermediary between the presentation layer and the data access layer.
+
+  - **Data Access Layer**: The data access layer is responsible for interacting with the underlying data sources, such as databases or external APIs. It provides methods for retrieving, updating, and deleting data. The layer abstracts the specific data storage technology and provides a standardized interface for accessing data.
+
+- Changes in one layer have **no or minimal impact on other layers**, facilitating easier maintenance and future enhancements.
+
+- All of the standard layers are defined as **closed layers** meaning the request needs to get pass through them each time before reaching next layer. In this pattern there might be additional, shared services like layers, that should be defined as **open layers** and could be skipped during request flow.
