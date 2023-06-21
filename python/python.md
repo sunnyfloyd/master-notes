@@ -1023,7 +1023,7 @@ Vector = List[float]
 from geolib import geohash as gh  # type: ignore
 ```
 
-- In Python, protocols are a way to define and enforce structural typing. They allow you to specify the expected interface or behavior of an object without explicitly defining a class or using inheritance. Protocols provide a flexible and dynamic approach to type checking and enable you to write more generic and reusable code.
+- In Python, static protocols are a way to define and enforce structural typing. They allow you to specify the expected interface or behavior of an object without explicitly defining a class or using inheritance. Protocols provide a flexible and dynamic approach to type checking and enable you to write more generic and reusable code.
 
 - Protocols are implemented using the typing.Protocol class from the typing module, which was introduced in Python 3.8. You can define a protocol by subclassing typing.Protocol and specifying the required methods or attributes that an object should have.
 
