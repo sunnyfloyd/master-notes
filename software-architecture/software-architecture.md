@@ -17,6 +17,8 @@
       - [Mediator Topology](#mediator-topology)
       - [Broker Topology](#broker-topology)
     - [Microkernel Architecture Pattern](#microkernel-architecture-pattern)
+    - [Microservices Architecture Pattern](#microservices-architecture-pattern)
+      - [Avoid Dependencies and Orchestration](#avoid-dependencies-and-orchestration)
 
 ## Scalability (CS75 Harvard)
 
@@ -140,3 +142,37 @@
   - Scalability: The pattern supports scalability by allowing the system to scale vertically by adding or removing modules as needed but it does not support horizontal scaling as such. When combined with other patterns it might offer some scalability though.
 
 - However, it's important to consider that implementing the Microkernel pattern can introduce additional complexity due to the need for proper module management, communication protocols, and interfaces. The pattern is best suited for systems that require frequent customization or have a need for easily replaceable or extendable components.
+
+### Microservices Architecture Pattern
+
+- The **Microservices Architecture Pattern** is a software architectural pattern that structures an application as a collection of small, loosely coupled, and independently deployable services. Each service in a microservices architecture is designed to perform a specific business capability and can be developed, deployed, and scaled independently of other services. These services communicate with each other through lightweight protocols, such as HTTP or messaging systems, and often use APIs or contracts for interaction.
+
+- Key characteristics of the Microservices Architecture Pattern include:
+
+  - Service autonomy: Each microservice is developed and maintained by a small, cross-functional team, providing a high degree of ownership and autonomy. This allows teams to independently develop, deploy, and scale their services without dependencies on other teams.
+
+  - Independent deployment: Microservices can be deployed and updated independently, enabling continuous delivery and faster time-to-market for specific services or features. This also allows for easier rollbacks and mitigates the risk of impacting the entire system during deployments.
+
+  - Loose coupling and bounded contexts: Services are designed to be loosely coupled, with clear boundaries and well-defined interfaces. They can be implemented using different technologies, databases, or frameworks based on their specific requirements. Each service encapsulates a specific business capability or domain, ensuring a separation of concerns.
+
+  - Scalability and fault isolation: Services can be scaled independently based on their individual resource demands, allowing for better resource utilization. Additionally, failures or issues in one service typically do not affect the overall system, as services are isolated and can gracefully degrade or fail without impacting the entire application.
+
+- Benefits of the Microservices Architecture Pattern include:
+
+  - Agility and scalability: The pattern enables faster development, deployment, and scaling of services, promoting agility and scalability in complex applications.
+
+  - Flexibility and technology diversity: Each microservice can use the most appropriate technology stack for its specific requirements, allowing for technology diversity and innovation within the system.
+
+  - Resilience and fault tolerance: Failure in one microservice doesn't bring down the entire system, improving fault tolerance and overall system resilience.
+
+  - Continuous delivery and DevOps: The pattern aligns well with DevOps practices and enables continuous delivery by supporting independent deployment and automated release processes for each service.
+
+- However, it's important to consider that implementing the Microservices Architecture Pattern introduces challenges in areas such as service coordination, data consistency, inter-service communication, and managing distributed systems complexity. Organizations need to carefully consider factors such as team structure, service boundaries, communication protocols, and monitoring when adopting this pattern.
+
+#### Avoid Dependencies and Orchestration
+
+- In microservices architecture, if you find you need to orchestrate your service components from within the user interface or API layer of the application, then chances are your service components are too fine-grained. Similarly, if you find you need to perform inter-service communication between service components to process a single request, chances are your service components are either too fine-grained or they are not partitioned correctly from a business functionality standpoint.
+
+- Inter-service communication, which could force undesired couplings between components, can be handled instead through a shared database. For example, if a service component handing Internet orders needs customer information, it can go to the database to retrieve the necessary data as opposed to invoking functionality within the customer-service component.
+
+- The shared database can handle information needs, but what about shared functionality? If a service component needs functionality contained within another service component or common to all service components, you can sometimes copy the shared functionality across service components (thereby violating the DRY principle: don’t repeat yourself). This is a fairly common practice in most business applications implementing the microservices architecture pattern, trading off the redundancy of repeating small portions of business logic for the sake of keeping service components independent and separating their deployment. Small utility classes might fall into this category of repeated code.
