@@ -19,6 +19,7 @@
     - [Microkernel Architecture Pattern](#microkernel-architecture-pattern)
     - [Microservices Architecture Pattern](#microservices-architecture-pattern)
       - [Avoid Dependencies and Orchestration](#avoid-dependencies-and-orchestration)
+    - [Space-Based Architecture Pattern](#space-based-architecture-pattern)
 
 ## Scalability (CS75 Harvard)
 
@@ -176,3 +177,31 @@
 - Inter-service communication, which could force undesired couplings between components, can be handled instead through a shared database. For example, if a service component handing Internet orders needs customer information, it can go to the database to retrieve the necessary data as opposed to invoking functionality within the customer-service component.
 
 - The shared database can handle information needs, but what about shared functionality? If a service component needs functionality contained within another service component or common to all service components, you can sometimes copy the shared functionality across service components (thereby violating the DRY principle: don’t repeat yourself). This is a fairly common practice in most business applications implementing the microservices architecture pattern, trading off the redundancy of repeating small portions of business logic for the sake of keeping service components independent and separating their deployment. Small utility classes might fall into this category of repeated code.
+
+### Space-Based Architecture Pattern
+
+- The **Space-Based Architecture (SBA) Pattern**, also known as the Tuple Space or Linda-style model, is a software architectural pattern that focuses on distributing and managing data or information across a network of interconnected nodes. The pattern is designed to handle high volumes of data and provide scalability, fault-tolerance, and responsiveness in distributed systems.
+
+- In the Space-Based Architecture pattern, the central concept is the shared data space, often referred to as the "space" or "tuple space." The space is a distributed, in-memory data store that holds data objects or tuples. Tuples typically consist of structured or semi-structured data and are stored in a key-value fashion. The space allows for efficient and concurrent access to data.
+
+- The main components of the Space-Based Architecture pattern are as follows:
+
+  - Space: The shared data space serves as a distributed, scalable, and fault-tolerant repository for storing tuples. It can be partitioned or replicated across multiple nodes in a network to handle high loads and ensure availability. The space provides operations for storing, retrieving, updating, and removing tuples.
+
+  - Producers: Producers are components or processes responsible for generating or updating tuples and storing them in the shared space. Producers can be distributed across different nodes and can concurrently write to the space.
+
+  - Consumers: Consumers are components or processes that retrieve tuples from the shared space based on their criteria or interests. Consumers can perform actions on the retrieved tuples, such as processing, analyzing, or displaying the data. Multiple consumers can concurrently read from the space.
+
+  - Event-driven processing: The Space-Based Architecture pattern often incorporates event-driven processing, where producers and consumers can be triggered by events or changes in the shared space. Events can notify consumers of the availability of new tuples or specific changes in the space.
+
+- The Space-Based Architecture pattern offers several advantages:
+
+  - Scalability: The pattern allows for horizontal scalability by distributing the shared space across multiple nodes, enabling the system to handle high data loads and accommodate increasing demands.
+
+  - Fault-tolerance: By replicating or partitioning the shared space, the pattern provides fault-tolerance and resilience to node failures. If one node fails, the data can still be accessed from other nodes.
+
+  - Loose coupling: The pattern promotes loose coupling between producers and consumers by relying on the shared space as an intermediary. Producers and consumers do not need to be aware of each other's existence, improving system modularity and flexibility.
+
+  - Real-time data processing: The pattern supports real-time processing of data by allowing consumers to retrieve and process tuples as soon as they become available in the shared space.
+
+- The Space-Based Architecture pattern is commonly used in scenarios that require distributed data processing, high scalability, and fault-tolerance. It finds applications in various domains, including big data analytics, event-driven systems, and distributed computing.
