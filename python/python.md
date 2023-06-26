@@ -21,6 +21,7 @@
       - [itertools](#itertools)
       - [collections](#collections)
     - [operator](#operator)
+    - [getattr and setattr](#getattr-and-setattr)
     - [Functions](#functions)
       - [Caching](#caching)
       - [singledispatch](#singledispatch)
@@ -552,6 +553,12 @@ f = attrgetter('name', 'date')
 f = attrgetter('name.first', 'name.last')
 # the call f(b) returns (b.name.first, b.name.last)
 ```
+
+### getattr and setattr
+
+- `__getattr__` provides the way to access dynamic class attributes that are not part of the class implementation. It is important to remember that this method is called only when no named attribute has been found on the instance, class nor class hierarchy level.
+
+- Very often when you implement `__getattr__`, you need to code `__setattr__` as well, to avoid inconsistent behavior in your objects (assigning value to named attributes that will no longer be handled by `__getattr__`).
 
 ### Functions
 
