@@ -38,6 +38,7 @@
       - [Abstract Classes](#abstract-classes)
       - [classmethod](#classmethod)
       - [dataclass](#dataclass)
+      - [Virtual Subclass](#virtual-subclass)
       - [Exception Classes](#exception-classes)
     - [Decorators](#decorators)
       - [Class-based Decorators](#class-based-decorators)
@@ -1198,6 +1199,25 @@ class Bowl:
 
 ```py
 
+```
+
+#### Virtual Subclass
+
+- In Python, a virtual subclass is a class that does not inherit from a superclass, but is registered as a subclass of that superclass. This allows the virtual subclass to be treated as a subclass of the superclass for the purposes of `isinstance()` and `issubclass()` checks. Virtual subclasses are useful for creating abstract base classes that can be implemented by multiple concrete classes. To create a virtual subclass, you can use the `register()` method of the ABCMeta metaclass:
+
+```python
+from abc import ABCMeta
+
+class Animal(metaclass=ABCMeta):
+    pass
+
+Animal.register(str)
+
+print(issubclass(str, Animal))  # True
+
+# `FrenchDesk` being registered as a virtual subclass of a Sequence
+from collections.abc import Sequence
+Sequence.register(FrenchDeck)
 ```
 
 #### Exception Classes
