@@ -36,6 +36,7 @@
       - [Inheritance](#inheritance)
       - [Multiple Inheritance](#multiple-inheritance)
       - [Abstract Classes](#abstract-classes)
+      - [final](#final)
       - [classmethod](#classmethod)
       - [dataclass](#dataclass)
       - [Virtual Subclass](#virtual-subclass)
@@ -1122,6 +1123,44 @@ class ChildClass(Main, Addon):
     pass
 ```
 
+- `super()` in multiple inheritance does not necassarily refer to the method from the parent class but to the given method in the current MRO.
+
+```py
+class Root:
+    def ping(self):
+        print(f"{self}.ping() in Root")
+        super().ping()  # Note that Root inherits from Object
+
+    def __repr__(self):
+        cls_name = type(self).__name__
+        return f"<instance of {cls_name}>"
+
+
+class A(Root):
+    def ping(self):
+        print(f"{self}.ping() in A")
+        super().ping()
+
+ # If B would inherit from Root its method would be called instead of Root method
+ # (due to lack of super and different MRO: A -> B -> Root)
+class B():
+    def ping(self):
+        print(f"{self}.ping() in B")
+
+class Leaf(A, B):
+    pass
+
+l = Leaf()
+l.ping()
+print(Leaf.__mro__)
+
+# <instance of Leaf>.ping() in A
+# <instance of Leaf>.ping() in Root
+# <instance of Leaf>.ping() in B
+# (<class '__main__.Leaf'>, <class '__main__.A'>, <class '__main__.Root'>, <class '__main__.B'>, 
+# <class 'object'>)
+```
+
 #### Abstract Classes
 
 - Some methods might repeat themselves in different classes (i.e. addition of an item to a database) that do not inherit from the same parent class. In order to reduce code repetition it might be a good idea to introduce an abstract class that will encapsulate such methods. Methods which functionality does not differ across the classes/methods can be implemented directly in the abstract class (even when those depend on other methods that should be implemented within the child classes). Those *dependency* methods should be introduced in the abstract class as well but implemented in each class separately.
@@ -1144,6 +1183,28 @@ class Animal(metaclass=ABCMeta):
 ```
 
 - **Abstract class is an interface** since it defines the functionality of the child classes. However, if abstract class defines non-abstract methods it does not fully comply with a standard interface definition.
+
+#### final
+
+- Decorator to indicate final methods and final classes.
+
+- Decorating a method with `@final` indicates to a type checker that the method cannot be overridden in a subclass. Decorating a class with @final indicates that it cannot be subclassed:
+
+```py
+class Base:
+    @final
+    def done(self) -> None:
+        ...
+class Sub(Base):
+    def done(self) -> None:  # Error reported by type checker
+        ...
+
+@final
+class Leaf:
+    ...
+class Other(Leaf):  # Error reported by type checker
+    ...
+```
 
 #### classmethod
 
