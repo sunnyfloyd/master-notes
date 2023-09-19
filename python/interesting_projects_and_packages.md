@@ -13,7 +13,7 @@
 ## Packages
 
 - [mpire](https://github.com/sybrenjansen/mpire) - easier multiprocessing
--
+- [HTXM](https://htmx.org/docs/) - dynamic pages (using JS) in static page templates (dynamic data fetching, polling, etc. based on pre-defined triggers)
 
 ## Articles
 

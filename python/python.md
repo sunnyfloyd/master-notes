@@ -33,6 +33,7 @@
     - [OOP](#oop)
       - [Classes](#classes)
         - [Typing](#typing)
+        - [Overloaded Signatures](#overloaded-signatures)
       - [Inheritance](#inheritance)
       - [Multiple Inheritance](#multiple-inheritance)
       - [Abstract Classes](#abstract-classes)
@@ -1032,6 +1033,17 @@ Vector = List[float]
 from geolib import geohash as gh  # type: ignore
 ```
 
+- It is better to use `cast` though since it is more informative:
+
+```py
+from typing import cast
+
+def fin_first_str(a: list[object]) -> str:
+    index = next(i for i, x in enumerate(a) if isinstance(x, str))
+
+    return cast(str, a[index])
+```
+
 - In Python, static protocols are a way to define and enforce structural typing. They allow you to specify the expected interface or behavior of an object without explicitly defining a class or using inheritance. Protocols provide a flexible and dynamic approach to type checking and enable you to write more generic and reusable code.
 
 - Protocols are implemented using the typing.Protocol class from the typing module, which was introduced in Python 3.8. You can define a protocol by subclassing typing.Protocol and specifying the required methods or attributes that an object should have.
@@ -1066,6 +1078,45 @@ circle = Circle(3)
 
 print_area(rectangle)  # Output: The area is: 20.0
 print_area(circle)  # Output: The area is: 28.26
+```
+
+- To type callable objects use `Callable` from `collections.abc` module with following syntax:
+
+```py
+from typing import Any
+from collections.abc import Callable
+
+def foo(it: Iterable[Any], key: Callable[[list_of_types_of_input_params], output_type]) -> Any
+    ...
+```
+
+- For registering virtual subclass respected by MyPy see [virtual subclass part](#virtual-subclass).
+
+##### Overloaded Signatures
+
+- Python functions may accept different combinations of arguments. The `@typing.overload` decorator allows annotating those different combinations.
+
+- A key benefit of `@overload` is declaring the return type as precisely as possible, according to the types of the arguments given.
+
+```py
+import functools
+import operator
+from collections.abc import Iterable
+from typing import overload, Union, TypeVar
+
+T = TypeVar("T")
+S = TypeVar("S")
+
+@overload
+def sum(it: Iterable[T]) -> Union[T, int]:
+    ...
+
+@overload
+def sum(it: Iterable[T], /, start: S) -> Union[T, S]:
+    ...
+
+def sum(it, /, start=0):  # signature of the actual function implementation has no type hints
+    return functools.reduce(operator.add, it, start)
 ```
 
 #### Inheritance
