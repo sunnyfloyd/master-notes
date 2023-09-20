@@ -32,7 +32,6 @@
       - [JSON](#json)
     - [OOP](#oop)
       - [Classes](#classes)
-        - [Typing](#typing)
         - [Overloaded Signatures](#overloaded-signatures)
       - [Inheritance](#inheritance)
       - [Multiple Inheritance](#multiple-inheritance)
@@ -56,6 +55,12 @@
       - [AsyncIO](#asyncio)
     - [Bitwise Operators](#bitwise-operators)
     - [RegEx](#regex)
+    - [Typing](#typing)
+      - [Generic Class](#generic-class)
+      - [Variance](#variance)
+        - [Invariance](#invariance)
+        - [Covariance](#covariance)
+        - [Contravariance](#contravariance)
     - [Other](#other)
   - [Testing](#testing)
     - [Unit Testing](#unit-testing)
@@ -1017,81 +1022,6 @@ class SpaceAge(object):
         return lambda ratio=ratio: round(self.seconds / ratio, 2)
 ```
 
-##### Typing
-
-- ```typing``` module provides runtime support for type hints:
-
-```python
-from typing import List
-
-Vector = List[float]
-```
-
-- When using Mypy, type errors for imported packages that lack typing can be silenced using `# type: ignore` comment:
-
-```python
-from geolib import geohash as gh  # type: ignore
-```
-
-- It is better to use `cast` though since it is more informative:
-
-```py
-from typing import cast
-
-def fin_first_str(a: list[object]) -> str:
-    index = next(i for i, x in enumerate(a) if isinstance(x, str))
-
-    return cast(str, a[index])
-```
-
-- In Python, static protocols are a way to define and enforce structural typing. They allow you to specify the expected interface or behavior of an object without explicitly defining a class or using inheritance. Protocols provide a flexible and dynamic approach to type checking and enable you to write more generic and reusable code.
-
-- Protocols are implemented using the typing.Protocol class from the typing module, which was introduced in Python 3.8. You can define a protocol by subclassing typing.Protocol and specifying the required methods or attributes that an object should have.
-
-```py
-from typing import Protocol
-
-class HasArea(Protocol):
-    def area(self) -> float:
-        pass
-
-def print_area(obj: HasArea) -> None:
-    print(f"The area is: {obj.area()}")
-
-class Rectangle:
-    def __init__(self, width: float, height: float):
-        self.width = width
-        self.height = height
-
-    def area(self) -> float:
-        return self.width * self.height
-
-class Circle:
-    def __init__(self, radius: float):
-        self.radius = radius
-
-    def area(self) -> float:
-        return 3.14 * self.radius ** 2
-
-rectangle = Rectangle(4, 5)
-circle = Circle(3)
-
-print_area(rectangle)  # Output: The area is: 20.0
-print_area(circle)  # Output: The area is: 28.26
-```
-
-- To type callable objects use `Callable` from `collections.abc` module with following syntax:
-
-```py
-from typing import Any
-from collections.abc import Callable
-
-def foo(it: Iterable[Any], key: Callable[[list_of_types_of_input_params], output_type]) -> Any
-    ...
-```
-
-- For registering virtual subclass respected by MyPy see [virtual subclass part](#virtual-subclass).
-
 ##### Overloaded Signatures
 
 - Python functions may accept different combinations of arguments. The `@typing.overload` decorator allows annotating those different combinations.
@@ -1982,6 +1912,241 @@ for item in re.finditer("(?P<title>[\w ]*)(?P<edit_link>\[edit\])",wiki):
 - When we want to match against the character(s) already captured by the previous pattern group we can refer to such group using ```\1``` where ```1``` is a number of a given group. It is importan to remember that optional groups will not be matched if not captured: ```(b)?c\1``` will not match a string if first *b* has not been found. This should be written like this: ```(b?)c\1```.
 
 - Regular expressions can be used both on `str` and `bytes`, but in `bytes` bytes outside the ASCII range are treated as nondigits and nonword characters.
+
+### Typing
+
+- ```typing``` module provides runtime support for type hints:
+
+```python
+from typing import List
+
+Vector = List[float]
+```
+
+- When using Mypy, type errors for imported packages that lack typing can be silenced using `# type: ignore` comment:
+
+```python
+from geolib import geohash as gh  # type: ignore
+```
+
+- It is better to use `cast` though since it is more informative:
+
+```py
+from typing import cast
+
+def fin_first_str(a: list[object]) -> str:
+    index = next(i for i, x in enumerate(a) if isinstance(x, str))
+
+    return cast(str, a[index])
+```
+
+- In Python, static protocols are a way to define and enforce structural typing. They allow you to specify the expected interface or behavior of an object without explicitly defining a class or using inheritance. Protocols provide a flexible and dynamic approach to type checking and enable you to write more generic and reusable code.
+
+- Protocols are implemented using the typing.Protocol class from the typing module, which was introduced in Python 3.8. You can define a protocol by subclassing typing.Protocol and specifying the required methods or attributes that an object should have.
+
+```py
+from typing import Protocol
+
+class HasArea(Protocol):
+    def area(self) -> float:
+        pass
+
+def print_area(obj: HasArea) -> None:
+    print(f"The area is: {obj.area()}")
+
+class Rectangle:
+    def __init__(self, width: float, height: float):
+        self.width = width
+        self.height = height
+
+    def area(self) -> float:
+        return self.width * self.height
+
+class Circle:
+    def __init__(self, radius: float):
+        self.radius = radius
+
+    def area(self) -> float:
+        return 3.14 * self.radius ** 2
+
+rectangle = Rectangle(4, 5)
+circle = Circle(3)
+
+print_area(rectangle)  # Output: The area is: 20.0
+print_area(circle)  # Output: The area is: 28.26
+```
+
+- To type callable objects use `Callable` from `collections.abc` module with following syntax:
+
+```py
+from typing import Any
+from collections.abc import Callable
+
+def foo(it: Iterable[Any], key: Callable[[list_of_types_of_input_params], output_type]) -> Any
+    ...
+```
+
+- For registering virtual subclass respected by MyPy see [virtual subclass part](#virtual-subclass).
+
+#### Generic Class
+
+- To define a generic class with formal type parameters we need to subclass from `typing.Generic`:
+
+```py
+import random
+from collections.abc import Iterable
+from typing import TypeVar, Generic
+from tombola import Tombola
+
+T = TypeVar("T")
+
+
+class LottoBlower(Tombola, Generic[T]):
+    def __init__(self, items: Iterable[T]) -> None:
+        self._balls = list[T](items)
+
+    def load(self, items: Iterable[T]) -> None:
+        self._balls.extend(items)
+
+    def pick(self) -> T:
+        try:
+            position = random.randrange(len(self._balls))
+        except ValueError:
+            raise LookupError("pick from empty LottoBlower")
+        return self._balls.pop(position)
+
+    def loaded(self) -> bool:
+        return bool(self._balls)
+
+    def inspect(self) -> tuple[T, ...]:
+        return tuple(self._balls)
+
+machine = LottoBlower[int](range(1, 11))  # OK
+machine = LottoBlower[int]([1, .2])  # ERROR
+```
+
+#### Variance
+
+- General rules about variance:
+
+  - If a formal type parameter defines a type for data that comes out of the object, it can be covariant.
+  - If a formal type parameter defines a type for data that goes into the object after its initial construction, it can be contravariant.
+  - If a formal type parameter defines a type for data that comes out of the object and the same parameter defines a type for data that goes into the object, it must be invariant.
+  - To err on the safe side, make formal type parameters invariant.
+
+##### Invariance
+
+```py
+from typing import TypeVar, Generic
+
+class Beverage:
+    """Any beverage."""
+
+
+class Juice(Beverage):
+    """Any fruit juice."""
+
+
+class OrangeJuice(Juice):
+    """Delicious juice from Brazilian oranges."""
+
+T = TypeVar("T")
+
+class BeverageDispenser(Generic[T]):
+    """A dispenser parameterized on the beverage type."""
+
+    def __init__(self, beverage: T) -> None:
+        self.beverage = beverage
+
+    def dispense(self) -> T:
+        return self.beverage
+
+
+def install(dispenser: BeverageDispenser[Juice]) -> None:
+    """Install a fruit juice dispenser."""
+
+# OK
+# juice_dispenser = BeverageDispenser(Juice())
+# install(juice_dispenser)
+
+# However, this is not legal:
+# beverage_dispenser = BeverageDispenser(Beverage())
+# install(beverage_dispenser)
+# mypy: Argument 1 to "install" has
+# incompatible type "BeverageDispenser[Beverage]"
+#          expected "BeverageDispenser[Juice]"
+
+# Somewhat surprisingly, this code is also illegal:
+# orange_juice_dispenser = BeverageDispenser(OrangeJuice())
+# install(orange_juice_dispenser)
+# mypy: Argument 1 to "install" has
+# incompatible type "BeverageDispenser[OrangeJuice]"
+#          expected "BeverageDispenser[Juice]"
+```
+
+##### Covariance
+
+```py
+T_co = TypeVar("T_co", covariant=True)
+
+class BeverageDispenser(Generic[T_co]):
+    def __init__(self, beverage: T_co) -> None:
+        self.beverage = beverage
+
+    def dispense(self) -> T_co:
+        return self.beverage
+
+
+def install(dispenser: BeverageDispenser[Juice]) -> None:
+    """Install a fruit juice dispenser."""
+
+# OK
+# juice_dispenser = BeverageDispenser(Juice())
+# install(juice_dispenser) 
+# orange_juice_dispenser = BeverageDispenser(OrangeJuice())
+# install(orange_juice_dispenser)
+
+# But a dispenser for an arbitrary Beverage is not acceptable:
+# beverage_dispenser = BeverageDispenser(Beverage())
+# install(beverage_dispenser)
+# mypy: Argument 1 to "install" has
+# incompatible type "BeverageDispenser[Beverage]"
+#          expected "BeverageDispenser[Juice]
+```
+
+##### Contravariance
+
+```py
+from typing import TypeVar, Generic
+
+class Refuse:
+    """Any refuse."""
+
+
+class Biodegradable(Refuse):
+    """Biodegradable refuse."""
+
+
+class Compostable(Biodegradable):
+    """Compostable refuse."""
+
+T_contra = TypeVar("T_contra", contravariant=True)
+
+class TrashCan(Generic[T_contra]):
+    def put(self, refuse: T_contra) -> None:
+        """Store trash until dumped."""
+
+
+def deploy(trash_can: TrashCan[Biodegradable]):
+    """Deploy a trash can for biodegradable refuse."""
+
+# Both OK
+# bio_can: TrashCan[Biodegradable] = TrashCan()
+# deploy(bio_can)
+
+# trash_can: TrashCan[Refuse] = TrashCan()
+# deploy(trash_can)
+```
 
 ### Other
 
