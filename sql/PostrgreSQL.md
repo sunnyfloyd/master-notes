@@ -1,10 +1,11 @@
 # PostgreSQL
 
 - [PostgreSQL](#postgresql)
-	- [Sandbox Setup](#sandbox-setup)
-	- [psql](#psql)
-	- [Other](#other)
-	- [PostgreSQL Specific Commands](#postgresql-specific-commands)
+  - [Sandbox Setup](#sandbox-setup)
+  - [psql](#psql)
+  - [Basics](#basics)
+  - [Other](#other)
+  - [PostgreSQL Specific Commands](#postgresql-specific-commands)
 
 ## Sandbox Setup
 
@@ -26,6 +27,35 @@ docker run -it --rm --network some-network postgres psql -h some-postgres -U pos
 - `\d` list tables, views and schemas
 - `\d table_name` describe table, view or schema
 - `\i path_to_file` executes SQL from a file
+
+## Basics
+
+- When inserting data into a table we can pass values for multiple rows:
+
+```sql
+INSERT INTO cities (name, country, population, area)
+VALUES
+  ('Delhi', 'India', 28125000, 2240),
+  ('Shanghai', 'China', 22125000, 4015);
+```
+
+- Updating rows:
+
+```sql
+UPDATE cities
+SET
+  population = 39505000
+WHERE
+  name = 'Shanghai';
+```
+
+- Deleting rows:
+
+```sql
+DELETE FROM cities
+WHERE
+  name = 'Tokyo';
+```
 
 ## Other
 
