@@ -56,6 +56,7 @@
     - [Bitwise Operators](#bitwise-operators)
     - [RegEx](#regex)
     - [Typing](#typing)
+      - [Protocols](#protocols)
       - [Generic Class](#generic-class)
       - [Variance](#variance)
         - [Invariance](#invariance)
@@ -1940,6 +1941,20 @@ def fin_first_str(a: list[object]) -> str:
     return cast(str, a[index])
 ```
 
+- To type callable objects use `Callable` from `collections.abc` module with following syntax:
+
+```py
+from typing import Any
+from collections.abc import Callable
+
+def foo(it: Iterable[Any], key: Callable[[list_of_types_of_input_params], output_type]) -> Any
+    ...
+```
+
+- For registering virtual subclass respected by MyPy see [virtual subclass part](#virtual-subclass).
+
+#### Protocols
+
 - In Python, static protocols are a way to define and enforce structural typing. They allow you to specify the expected interface or behavior of an object without explicitly defining a class or using inheritance. Protocols provide a flexible and dynamic approach to type checking and enable you to write more generic and reusable code.
 
 - Protocols are implemented using the typing.Protocol class from the typing module, which was introduced in Python 3.8. You can define a protocol by subclassing typing.Protocol and specifying the required methods or attributes that an object should have.
@@ -1976,17 +1991,49 @@ print_area(rectangle)  # Output: The area is: 20.0
 print_area(circle)  # Output: The area is: 28.26
 ```
 
-- To type callable objects use `Callable` from `collections.abc` module with following syntax:
+- Protocols can also be implemented in form of **generic static protocols**:
 
 ```py
-from typing import Any
-from collections.abc import Callable
+@runtime_checkable
+class SupportsAbs(Protocol[T_co]):
+    """An ABC with one abstract method __abs__ that is covariant
+    in its return type."""
 
-def foo(it: Iterable[Any], key: Callable[[list_of_types_of_input_params], output_type]) -> Any
-    ...
+    __slots__ = ()
+
+    @abstractmethod
+    def __abs__(self) -> T_co:
+        pass
+
+
+import math
+from typing import NamedTuple, SupportsAbs
+
+class Vector2d(NamedTuple):
+    x: float
+    y: float
+
+    def __abs__(self) -> float:
+        return math.hypot(self.x, self.y)
+
+
+def is_unit(v: SupportsAbs[float]) -> bool:
+    """'True' if the magnitude of 'v' is close to 1."""
+    return math.isclose(abs(v), 1.0)
+
+assert issubclass(Vector2d, SupportsAbs)  # works thanks to runtime_checkable decorator
 ```
 
-- For registering virtual subclass respected by MyPy see [virtual subclass part](#virtual-subclass).
+- `runtime_checkable` marks a protocol class as a runtime protocol. Such a protocol can be used with `isinstance()` and `issubclass()`. This raises `TypeError` when applied to a non-protocol class. This allows a simple-minded structural check:
+
+```py
+@runtime_checkable
+class Closable(Protocol):
+    def close(self):
+        ...
+
+assert isinstance(open("/some/file"), Closable)
+```
 
 #### Generic Class
 
