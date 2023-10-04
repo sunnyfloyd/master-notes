@@ -267,6 +267,15 @@ letters = ['a', 'b', 'c', 'd', 'e']
 num_let = [str(n) + l for l, n in zip(letters, range(1, 6))]
 ```
 
+- `itertools.zip_longest` makes an iterator that aggregates elements from each of the iterables. If the iterables are of **uneven length**, missing values are filled-in with `fillvalue`. Iteration continues until the longest iterable is exhausted:
+
+```py
+class Vector:
+    def __add__(self, other):
+        pairs = itertools.zip_longest(self, other, fillvalue=0.0)
+        return Vector(a + b for a, b in pairs)
+```
+
 - Asterisk (*) can be used before argument in order to unpack iterable value:
 
 ```python
