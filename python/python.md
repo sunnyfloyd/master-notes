@@ -57,6 +57,7 @@
     - [RegEx](#regex)
     - [Typing](#typing)
       - [Protocols](#protocols)
+      - [subclasshook](#subclasshook)
       - [Generic Class](#generic-class)
       - [Variance](#variance)
         - [Invariance](#invariance)
@@ -2042,6 +2043,27 @@ class Closable(Protocol):
         ...
 
 assert isinstance(open("/some/file"), Closable)
+```
+
+#### subclasshook
+
+- If a class implements a `__subclasshook__` method then it overrides the way Python checks instance class hierarchy. This is the mechanism used in `collections.abc` like `abc.Sized` and `abc.Iterable` which allows for checking if given instance implements desired method(s):
+
+```py
+from collections.abc import Sized
+
+class A:
+    ...
+
+a = A()
+isinstance(a, Sized)  # False
+
+class B:
+    def __len__(self):
+        return 0
+
+b = B()
+isinstance(b, Sized)  # True
 ```
 
 #### Generic Class
