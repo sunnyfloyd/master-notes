@@ -57,6 +57,15 @@ WHERE
   name = 'Tokyo';
 ```
 
+- Creating foreign key field in table creation:
+
+```sql
+CREATE TABLE crew_members (
+    -- ...
+    boat_id INTEGER REFERENCES boats(id)
+);
+```
+
 ## Other
 
 - `CREATE DATABASE database_name`
