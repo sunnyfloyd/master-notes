@@ -4,6 +4,10 @@
   - [Sandbox Setup](#sandbox-setup)
   - [psql](#psql)
   - [Basics](#basics)
+  - [Sets](#sets)
+    - [Unions](#unions)
+    - [Intersections](#intersections)
+    - [Except](#except)
   - [Other](#other)
   - [PostgreSQL Specific Commands](#postgresql-specific-commands)
 
@@ -65,6 +69,44 @@ CREATE TABLE crew_members (
     boat_id INTEGER REFERENCES boats(id)
 );
 ```
+
+- To skip certain number of rows from the query output use `OFFSET`:
+
+```sql
+SELECT * FROM PRODUCTS
+LIMIT 10
+OFFSET 40; -- skip the first 40 records
+```
+
+## Sets
+
+- All of the below have 2 variants: with and without `ALL`. The latter does not remove duplicates from the results.
+
+### Unions
+
+- `UNION` allows for joining results from multiple queries that have the same output structure (have the same result columns with the same data type):
+
+```sql
+(
+  SELECT * FROM products
+  ORDER BY price
+  LIMIT 5
+)
+UNION
+(
+  SELECT * FROM products
+  ORDER BY price / weight DESC
+  LIMIT 5
+)
+```
+
+### Intersections
+
+- `INTERSECT` joins results from multiple queries and outputs rows that are **common** between results.
+
+### Except
+
+- `EXCEPT` finds the rows that are present in the first query but not in the second query.
 
 ## Other
 
