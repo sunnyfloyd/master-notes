@@ -8,6 +8,7 @@
     - [Unions](#unions)
     - [Intersections](#intersections)
     - [Except](#except)
+  - [Subqueries](#subqueries)
   - [Other](#other)
   - [PostgreSQL Specific Commands](#postgresql-specific-commands)
 
@@ -107,6 +108,14 @@ UNION
 ### Except
 
 - `EXCEPT` finds the rows that are present in the first query but not in the second query.
+
+## Subqueries
+
+- There are 3 ways to use a subquery:
+
+  - subquery inside `SELECT` (scalar value),
+  - subquery inside `FROM` (must match structure of outer `SELECT`, `WHERE`, etc.; must be named with `as`)
+  - subquery in other parts ('WHERE', `JOIN`, etc.).
 
 ## Other
 
