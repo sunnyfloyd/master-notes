@@ -20,6 +20,7 @@
       - [Comprehensions](#comprehensions)
       - [itertools](#itertools)
       - [collections](#collections)
+    - [Iterators](#iterators)
     - [operator](#operator)
     - [getattr and setattr](#getattr-and-setattr)
     - [Functions](#functions)
@@ -548,6 +549,63 @@ def format_sort_records(list_of_tuples):
     for person in sorted(list_of_tuples, key=operator.attrgetter('last', 'first')):
         output.append(template.format(*(person._asdict())))
     return output
+```
+
+### Iterators
+
+- A common cause of errors in building iterables and iterators is to confuse the two. To be clear: iterables have an `__iter__` method that instantiates a new iterator every time. Iterators implement a `__next__` method that returns individual items, and an `__iter__` method that returns self. Therefore, **iterators are also iterable, but iterables are not iterators**.
+
+- Moder approach to building iterator is to use generators (functions that use `yield` keyword):
+
+```py
+import re
+import reprlib
+
+RE_WORD = re.compile(r"\w+")
+
+class Sentence:
+    def __init__(self, text):
+        self.text = text
+        self.words = RE_WORD.findall(text)
+
+    # NEW APPROACH
+    # creates generator object that implements `Iterator` interface so there is no
+    # need to implement seperate Iterator class
+    def __iter__(self):
+        for word in self.words:
+            yield word
+
+    # OLD APPROACH
+    def __iter__(self):
+        return SentenceIterator(self.words)
+
+class SentenceIterator:
+    def __init__(self, words):
+        self.words = words
+        self.index = 0
+
+    def __next__(self):
+        try:
+            word = self.words[self.index]
+        except IndexError:
+            raise StopIteration()
+        self.index += 1
+        return word
+
+    def __iter__(self):
+        return self
+```
+
+- One useful application of the second form of `iter()` is to build a block-reader. For example, reading fixed-width blocks from a binary database file until the end of file is reached:
+
+```py
+from functools import partial
+
+with open("mydata.db", "rb") as f:
+    # partial is necessary because callable given to iter must not require arguments
+    read64 = partial(f.read, 64)
+    for block in iter(read64, b""):  # b"" is a sentinel - once reached stops iteration
+        process_block(block)
 ```
 
 ### operator
