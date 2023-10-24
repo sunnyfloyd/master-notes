@@ -9,6 +9,9 @@
     - [Intersections](#intersections)
     - [Except](#except)
   - [Subqueries](#subqueries)
+  - [Utility Functions, Keywords and Operators](#utility-functions-keywords-and-operators)
+    - [GREATEST AND LEAST](#greatest-and-least)
+    - [CASE](#case)
   - [Other](#other)
   - [PostgreSQL Specific Commands](#postgresql-specific-commands)
 
@@ -116,6 +119,34 @@ UNION
   - subquery inside `SELECT` (scalar value),
   - subquery inside `FROM` (must match structure of outer `SELECT`, `WHERE`, etc.; must be named with `as`)
   - subquery in other parts ('WHERE', `JOIN`, etc.).
+
+## Utility Functions, Keywords and Operators
+
+### GREATEST AND LEAST
+
+- `GREATEST()` and `LEAST()` functions return the largest and the smallest values from the specified values respectively. Both the functions take any number of arguments:
+
+```sql
+SELECT GREATEST(25, 6, 7, 10, 20, 54);  --  returns 54
+SELECT LEAST(25, 6, 7, 10, 20, 54);  --  returns 6
+```
+
+### CASE
+
+- `CASE` is a conditional expression that allows you to perform different actions based on specified conditions. It's often used in `SELECT` statements to create calculated columns, perform data transformations, or apply conditional logic:
+
+```sql
+SELECT
+  employee_name,
+  salary,
+  CASE
+    WHEN salary >= 50000 THEN 'High Salary'
+    WHEN salary >= 30000 THEN 'Moderate Salary'
+    ELSE 'Low Salary'
+  END AS salary_category
+FROM
+  employees;
+```
 
 ## Other
 
