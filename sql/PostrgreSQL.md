@@ -12,6 +12,8 @@
   - [Utility Functions, Keywords and Operators](#utility-functions-keywords-and-operators)
     - [GREATEST AND LEAST](#greatest-and-least)
     - [CASE](#case)
+  - [Validations and Constraints](#validations-and-constraints)
+    - [Check](#check)
   - [Other](#other)
   - [PostgreSQL Specific Commands](#postgresql-specific-commands)
 
@@ -146,6 +148,41 @@ SELECT
   END AS salary_category
 FROM
   employees;
+```
+
+## Validations and Constraints
+
+### Check
+
+- A `check` constraint in PostgreSQL is used to specify a condition that each row in a table must meet for an insert or update operation to succeed. It is a way to enforce data integrity by preventing invalid data from being entered into a column.
+
+```sql
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100),
+    age INT CHECK (age > 0)
+);
+```
+
+- You can also add a check constraint to an existing table which, contrary to other constraints (unique, not null), will not work on the rows already added to the table:
+
+```sql
+ALTER TABLE users ADD CONSTRAINT age_positive CHECK (age > 0)
+```
+
+- Check can also be applied on multiple columns:
+
+```sql
+CREATE TABLE events (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255),
+    start_date DATE,
+    end_date DATE,
+    CHECK (end_date > start_date)
+);
+
+-- for already existing table
+ALTER TABLE events ADD CONSTRAINT end_after_start CHECK (end_date > start_date);
 ```
 
 ## Other
