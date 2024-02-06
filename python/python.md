@@ -46,7 +46,7 @@
       - [Class-based Decorators](#class-based-decorators)
     - [Closures](#closures)
     - [Underscores](#underscores)
-    - [Asynchronous Programming](#asynchronous-programming)
+    - ["Asynchronous" Programming](#asynchronous-programming)
       - [Multithreading](#multithreading)
         - [Sharing State in Threads](#sharing-state-in-threads)
         - [Racing Conditions in Multithread Code](#racing-conditions-in-multithread-code)
@@ -1704,13 +1704,15 @@ car = ('red', 'auto', 12, 3812.4)
 color, _, _, mileage = car # interested only in color and mileage values
 ```
 
-### Asynchronous Programming
+### "Asynchronous" Programming
 
 - [Article and decision trees](https://superfastpython.com/python-concurrency-choose-api/) to help you decide which asynchronous API to use in which scenario.
 
 #### Multithreading
 
 - Python processes can only run a single thread at the same time. This is because for each Python process only one GIL (Global Interpreter Lock), which is a key resource, is created. Running thread must acquire that resource so it is not possible to run multiple threads on a single Python process. Multithreading in Python is therefore useful only for **reducing waiting time** or, to be more specific, for **I/O bottleneck**. If all the threads are actually using computational power then multithreading will only slow down the entire process due to the overhead involved with switching between threads.
+
+- Remember that Python interpreter suspends the running thread every 5ms, making the GIL available to other pending threads.
 
 ```python
 from threading import Thread
