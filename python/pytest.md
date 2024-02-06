@@ -363,7 +363,7 @@ def​ ​test_patch_env_var​(monkeypatch, tmp_path):
 
 ```python
 @pytest.mark.parametrize(
-​   "start_summary, start_state"​,  # this can be either strign or a list
+​   "start_summary, start_state"​,  # this can be either string or a list
     [
         (​"write a book"​, ​"done"​),
         (​"second edition"​, ​"in prog"​),
