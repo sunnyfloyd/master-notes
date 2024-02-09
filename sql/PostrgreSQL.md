@@ -14,6 +14,7 @@
     - [CASE](#case)
   - [Validations and Constraints](#validations-and-constraints)
     - [Check](#check)
+  - [Indices](#indices)
   - [Other](#other)
   - [PostgreSQL Specific Commands](#postgresql-specific-commands)
 
@@ -184,6 +185,19 @@ CREATE TABLE events (
 -- for already existing table
 ALTER TABLE events ADD CONSTRAINT end_after_start CHECK (end_date > start_date);
 ```
+
+## Indices
+
+- An **index** is a database object that provides a fast and efficient way to look up rows in a table based on the values in one or more columns. The primary purpose of an index is to improve the speed of data retrieval operations, such as `SELECT` queries, by creating a sorted structure that allows the database engine to quickly locate the rows that match certain criteria.
+
+- There are several types of indexes in PostgreSQL, including B-tree, Hash, GiST (Generalized Search Tree), GIN (Generalized Inverted Index), and others. The most commonly used index type is the B-tree index.
+
+```sql
+-- Create a B-tree index on the last_name column
+CREATE INDEX idx_last_name ON employees(last_name);
+```
+
+- It's important to note that while indexes can significantly improve query performance, they also come with some trade-offs. Indexes consume disk space, and they need to be updated whenever the underlying data is modified (inserts, updates, or deletes).
 
 ## Other
 
