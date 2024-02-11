@@ -2436,7 +2436,7 @@ ngOnInit() {
 
 ```html
 <!-- HTML where ingredients are iterated over -->
-<a>*ngFor="let ingredient of (ingredients | async).ingredients; let i = index"</a>
+<a *ngFor="let ingredient of (ingredients | async).ingredients; let i = index"></a>
 ```
 
 ## Testing
