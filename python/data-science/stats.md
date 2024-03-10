@@ -48,7 +48,7 @@
 
 #### Cross tables and scatter plots
 
-- **Crost Tables** (contingency tables) - represent relation between two variables. Can be then translated into a **side-by-side bar chart**.
+- **Cross Tables** (contingency tables) - represent relation between two variables. Can be then translated into a **side-by-side bar chart**.
 
 - **Scatter Plots** used when representing two numerical sets of data.
 
