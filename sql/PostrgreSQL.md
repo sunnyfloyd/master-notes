@@ -229,6 +229,8 @@ WHERE
 - A recursive Common Table Expression (CTE) in PostgreSQL allows for iteration within SQL queries. It's useful for handling hierarchical, tree- or graph-like data structures where each iteration builds upon the results of the previous one.
 - The recursive CTE consists of two parts: the base case and the recursive part. The base case initializes the recursion, and the recursive part continues the iteration until a termination condition is met.
 - For example, you can use recursive CTEs to traverse a hierarchical data structure like an organization chart, a file system, or a bill of materials. Each iteration retrieves rows from the previous iteration and processes them further, allowing for flexible and efficient querying of hierarchical data.
+- The way recursive CTE works is that it initializes with 2 tables: results table and working table. Base case populates both tables at the beginning and then each time recursive part runs the results are added to the results table and **replace** the data in the working table.
+- You can define column names that ought to be used inside parenthesis: `WITH RECURSIVE org_hierarchy(employee_id, name, manager_id, depth)`.
 
 ```sql
 WITH RECURSIVE org_hierarchy AS (
@@ -240,7 +242,7 @@ WITH RECURSIVE org_hierarchy AS (
     
     SELECT e.employee_id, e.name, e.manager_id, oh.depth + 1
     FROM employees e
-    INNER JOIN org_hierarchy oh ON e.manager_id = oh.employee_id -- Recursive part: Joining employees with their managers
+    INNER JOIN org_hierarchy oh ON e.manager_id = oh.employee_id -- Recursive part: Joining employees with their managers (org_hierarchy refers to a working table here)
 )
 SELECT * FROM org_hierarchy;
 ```
