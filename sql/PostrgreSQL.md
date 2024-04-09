@@ -15,6 +15,8 @@
   - [Validations and Constraints](#validations-and-constraints)
     - [Check](#check)
   - [Indices](#indices)
+  - [Common Table Expression (CTE)](#common-table-expression-cte)
+    - [Recursive CTE](#recursive-cte)
   - [Other](#other)
   - [PostgreSQL Specific Commands](#postgresql-specific-commands)
 
@@ -198,6 +200,50 @@ CREATE INDEX idx_last_name ON employees(last_name);
 ```
 
 - It's important to note that while indexes can significantly improve query performance, they also come with some trade-offs. Indexes consume disk space, and they need to be updated whenever the underlying data is modified (inserts, updates, or deletes).
+
+## Common Table Expression (CTE)
+
+- A **Common Table Expression (CTE)** in PostgreSQL is a temporary named result set that you can reference within a `SELECT`, `INSERT`, `UPDATE`, or `DELETE` statement. It helps in organizing complex queries by breaking them down into smaller, more readable parts. CTEs are particularly useful for recursive queries or when you need to reference the same subquery multiple times within a larger query. They improve code clarity, maintainability, and can sometimes even enhance performance by allowing the query optimizer to better understand the intent of the query.
+
+```sql
+WITH sales AS (
+    SELECT
+        product_id,
+        SUM(quantity) AS total_quantity
+    FROM
+        order_items
+    GROUP BY
+        product_id
+)
+SELECT
+    product_id,
+    total_quantity
+FROM
+    sales
+WHERE
+    total_quantity > 100;
+```
+
+### Recursive CTE
+
+- A recursive Common Table Expression (CTE) in PostgreSQL allows for iteration within SQL queries. It's useful for handling hierarchical, tree- or graph-like data structures where each iteration builds upon the results of the previous one.
+- The recursive CTE consists of two parts: the base case and the recursive part. The base case initializes the recursion, and the recursive part continues the iteration until a termination condition is met.
+- For example, you can use recursive CTEs to traverse a hierarchical data structure like an organization chart, a file system, or a bill of materials. Each iteration retrieves rows from the previous iteration and processes them further, allowing for flexible and efficient querying of hierarchical data.
+
+```sql
+WITH RECURSIVE org_hierarchy AS (
+    SELECT employee_id, name, manager_id, 1 AS depth
+    FROM employees
+    WHERE manager_id IS NULL  -- Base case: Employees without managers (top-level)
+    
+    UNION ALL
+    
+    SELECT e.employee_id, e.name, e.manager_id, oh.depth + 1
+    FROM employees e
+    INNER JOIN org_hierarchy oh ON e.manager_id = oh.employee_id -- Recursive part: Joining employees with their managers
+)
+SELECT * FROM org_hierarchy;
+```
 
 ## Other
 
