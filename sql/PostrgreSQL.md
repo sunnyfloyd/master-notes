@@ -17,6 +17,8 @@
   - [Indices](#indices)
   - [Common Table Expression (CTE)](#common-table-expression-cte)
     - [Recursive CTE](#recursive-cte)
+  - [Views](#views)
+    - [Materialized Views](#materialized-views)
   - [Other](#other)
   - [PostgreSQL Specific Commands](#postgresql-specific-commands)
 
@@ -246,6 +248,36 @@ WITH RECURSIVE org_hierarchy AS (
 )
 SELECT * FROM org_hierarchy;
 ```
+
+## Views
+
+- A **view** is a virtual table based on the result set of a SELECT query. It acts as a stored query that can be referenced and used just like a table in subsequent queries. Views provide a way to simplify complex queries, encapsulate logic, and present data in a more structured or summarized form without duplicating the underlying data.
+
+```sql
+CREATE VIEW tags AS (
+  SELECT id, created_at, user_id from photo_tags
+  UNION ALL
+  SELECT id, created_at, user_id, post_id
+)
+```
+
+- To modify or replace a view use `CREATE OR REPLACE VIEW`.
+
+### Materialized Views
+
+- A **materialized view** is a precomputed snapshot of the result set of a query. Unlike regular views, which execute the underlying query each time they're referenced, materialized views store the query result set physically on disk. This allows for faster access to the data, especially for complex queries or when dealing with large datasets.
+
+- Materialized views are useful for scenarios where the underlying data changes infrequently, or when you need to improve query performance by caching the result set. However, it's important to note that materialized views require storage space and need to be refreshed periodically to reflect changes in the underlying data.
+
+```sql
+CREATE MATERIALIZED VIEW high_salary_employees_mv AS (
+  SELECT name, department
+  FROM employees
+  WHERE salary > 50000
+)
+```
+
+- To refresh materialized view use `REFRESH MATERIALIZED VIEW view_name`.
 
 ## Other
 
